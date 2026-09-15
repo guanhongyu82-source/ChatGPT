@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
-"""Verify Sol Cabinet skill, agents, and managed rule installation."""
+"""Verify the live Sol Cabinet runtime installation and deployment state."""
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import stat
 from pathlib import Path
 
+import deployment_state
+
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILL_LINK = Path.home() / ".codex" / "skills" / "sol-cabinet"
-GLOBAL_AGENTS = Path.home() / ".codex" / "AGENTS.md"
 GLOBAL_OVERRIDE = Path.home() / ".codex" / "AGENTS.override.md"
 PROJECT_AGENTS = Path("/Users/macbook/ChatGPT/AGENTS.md")
 LINEAGE_AGENTS = Path("/Users/macbook/ChatGPT/lineage/codex-root/AGENTS.md")
 BLOCK_SOURCE = ROOT / "platform-adapter" / "AGENTS.managed-block.md"
-INSTALL_MANIFEST = ROOT / "platform-adapter" / "installation-manifest.json"
 BEGIN = "<!-- SOL CABINET MANAGED BLOCK BEGIN -->"
 END = "<!-- SOL CABINET MANAGED BLOCK END -->"
 AGENT_SOURCE_DIR = ROOT / "platform-adapter" / "codex-agents"
@@ -26,11 +27,6 @@ AGENT_FILES = {
     "sol-researcher.toml", "sol-fact-checker.toml", "sol-structure-architect.toml",
     "sol-drafter.toml", "sol-critic.toml", "sol-compliance-reviewer.toml",
     "sol-language-editor.toml", "sol-final-verifier.toml",
-}
-MANIFEST_KEYS = {
-    "system", "version", "installed_at", "source_of_truth", "skill_entry",
-    "agent_runtime", "managed_rules", "required_cwd", "smoke_tests",
-    "known_preexisting_warning", "verification",
 }
 
 
@@ -74,9 +70,11 @@ def _check_agent_runtime() -> list[dict[str, object]]:
     return issues
 
 
-def check() -> dict[str, object]:
-    issues = []
-    warnings = []
+def check(*, expected_commit: str | None = None,
+          state_path: Path = deployment_state.DEFAULT_STATE) -> dict[str, object]:
+    issues: list[dict[str, object]] = []
+    warnings: list[str] = []
+
     if not SKILL_LINK.is_symlink() or SKILL_LINK.resolve() != ROOT.resolve():
         issues.append({"issue": "skill-link-invalid", "path": str(SKILL_LINK)})
 
@@ -86,15 +84,10 @@ def check() -> dict[str, object]:
 
     try:
         expected = BLOCK_SOURCE.read_text(encoding="utf-8").strip()
-        rules = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))["managed_rules"]
-        for raw in rules["installed_in"]:
-            path = Path(raw)
+        for path in (PROJECT_AGENTS, LINEAGE_AGENTS):
             if _extract_block(path) != expected:
                 issues.append({"issue": "managed-block-drift", "path": str(path)})
-        for raw, expected_hash in rules.get("user_owned", {}).items():
-            if _sha256(Path(raw)) != expected_hash:
-                issues.append({"issue": "user-owned-rule-changed-review-required", "path": raw})
-    except (OSError, UnicodeError, ValueError, KeyError) as exc:
+    except (OSError, UnicodeError, ValueError) as exc:
         issues.append({"issue": "managed-block-check-failed", "detail": str(exc)})
 
     if GLOBAL_OVERRIDE.is_file() and GLOBAL_OVERRIDE.stat().st_size > 0:
@@ -105,72 +98,12 @@ def check() -> dict[str, object]:
     except (OSError, UnicodeError, ValueError) as exc:
         issues.append({"issue": "agent-runtime-check-failed", "detail": str(exc)})
 
-    try:
-        manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
-        if not isinstance(manifest, dict):
-            raise ValueError("manifest must be a JSON object")
-        if set(manifest) != MANIFEST_KEYS:
-            raise ValueError("manifest top-level schema mismatch")
-        if manifest["system"] != "Sol Cabinet" or manifest["version"] != "1.5":
-            raise ValueError("manifest identity mismatch")
-        if manifest["source_of_truth"] != str(ROOT):
-            raise ValueError("manifest source mismatch")
-        if manifest["skill_entry"] != {
-            "path": str(SKILL_LINK),
-            "mode": "symlink",
-            "resolved_path": str(ROOT),
-            "skill_md_sha256": manifest["skill_entry"].get("skill_md_sha256"),
-        }:
-            raise ValueError("manifest skill entry mismatch")
-        runtime_manifest = manifest["agent_runtime"]
-        if set(runtime_manifest) != {"path", "mode", "sync_script", "sync_script_sha256", "files"}:
-            raise ValueError("manifest agent runtime schema mismatch")
-        if set(runtime_manifest["files"]) != AGENT_FILES:
-            raise ValueError("manifest agent file set mismatch")
-        if runtime_manifest["path"] != str(AGENT_TARGET_DIR) or runtime_manifest["mode"] != "managed-regular-copies":
-            raise ValueError("manifest agent runtime mismatch")
-        if runtime_manifest["sync_script"] != "scripts/sync_agent_runtime.py":
-            raise ValueError("manifest sync script mismatch")
-        if _sha256(ROOT / runtime_manifest["sync_script"]) != runtime_manifest["sync_script_sha256"]:
-            issues.append({"issue": "installation-manifest-sync-script-hash-drift"})
-        if _sha256(ROOT / "SKILL.md") != manifest["skill_entry"]["skill_md_sha256"]:
-            issues.append({"issue": "installation-manifest-skill-hash-drift"})
-        if _sha256(BLOCK_SOURCE) != manifest["managed_rules"]["source_sha256"]:
-            issues.append({"issue": "installation-manifest-rule-hash-drift"})
-        if manifest["managed_rules"]["source"] != "platform-adapter/AGENTS.managed-block.md":
-            raise ValueError("manifest managed rule source mismatch")
-        if set(manifest["managed_rules"]) != {"source", "source_sha256", "installed_in", "user_owned"}:
-            raise ValueError("manifest managed rule schema mismatch")
-        if set(manifest["managed_rules"]["installed_in"]) | set(manifest["managed_rules"]["user_owned"]) != {
-            str(GLOBAL_AGENTS), str(PROJECT_AGENTS), str(LINEAGE_AGENTS)
-        }:
-            raise ValueError("manifest managed rule targets mismatch")
-        if set(manifest["managed_rules"]["installed_in"]) & set(manifest["managed_rules"]["user_owned"]):
-            raise ValueError("rule target cannot be both managed and user-owned")
-        if manifest["required_cwd"] != "/Users/macbook/ChatGPT":
-            raise ValueError("manifest cwd mismatch")
-        smoke = manifest["smoke_tests"]
-        if set(smoke) != {
-            "skill_discovery", "custom_agent_discovery", "custom_agent_name",
-            "custom_agent_sandbox_mode",
-        }:
-            raise ValueError("manifest smoke schema mismatch")
-        if smoke.get("skill_discovery") != "PASS" or smoke.get("custom_agent_discovery") != "PASS":
-            raise ValueError("manifest smoke status mismatch")
-        if smoke.get("custom_agent_name") != "sol_final_verifier" or smoke.get("custom_agent_sandbox_mode") != "read-only":
-            raise ValueError("manifest custom agent smoke mismatch")
-        verification = manifest["verification"]
-        if verification.get("check_script") != "scripts/check_installation.py":
-            raise ValueError("manifest verification script mismatch")
-        if set(verification) != {"check_script", "check_script_sha256"}:
-            raise ValueError("manifest verification schema mismatch")
-        if _sha256(ROOT / verification["check_script"]) != verification["check_script_sha256"]:
-            issues.append({"issue": "installation-manifest-check-script-hash-drift"})
-        for name, expected_hash in manifest["agent_runtime"]["files"].items():
-            if _sha256(ROOT / "platform-adapter/codex-agents" / name) != expected_hash:
-                issues.append({"issue": "installation-manifest-agent-hash-drift", "file": name})
-    except (OSError, AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-        issues.append({"issue": "installation-manifest-invalid", "detail": str(exc)})
+    runtime = deployment_state.classify(
+        deployment_state.read_state(state_path), ROOT, expected_commit=expected_commit
+    )
+    if runtime["state"] != "SYNCED":
+        issues.append({"issue": "runtime-deployment-state-" + runtime["state"].lower(),
+                       "detail": runtime.get("issues", [])})
 
     hooks = Path.home() / ".codex" / "hooks.json"
     if hooks.is_file() and "Otty" in hooks.read_text(encoding="utf-8", errors="replace"):
@@ -180,11 +113,20 @@ def check() -> dict[str, object]:
         if not hook_script.exists():
             warnings.append("pre-existing Otty hooks are registered but their executable is missing")
 
-    return {"verdict": "PASS" if not issues else "FAIL", "issues": issues, "warnings": warnings}
+    return {
+        "verdict": "PASS" if not issues else "FAIL",
+        "runtime_state": runtime,
+        "issues": issues,
+        "warnings": warnings,
+    }
 
 
 def main() -> int:
-    result = check()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--expected-commit")
+    parser.add_argument("--state", type=Path, default=deployment_state.DEFAULT_STATE)
+    args = parser.parse_args()
+    result = check(expected_commit=args.expected_commit, state_path=args.state)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["verdict"] == "PASS" else 1
 
