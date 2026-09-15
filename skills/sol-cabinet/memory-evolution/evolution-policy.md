@@ -7,8 +7,9 @@
 [权限笼](permission-cage.json) 是冻结层。最高遵循：任务不变、边界不扩；能力升级、帮手增加；并行增强、速度提升；范围收敛、颗粒度加深；减少发散、提高精度与质量。质量不得为速度下降。速度来自有效并行、调度、路由、减少空转和能力提升。
 
 - A 冻结层与 D 否决层：进化无权改写、弱化、绕过或换名重引。涉及这些内容停止晋升，另形成用户裁决方案；当前自动权限永远不能用于改自己的权限笼。
-- B 自动层：仅白名单低风险路径且双独立审核确认冻结项零影响。白名单不是整文件任意修改授权；语义触及核心即升级或拒绝。非核心表达、兼容、路由、上下文挂载、无职责变化的并行、消除重复与修执行链可进入分析，不保证自动晋升。
-- C approve 层：范围、保密、完成定义、质量 Gate、Agent 权限、模型核心策略、架构、迁移、删除能力须明确用户批准，批准绑定候选哈希、差异和用途；模糊授权或修改后旧批准失效。自保护文件只允许独立的用户直接维护施工，不进入自我进化自动通道。
+- B 自动层：仅白名单低风险路径且双独立审核确认冻结项零影响。白名单不是整文件任意修改授权；语义触及核心即升级或拒绝。非核心表达、兼容、路由、上下文挂载、无职责变化的并行、消除重复与修执行链可自动完成观察、分析、候选、回归和审核准备，但最高只到 `CANDIDATE READY`。`auto_paths` 只表示候选风险分层，不产生 Stable 写入权。
+- C 用户裁决层：任何 `candidate → stable` 都必须有当前用户明确的发布/定稿授权。授权必须绑定当前 candidate hash、base hash、changes hash 和用途，并记录 `release_intent=finalize-stable`；“看看 / 优化一下 / 建议一下 / 先改改看 / 先出一版”等模糊表达不得生成发布授权。候选任一字节变化后，旧授权失效，必须重新确认。
+- 自保护文件只允许独立的用户直接维护施工，不进入自我进化自动通道。
 - 本地脚本是机械门禁，不是操作系统权限隔离；同一用户可改文件，哈希不能认证人或模型身份。维护执行者必须核对真实用户消息和真实独立工具输出，禁止自填通过。
 
 ## 生产收尾：无事故零写入
@@ -29,13 +30,17 @@ Work 无法写本机时，只在当前任务保留脱敏待处理项，下一次
 
 `scripts/evolve.py regress <candidate> <evidence-dir>` 执行候选 unittest 与结构检查并记录真实退出码、日志及候选哈希。原事故需有可执行 case 测试；非退化复用既有套件。边界、质量与速度五项必须由独立审核核对实际差异；不能用静态 PASS 登记代替测试。未经实际 A/B，速度仅写预计不降或待实测，不伪造提升。
 
-维护层准备 proposal JSON：incident_id、case_ids、base_sha256、candidate_sha256、test_run_id、review_ids、permission、approval_ref、summary、quality、speed。审核沿用 `verify_evidence.py` 格式及双独立审核，并补 permission、frozen_impact=false、dimensions（fix/non_regression/boundary/quality/speed 均 PASS）。受影响检查不足、未知项或任一失败均不晋升。
+维护层准备 proposal JSON：incident_id、case_ids、base_sha256、candidate_sha256、test_run_id、review_ids、permission、approval_ref、summary、quality、speed。`permission=auto|approve` 仅表示候选风险分层，不表示发布权。审核沿用 `verify_evidence.py` 格式及双独立审核，并补 permission、frozen_impact=false、dimensions（fix/non_regression/boundary/quality/speed 均 PASS）。受影响检查不足、未知项或任一失败均不进入发布 Gate。
+
+候选通过全部回归和双审核后只能进入 `CANDIDATE READY`。没有用户明确 FINAL，不生成发布授权记录，不执行 promote，不写 Stable，不产生正式 EVO。
 
 ## 晋升、EVO 与回滚
 
-`scripts/evolve.py promote <candidate> <proposal.json> <evidence-dir>` 在维护层执行：锁定 → 当前基线/候选/案例 → 回归证据 → 权限 → 已验证快照 → 最小文件变更 → 实体哈希复验 → EVO。失败保留候选、拒绝原因和证据，不产生 EVO。部署异常恢复修改文件；中断留下 pending 标记阻止后续晋升，须维护恢复，不假完成。
+`scripts/evolve.py promote <candidate> <proposal.json> <evidence-dir>` 是 Stable 发布动作，不再属于自动进化权限。无论 proposal 的候选风险分层是 `auto` 还是 `approve`，promote 都必须验证用户发布授权：`actor=user`、`approved=true`、`release_intent=finalize-stable`，并同时绑定当前 candidate_sha256、base_sha256、changes_sha256、purpose 和真实消息证据。任一不匹配即拒绝；候选变化后旧授权自动失效。
 
-EVO 仅为真实成功版本，格式 EVO-YYYYMMDD-HHMMSS（UTC），记录事故、根因、Case、前后哈希、文件差异、摘要、质量/速度、回归、auto/approve、批准依据和回滚点。运行记录放 `memory-evolution/proposals/`，不参与候选代码摘要；不用 record、hits、分析、回归失败凑 EVO。
+发布顺序：锁定 → 当前基线/候选/案例 → 回归证据 → 候选权限分层 → 用户发布授权 → 已验证快照 → 最小文件变更 → 实体哈希复验 → EVO。失败保留候选、拒绝原因和证据，不产生 EVO。部署异常恢复修改文件；中断留下 pending 标记阻止后续晋升，须维护恢复，不假完成。
+
+EVO 仅为真实成功版本，格式 EVO-YYYYMMDD-HHMMSS（UTC），记录事故、根因、Case、前后哈希、文件差异、摘要、质量/速度、回归、候选风险分层、用户批准依据和回滚点。运行记录放 `memory-evolution/proposals/`，不参与候选代码摘要；不用 record、hits、分析、回归失败或 `CANDIDATE READY` 凑 EVO。
 
 `scripts/evolve.py rollback <EVO>` 仅在当前版本仍等于该 EVO 时恢复其确切变更集，保留原 EVO，新增 rollback_of 记录；不盲目覆盖后续维护。回滚仍须维护层真实核验，不得将回滚记录当新成功 EVO。
 
@@ -47,10 +52,10 @@ EVO 仅为真实成功版本，格式 EVO-YYYYMMDD-HHMMSS（UTC），记录事�
 
 ## Direct Policy Change 与历史事项
 
-用户直接指定的持久规则施工走 Direct Policy Change，仅免重复观察等待，不免授权、候选测试、独立审核或回滚；本次闭环初装属于该路径。中央 improvements 仅作历史参考，新事故的记录、处理和关闭统一以 INC/EV、RES 和 EVO 为依据；`pending-*` 不得进入 VERIFIED 或 CLOSED，未经实战 A/B 不标为已验证收益。
+用户直接指定的持久规则施工走 Direct Policy Change，仅免重复观察等待，不免候选测试、独立审核、用户定稿授权或回滚；本次闭环初装属于该路径。中央 improvements 仅作历史参考，新事故的记录、处理和关闭统一以 INC/EV、RES 和 EVO 为依据；`pending-*` 不得进入 VERIFIED 或 CLOSED，未经实战 A/B 不标为已验证收益。
 复用事项字段 blocker、root_cause、solution、prevention、verification 与 status，不复制用户正文。
 
-新 Case 可单调追加，配套新增测试可随低风险修复进入同一候选；已有 Case 和已有测试不能被自我进化覆盖或删减。批准记录必须关联候选、基线、差异哈希、用途和真实消息采集记录。事故 capture 按独立 task ID 去重。审核还须确认 sanitized_metadata=true；summary/quality/speed 采用脚本固定代码。
+新 Case 可单调追加，配套新增测试可随低风险修复进入同一候选；已有 Case 和已有测试不能被自我进化覆盖或删减。发布批准记录必须关联当前候选、当前基线、当前差异哈希、用途、`release_intent=finalize-stable` 和真实消息采集记录。事故 capture 按独立 task ID 去重。审核还须确认 sanitized_metadata=true；summary/quality/speed 采用脚本固定代码。
 
 中断恢复：维护层先运行 `scripts/evolve.py recover`；脚本只在全部当前字节属于登记前/后版本、无旁路修改时恢复晋升前状态，已提交版本先验安装再解除 pending。回滚期间中断保留 pending，须对照其 rollback_path、已验证 snapshot-manifest 和 changes 逐项核对，禁止直接删 pending 或通配解包覆盖；无法确认时停止并报告人工恢复项。
 
