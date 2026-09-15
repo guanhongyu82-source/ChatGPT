@@ -89,6 +89,12 @@ class RuntimeStateTests(unittest.TestCase):
         self.assertNotIn('runtime-snapshot.json', checker)
         self.assertIn('deployment_state.classify', checker)
 
+    def test_checker_separates_content_only_from_deployment_verdict(self):
+        checker = (ROOT / 'scripts/check_installation.py').read_text(encoding='utf-8')
+        self.assertIn('deployment_scope = expected_commit is not None', checker)
+        self.assertIn('"scope": "deployment" if deployment_scope else "content-only"', checker)
+        self.assertIn('if deployment_scope and runtime["state"] != "SYNCED"', checker)
+
 
 if __name__ == '__main__':
     unittest.main()
