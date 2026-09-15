@@ -16,7 +16,7 @@ Mac 本机路径：
 /Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet
 ```
 
-仅作为运行部署树，不再作为独立维护真源。GitHub→Mac 的单向部署、漂移处理、验证和回滚见 [Deployment Contract](deployment-contract.md)。本机发现到未知正文改动时先停止覆盖并报告，不自动反推 GitHub。
+仅作为运行部署树，不再作为独立维护真源。GitHub→Mac 的单向部署、GitHub／Runtime 状态模型、漂移处理、验证和回滚见 [Deployment Contract](deployment-contract.md)。本机发现到未知正文改动时先停止覆盖并报告，不自动反推 GitHub。
 
 个人 Skill 运行入口：
 
@@ -65,9 +65,13 @@ T0 命中真实人名加具体案件或 `secret-bearing` 时，除禁止联网�
 
 `sandbox_mode=read-only` 只约束文件写入，不是网络、插件或连接器的技术隔离。敏感 `TASK_CARD` 必须显式写 `external_access/network/connectors/persistent_context=deny`，并在每个 Agent 任务中重复。若宿主不能保证该工具边界，secret-bearing 任务进入 `BLOCKED` 或先去标识，不能仅凭提示词宣称隔离。
 
-## 当前能力快照
+## 历史能力与安装记录
 
-见 [runtime-snapshot.json](runtime-snapshot.json) 与 [installation-manifest.json](installation-manifest.json)。它们记录本机运行环境和历史安装身份，不覆盖 GitHub 正式维护真源。初装或更新不修改模型、并发或权限设置；只有真实验证证明必要且用户授权时再提议。
+[runtime-snapshot.json](runtime-snapshot.json) 与 [installation-manifest.json](installation-manifest.json) 仅记录 2026-08-23/24 当时的能力、路径、安装身份和 smoke 结果。其内部历史 `source_of_truth`、模型、并发、哈希、installed_at 与 smoke_tests 字段只解释当时发生过什么，不是当前 Runtime 状态，也不得覆盖 GitHub 正式维护真源。
+
+当前 Runtime 是否与某 Git commit 一致，只由外部部署状态凭证和实时文件检查判断：部署时由 `scripts/deployment_state.py` 绑定 commit、`VERSION` 与系统摘要，安装核验由 `scripts/check_installation.py` 读取真实入口、受管 Agent、托管规则和部署凭证。历史 snapshot/manifest 不参与当前 PASS/FAIL。
+
+初装或更新不修改模型、并发或权限设置；只有真实验证证明必要且用户授权时再提议。
 
 ## 官方依据
 
@@ -113,4 +117,4 @@ Work 负责办公生产；Chat 负责正式维护决策与 GitHub 版本；Codex
 - 本机 hooks.json 只登记受任务范围约束的事件，调用正式部署版本的 `scripts/codex_delivery_hook.py`。钩子只保留不透明会话ID、模型及本任务契约指针等短期运行态，不记录用户正文，不联网、不换型。只有经过宿主原生信任后才实际执行。未信任、宿主未加载或非本机环境，不称已自动强制。
 - 文件任务注册 delivery-contract；无文件分析显式 analysis-only。失败只要求一次定向返工，仍失败则 PARTIAL 并停止自动重试；不以循环耗额度换“通过”。该检查验证真实文件和记录一致性，不认证模型说法或替代内容审查。
 - Work读不到本机运行态时，按同一Skill主动完成收尾核验并保留脱敏待办；不得声称已经运行本机钩子。
-- 正式 GitHub 版本需要进入 Mac 运行环境时，按 [Deployment Contract](deployment-contract.md) 执行：读目标 commit → 比本机漂移 → 备份 → 单向部署 → Agent 同步 → 安装／相关回归核验 → 报告。任何一步失败不得声称本机已更新。
+- 正式 GitHub 版本需要进入 Mac 运行环境时，按 [Deployment Contract](deployment-contract.md) 执行：锁定 GITHUB_STABLE commit 与源摘要 → 比 Runtime 漂移 → 备份 → 单向部署 → Agent 同步 → 写外部部署状态凭证 → `check_installation.py --expected-commit` 核验到 SYNCED → 报告。任何一步失败不得声称本机已更新。
