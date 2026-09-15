@@ -7,10 +7,10 @@
 正式维护单一真源：
 
 ```text
-gu an hongyu82-source/ChatGPT:skills/sol-cabinet/
+guanhongyu82-source/ChatGPT:skills/sol-cabinet/
 ```
 
-去除上行字符串中的空格后，仓库全名为 `guanhongyu82-source/ChatGPT`。Mac 本机路径：
+Mac 本机路径：
 
 ```text
 /Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet
