@@ -34,7 +34,7 @@ def lock(root):
     if directory.is_symlink(): raise ValueError('unsafe state directory')
     fd=os.open(directory/'.lock',os.O_CREAT|os.O_RDWR|getattr(os,'O_NOFOLLOW',0),0o600)
     with os.fdopen(fd,'w') as f:
-        fcntl.flock(f,fcntl.LOCK_EX);yield directory
+        fcntl.flock(fd,fcntl.LOCK_EX);yield directory
 
 def validate_incident(i):
     fields={'incident_id','time','failure_type','cause','impact','evidence','capabilities','repeated','hits','permission'}
@@ -100,7 +100,6 @@ def resolve(incident_id, resolution, evidence, root=ROOT):
         current = validate_incident(read(_file(root/'memory-evolution/observations', incident_id+'.json')))
         if current != incident: raise ValueError('incident changed before resolution lock')
         record_id = 'RES-' + uuid.uuid4().hex
-        # Retain exact reviewed bytes; a human must verify the original executor provenance.
         for rid in [resolution['test_run_id'], *resolution['review_ids']]:
             rec = read(_file(Path(evidence), rid+'.json'))
             dest = root/'memory-evolution/proposals/evidence'/record_id
@@ -132,7 +131,6 @@ def status(root=ROOT):
                 verify_evidence(evidence_dir,data['candidate_sha256'],data['test_run_id'],data['review_ids'],required)
                 closed_evidence.setdefault(data['incident_id'],set()).update(data['evidence'])
             elif data.get('EVO') and not data.get('rollback_of'):
-                # Successful historical EVO closes only its captured evidence, never future recurrences.
                 rolled_back=any(read(q).get('rollback_of') == data['EVO'] for q in proposals.glob('*.json') if q.is_file() and not q.is_symlink())
                 if not rolled_back and data.get('post_apply') == 'PASS':
                     verify_evidence(Path(data['evidence_dir']),data['after'],data['regression'],data['reviews'],['REG1','REG2',*[c['case_id'] for c in data['cases']]])
@@ -190,7 +188,6 @@ def regress(candidate,evidence):
         r=subprocess.run(cmd,cwd=candidate,capture_output=True,text=True,timeout=180)
         results[tid]='PASS' if r.returncode==0 else 'FAIL';logs.append(r.stdout+r.stderr)
         if tid=='REG1' and not re.search(r'Ran [1-9][0-9]* tests?',r.stderr): results[tid]='FAIL'
-    # Execute each registered regression method, refusing missing or skipped methods.
     runner = """import unittest,sys
 suite=unittest.defaultTestLoader.discover(sys.argv[1],pattern=sys.argv[2])
 def flatten(s):
@@ -222,11 +219,19 @@ def permission(root,paths,proposal,reviews,*,deletions=False):
     support = {p for p in paths if p == 'tests/regression-cases.json' or (p.startswith('tests/test_') and not (root/p).exists())}
     lane='auto' if not deletions and set(paths)-support<=set(cage['auto_paths']) else 'approve'
     if proposal.get('permission')!=lane: raise ValueError('permission mismatch')
-    if lane=='approve' and not re.fullmatch(r'turn-[0-9a-f]{16,64}',proposal.get('approval_ref') or ''): raise ValueError('explicit candidate-bound approval required')
+    if not re.fullmatch(r'turn-[0-9a-f]{16,64}',proposal.get('approval_ref') or ''): raise ValueError('explicit candidate-bound release approval required')
     if len(reviews)<2: raise ValueError('two independent semantic reviews required')
     for r in reviews:
         if r.get('permission')!=lane or r.get('frozen_impact') is not False or r.get('dimensions')!={d:'PASS' for d in DIMENSIONS}: raise ValueError('semantic boundary/quality/speed review incomplete')
     return lane
+
+def validate_release_approval(evidence,proposal,changes):
+    approval=read(_file(evidence,proposal['approval_ref']+'.json'))
+    expected={'actor':'user','candidate_sha256':proposal['candidate_sha256'],'base_sha256':proposal['base_sha256'],'changes_sha256':hashlib.sha256(json.dumps(changes,sort_keys=True).encode()).hexdigest(),'approval_ref':proposal['approval_ref'],'purpose':proposal['summary'],'release_intent':'finalize-stable','source':'executor-capture','approved':True}
+    if any(approval.get(k)!=v for k,v in expected.items()): raise ValueError('release approval not bound to current candidate and explicit finalize intent')
+    artifact=_file(evidence,approval.get('artifact_path'))
+    if not artifact.stat().st_size or hashlib.sha256(artifact.read_bytes()).hexdigest()!=approval.get('artifact_sha256'): raise ValueError('approval artifact mismatch')
+    return approval
 
 def metadata_hash(root):
     return hashlib.sha256(json.dumps(snapshot_metadata(root),sort_keys=True).encode()).hexdigest()
@@ -263,13 +268,7 @@ def promote(candidate,proposal,evidence,root=ROOT):
         if proposal.get('sensitivity_checked') is not True or proposal.get('contains_sensitive_content') is not False or any(r.get('sanitized_metadata') is not True for r in reviews): raise ValueError('sanitized metadata review required')
         if proposal.get('quality') not in {'regression-pass','verified-improvement'} or proposal.get('speed') not in {'not-measured','expected-non-decrease','measured-improvement'}: raise ValueError('quality/speed must use fixed evidence codes')
         if proposal.get('summary') not in {'fix-runtime-compatibility','fix-execution-chain','improve-routing','reduce-duplicate-work','non-core-wording'}: raise ValueError('summary must use fixed code')
-        if lane=='approve':
-            approval=read(_file(evidence,proposal['approval_ref']+'.json'))
-            expected={'actor':'user','candidate_sha256':proposal['candidate_sha256'],'base_sha256':proposal['base_sha256'],'changes_sha256':hashlib.sha256(json.dumps(changes,sort_keys=True).encode()).hexdigest(),'approval_ref':proposal['approval_ref'],'purpose':proposal['summary'],'source':'executor-capture','approved':True}
-            if any(approval.get(k)!=v for k,v in expected.items()): raise ValueError('approval not bound to candidate and scope')
-            artifact=_file(evidence,approval.get('artifact_path'))
-            if not artifact.stat().st_size or hashlib.sha256(artifact.read_bytes()).hexdigest()!=approval.get('artifact_sha256'): raise ValueError('approval artifact mismatch')
-        # Every selected case must point to a discovered actual test method.
+        validate_release_approval(evidence,proposal,changes)
         for c in cases:
             module,method=c['test'].split(':')
             if not re.fullmatch(r'test_[a-z0-9_]+\.py',module) or not re.fullmatch(r'test_[a-z0-9_]+',method): raise ValueError('invalid test binding')
@@ -277,7 +276,6 @@ def promote(candidate,proposal,evidence,root=ROOT):
         stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S');evo='EVO-'+stamp
         if (state/(evo+'.json')).exists(): raise ValueError('EVO collision; retry later')
         rollback_id='snapshot-'+datetime.now(timezone.utc).strftime('%Y-%m-%d')+'-v'+datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
-        # Snapshot implementation resolves this same active source; alternate roots are tests only.
         if root!=ROOT: raise ValueError('promotion root must be the installed source')
         snapshot,base=create_snapshot(rollback_id)
         validate_snapshot(snapshot,rollback_id,base)
@@ -297,14 +295,14 @@ def promote(candidate,proposal,evidence,root=ROOT):
             if post.returncode!=0: raise ValueError('post-apply installation check failed')
             if system_digest(root)!=proposal['candidate_sha256']: raise ValueError('post-check candidate drift')
             capture=state/'evidence'/evo
-            for rid in [proposal['test_run_id'],*proposal['review_ids'],*([proposal['approval_ref']] if lane=='approve' else [])]:
+            for rid in [proposal['test_run_id'],*proposal['review_ids'],proposal['approval_ref']]:
                 rec=read(_file(evidence,rid+'.json'))
                 write(capture/(rid+'.json'),rec)
                 artifact=_file(evidence,rec['artifact_path'])
                 dest=capture/rec['artifact_path'];dest.parent.mkdir(parents=True,exist_ok=True)
                 _atomic_regular_write(dest,artifact.read_bytes(),0o600)
             _atomic_regular_write(capture/'post-apply.log',post.stdout.encode()+post.stderr.encode(),0o600)
-            entry={'EVO':evo,'time':now(),'incident':i,'cases':cases,'root_cause':i['cause'],'changes':changes,'before':base,'after':system_digest(root),'summary':proposal['summary'],'quality':proposal['quality'],'speed':proposal['speed'],'evidence_dir':str(capture),'post_apply':'PASS','regression':proposal['test_run_id'],'reviews':proposal['review_ids'],'permission':lane,'user_approval':proposal.get('approval_ref') if lane=='approve' else 'standing-2026-09-12-bounded-authorization','rollback_id':rollback_id,'rollback_path':str(snapshot)}
+            entry={'EVO':evo,'time':now(),'incident':i,'cases':cases,'root_cause':i['cause'],'changes':changes,'before':base,'after':system_digest(root),'summary':proposal['summary'],'quality':proposal['quality'],'speed':proposal['speed'],'evidence_dir':str(capture),'post_apply':'PASS','regression':proposal['test_run_id'],'reviews':proposal['review_ids'],'permission':lane,'user_approval':proposal['approval_ref'],'rollback_id':rollback_id,'rollback_path':str(snapshot)}
             write(state/(evo+'.json'),entry)
         except BaseException:
             for p,data in saved.items():
@@ -323,7 +321,6 @@ def rollback(evo,root=ROOT):
         e=read(_file(state,evo+'.json'))
         if system_digest(root)!=e['after']: raise ValueError('refuse rollback over later changes')
         snap=Path(e['rollback_path']);validate_snapshot(snap,e['rollback_id'],e['before'])
-        # Audit JSON cannot supply write paths: derive and compare against verified archive metadata.
         with tarfile.open(snap,'r:gz') as archive:
             original=json.load(archive.extractfile('snapshot-manifest.json'))['files']
         current=snapshot_metadata(root)
