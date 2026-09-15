@@ -26,21 +26,90 @@ class DeliveryRules(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.artifact = self.root / '2026-09-13_方案_协作机制_v1.docx'
         self.artifact.write_bytes(b'candidate')
+        self.task_card = self.root / 'task-card.json'
+        self.card = {
+            'task_instance_id':'task-1',
+            'deliverables':[{
+                'artifact_id':'main-doc',
+                'required':True,
+                'format':'.docx',
+                'target_role':'final',
+                'target_directory':str(self.root),
+                'filename_override':None,
+            }],
+        }
+        self.write_task_card()
         digest = hashlib.sha256(self.artifact.read_bytes()).hexdigest()
         self.evidence = self.root / 'review.json'
         self.c = {'task_id':'task-1','t_level':4,'formal_normative_additions':True,
                   'opening_notice':True,'summary_present':True,'incident_present':False,
                   'timing':{'started_at':'2026-09-13T01:00:00Z','ended_at':'2026-09-13T01:05:00Z','basis':'user-message to pre-delivery'},
                   'storage':{'output_root':str(self.root),'archive_status':'deferred','archive_reason':'host fixes outputs path'},
-                  'artifacts':[{'path':str(self.artifact),'sha256':digest}],
+                  'task_card':{'path':str(self.task_card),'sha256':hashlib.sha256(self.task_card.read_bytes()).hexdigest()},
+                  'artifacts':[{'artifact_id':'main-doc','role':'final','path':str(self.artifact),'sha256':digest}],
                   'reviews':[{'reviewer_id':'reviewer-1','author_id':'lead','evidence_path':str(self.evidence),'candidate_sha256':{str(self.artifact):digest},'verdict':'PASS','must_fix':[]}],
-                  'retention':{'process_root':None,'temporary_files':[],'retained_reason':{str(self.evidence):'required review evidence'}}}
+                  'retention':{'process_root':None,'temporary_files':[],'retained_reason':{str(self.evidence):'required review evidence',str(self.task_card):'locked expected artifact contract'}}}
         self.c['reviews'][0]['source_ref']='tool:reviewer-1/message:result-1'
         self.write_evidence()
+    def write_task_card(self):
+        self.task_card.write_text(json.dumps(self.card,ensure_ascii=False))
+    def relock_task_card(self):
+        self.write_task_card()
+        self.c['task_card']['sha256']=hashlib.sha256(self.task_card.read_bytes()).hexdigest()
     def write_evidence(self):
         review=self.c['reviews'][0]
         self.evidence.write_text(json.dumps({k:review[k] for k in ('reviewer_id','author_id','verdict','must_fix','candidate_sha256','source_ref')}))
         review['evidence_sha256']=hashlib.sha256(self.evidence.read_bytes()).hexdigest()
+    def refresh_artifact_review(self):
+        digest=hashlib.sha256(self.artifact.read_bytes()).hexdigest()
+        self.c['artifacts'][0]['path']=str(self.artifact)
+        self.c['artifacts'][0]['sha256']=digest
+        self.c['reviews'][0]['candidate_sha256']={str(self.artifact):digest}
+        self.write_evidence()
+    def test_expected_actual_baseline_passes(self):
+        self.assertEqual(gate.check(self.c)['state'],'PASS')
+    def test_required_expected_artifact_missing_fails(self):
+        self.c['artifacts']=[]
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+    def test_unauthorized_extra_artifact_fails(self):
+        extra=self.root/'2026-09-13_附件_额外材料_v1.pdf';extra.write_bytes(b'extra')
+        self.c['artifacts'].append({'artifact_id':'extra','role':'final','path':str(extra),'sha256':hashlib.sha256(extra.read_bytes()).hexdigest()})
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+    def test_wrong_format_location_and_role_fail(self):
+        bad=self.root/'2026-09-13_方案_协作机制_v1.pdf';bad.write_bytes(b'candidate')
+        self.c['artifacts'][0].update(path=str(bad),sha256=hashlib.sha256(bad.read_bytes()).hexdigest())
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+        self.c['artifacts'][0].update(path=str(self.artifact),sha256=hashlib.sha256(self.artifact.read_bytes()).hexdigest(),role='candidate')
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+        sub=self.root/'other';sub.mkdir();moved=sub/self.artifact.name;self.artifact.rename(moved)
+        self.c['artifacts'][0].update(path=str(moved),role='final',sha256=hashlib.sha256(moved.read_bytes()).hexdigest())
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+    def test_filename_override_comes_only_from_expected(self):
+        self.card['deliverables'][0]['filename_override']='用户指定名称.docx'
+        self.relock_task_card()
+        renamed=self.root/'用户指定名称.docx';self.artifact.rename(renamed);self.artifact=renamed
+        self.refresh_artifact_review()
+        self.assertEqual(gate.check(self.c)['state'],'PASS')
+        self.c['artifacts'][0]['user_filename_override']=True
+        self.artifact.rename(self.root/'执行端自定名.docx');self.artifact=self.root/'执行端自定名.docx'
+        self.refresh_artifact_review()
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+    def test_task_card_change_without_relock_fails(self):
+        self.card['deliverables'].append({'artifact_id':'new-required','required':True,'format':'.pdf','target_role':'final','target_directory':str(self.root),'filename_override':None})
+        self.write_task_card()
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+    def test_user_reduces_deliverables_and_relocks_passes(self):
+        self.card['deliverables'].append({'artifact_id':'optional-pdf','required':False,'format':'.pdf','target_role':'final','target_directory':str(self.root),'filename_override':None})
+        self.relock_task_card()
+        self.assertEqual(gate.check(self.c)['state'],'PASS')
+        self.card['deliverables']=self.card['deliverables'][:1]
+        self.relock_task_card()
+        self.assertEqual(gate.check(self.c)['state'],'PASS')
+    def test_task_card_identity_and_duplicate_ids_fail(self):
+        self.card['task_instance_id']='other-task';self.relock_task_card()
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
+        self.card['task_instance_id']='task-1';self.card['deliverables'].append(copy.deepcopy(self.card['deliverables'][0]));self.relock_task_card()
+        self.assertEqual(gate.check(self.c)['state'],'FAIL')
     def test_apology_without_incident_record_fails(self):
         self.c['incident_present']=True
         self.c['incident_disposition']='已道歉并修复'
@@ -124,8 +193,8 @@ class DeliveryRules(unittest.TestCase):
         self.assertEqual(gate.check(self.c)['state'],'FAIL')
         self.c['retention']['retained_reason'][str(self.evidence)]='required review evidence'
         self.assertEqual(gate.check(self.c)['state'],'PASS')
-        p=self.root/'new.docx';self.artifact.rename(p)
-        self.c['artifacts'][0]['path']=str(p)
+        p=self.root/'new.docx';self.artifact.rename(p);self.artifact=p
+        self.refresh_artifact_review()
         self.assertEqual(gate.check(self.c)['state'],'FAIL')
 
 if __name__=='__main__':
