@@ -9,6 +9,8 @@ import check_installation as install
 class EvolutionTests(unittest.TestCase):
     def incident(self):
         return {'incident_id':'INC-'+'1'*32,'time':'2026-09-12T00:00:00+00:00','failure_type':'runtime-compatibility','cause':'runtime_issue','impact':'high','evidence':['EV-'+'1'*32],'capabilities':['installation'],'repeated':False,'hits':1,'permission':'record'}
+    def reviews(self, permission='auto'):
+        return [{'permission':permission,'frozen_impact':False,'dimensions':{d:'PASS' for d in evolve.DIMENSIONS}} for _ in range(2)]
     def test_no_incident_no_mutation(self):
         with tempfile.TemporaryDirectory() as d:
             r=Path(d);self.assertEqual(evolve.changed(r,r),{});self.assertEqual(list(r.iterdir()),[])
@@ -30,21 +32,37 @@ class EvolutionTests(unittest.TestCase):
     def test_cage_cannot_self_amend(self):
         with self.assertRaises(ValueError): evolve.permission(ROOT,['memory-evolution/permission-cage.json'],{'permission':'approve','approval_ref':'turn-'+'a'*32},[])
     def test_gate_cannot_be_auto_by_name(self):
-        with self.assertRaises(ValueError): evolve.permission(ROOT,['core/core.md'],{'permission':'auto'},[])
+        with self.assertRaises(ValueError): evolve.permission(ROOT,['core/core.md'],{'permission':'auto','approval_ref':'turn-'+'a'*32},[])
     def test_semantic_review_required(self):
-        with self.assertRaises(ValueError): evolve.permission(ROOT,['scripts/check_installation.py'],{'permission':'auto'},[{'permission':'auto','frozen_impact':True}])
+        with self.assertRaises(ValueError): evolve.permission(ROOT,['scripts/check_installation.py'],{'permission':'auto','approval_ref':'turn-'+'a'*32},[{'permission':'auto','frozen_impact':True}])
+    def test_auto_path_without_finalize_cannot_release(self):
+        with self.assertRaisesRegex(ValueError,'release approval'):
+            evolve.permission(ROOT,['scripts/check_installation.py'],{'permission':'auto','approval_ref':None},self.reviews('auto'))
+    def test_auto_path_with_candidate_bound_finalize_can_enter_release_gate(self):
+        lane=evolve.permission(ROOT,['scripts/check_installation.py'],{'permission':'auto','approval_ref':'turn-'+'a'*32},self.reviews('auto'))
+        self.assertEqual(lane,'auto')
+    def test_release_approval_requires_explicit_finalize_and_current_hashes(self):
+        with tempfile.TemporaryDirectory() as d:
+            evidence=Path(d);ref='turn-'+'a'*32;artifact=evidence/'approval.log';artifact.write_text('synthetic explicit user finalize fixture')
+            changes={'scripts/check_installation.py':{'before':{'sha256':'1'},'after':{'sha256':'2'}}}
+            proposal={'approval_ref':ref,'candidate_sha256':'c'*64,'base_sha256':'b'*64,'summary':'fix-execution-chain'}
+            approval={'actor':'user','candidate_sha256':proposal['candidate_sha256'],'base_sha256':proposal['base_sha256'],'changes_sha256':hashlib.sha256(json.dumps(changes,sort_keys=True).encode()).hexdigest(),'approval_ref':ref,'purpose':proposal['summary'],'release_intent':'review-only','source':'executor-capture','approved':True,'artifact_path':artifact.name,'artifact_sha256':hashlib.sha256(artifact.read_bytes()).hexdigest()}
+            (evidence/(ref+'.json')).write_text(json.dumps(approval))
+            with self.assertRaisesRegex(ValueError,'explicit finalize intent'): evolve.validate_release_approval(evidence,proposal,changes)
+            approval['release_intent']='finalize-stable';(evidence/(ref+'.json')).write_text(json.dumps(approval))
+            self.assertEqual(evolve.validate_release_approval(evidence,proposal,changes)['release_intent'],'finalize-stable')
+            stale=dict(proposal);stale['candidate_sha256']='d'*64
+            with self.assertRaisesRegex(ValueError,'current candidate'): evolve.validate_release_approval(evidence,stale,changes)
     def test_case_binding(self):
         self.assertEqual(len(evolve.cases_for(ROOT,self.incident(),['RC-INSTALL-001'])),1)
         with self.assertRaises(ValueError): evolve.cases_for(ROOT,self.incident(),['fake'])
     def test_user_owned_rule_drift_is_rejected(self):
-        # Exercise real checker with current external rules; no external writes.
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'manifest.json';m=json.loads((ROOT/'platform-adapter/installation-manifest.json').read_text())
             m['managed_rules']['user_owned']={str(install.GLOBAL_AGENTS):'0'*64};p.write_text(json.dumps(m))
             with patch.object(install,'INSTALL_MANIFEST',p):
                 result=install.check()
             self.assertTrue(any(x['issue']=='user-owned-rule-changed-review-required' for x in result['issues']))
-            # Positive repair: real user-owned governance accepted with exact hash.
             m['managed_rules']['user_owned'][str(install.GLOBAL_AGENTS)]=install._sha256(install.GLOBAL_AGENTS);p.write_text(json.dumps(m))
             with patch.object(install,'INSTALL_MANIFEST',p): fixed=install.check()
             self.assertFalse(any(x['issue'] in {'managed-block-check-failed','user-owned-rule-changed-review-required'} for x in fixed['issues']))
@@ -56,8 +74,7 @@ class EvolutionTests(unittest.TestCase):
             result=evolve.regress(c,e);self.assertEqual(result['verdict'],'FAIL');self.assertFalse(list(r.rglob('EVO-*')))
             with self.assertRaises(ValueError): evolve.verify_evidence(e,result['candidate_sha256'],result['record_id'],[],['REG1','REG2'])
     def test_deleted_stable_capability_requires_approval(self):
-        reviews=[{'permission':'auto','frozen_impact':False,'dimensions':{d:'PASS' for d in evolve.DIMENSIONS}}]*2
-        with self.assertRaises(ValueError): evolve.permission(ROOT,['scripts/check_installation.py'],{'permission':'auto'},reviews,deletions=True)
+        with self.assertRaises(ValueError): evolve.permission(ROOT,['scripts/check_installation.py'],{'permission':'auto','approval_ref':'turn-'+'a'*32},self.reviews('auto'),deletions=True)
     def test_metadata_hash_tracks_mode(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);p=root/'file';p.write_text('same');p.chmod(0o600);before=evolve.metadata_hash(root);p.chmod(0o700)
