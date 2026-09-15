@@ -1,31 +1,43 @@
-# Operational Learnings
+# Operational Learnings — Legacy Read-Only Registry
 
-本模块是 Sol Cabinet 的中央运营卡点系统。机器真源是 [improvements.json](improvements.json)；本文件只定义字段、固定代码和闭环规则，不重复保存逐任务正文或每次反馈档案。
+本模块是 Sol Cabinet 早期中央运营卡点系统的历史记录说明。自当前 1.5.x 维护线起，`improvements.json`、`manage_improvements.py`、`record_evolution.py` 及旧 Evolution Entry／Proposal 仅保留历史兼容与审计用途，**不再作为新事故、待办、候选或晋升的活动真源**。
 
-## 不可违反的边界
+当前活动闭环唯一依据见 [Evolution Policy](evolution-policy.md)：真实问题以 `INC/EV` 进入待办，修复或正式晋升以有证据的 `RES/EVO` 闭合。生产任务不得同时向新旧两套账本重复登记。
 
-- 只记录抽象控制模式，不记录用户正文、原话、人名、单位、案件、密钥、附件文件名、完整路径、文件哈希或可识别任务信息。
-- `sensitive=true`、`contains_sensitive_content!=false` 或 `sensitivity_checked!=true` 时，`scripts/manage_improvements.py` 必须拒绝写入。
-- 相同 `blocker_code` 只能更新同一个 `improvement_id`；复发时增加次数并更新日期，不新建重复长期事项。
-- 只有根因、解决方案、预防措施和验证全部有固定代码，且验证状态满足门禁时，事项才能进入 `VERIFIED` 或 `CLOSED`。
-- observation 是短期 intake；中央事项验证后，只能通过明确 observation ID 清单安全退出，禁止通配删除或跟随符号链接。
+## 历史边界
 
-## 闭环字段
+- `improvements.json` 冻结为历史状态快照，不因新任务继续增加、复发计数或变更状态。
+- 旧 `OPEN`、`INTEGRATING`、`RECURRENT`、`VERIFIED`、`CLOSED` 状态只描述当时系统记录，不代表当前仍有活动维护授权或当前运行状态。
+- 如旧事项在当前版本再次真实发生，应按 `evolution-policy.md` 新建脱敏 `INC/EV`，并把旧编号仅作为历史参考；不得直接继续写旧 registry。
+- 不删除、重写或美化既有历史记录；需要清理旧体系时必须另有用户明确授权。
+- 历史脚本、模板与测试不能被用来绕过当前 permission cage、候选绑定、真实回归、双独立审核或回滚要求。
 
-| 字段 | 含义 |
+## 历史隐私约束
+
+这些约束继续适用于读取旧记录：
+
+- 不记录或恢复用户正文、原话、人名、单位、案件、密钥、附件文件名、完整业务路径或可识别任务信息。
+- 旧 `sensitive=true`、`contains_sensitive_content!=false` 或 `sensitivity_checked!=true` 的事项不得被复制进新的活动账本。
+- observation／旧 improvements 的存在不能自动生成新 EVO，也不能证明问题仍存在。
+
+## 历史字段
+
+| 字段 | 历史含义 |
 |---|---|
-| `improvement_id` | 稳定的 `OL-NNN` 事项编号 |
-| `status` | `OPEN`、`INTEGRATING`、`VERIFIED`、`CLOSED` 或 `RECURRENT` |
-| `scope_code` | 受影响的最窄系统模块 |
-| `blocker_code` | 可复现卡点 |
-| `root_cause_code` | 证据支持的根因 |
-| `solution_code` | 已实施或待实施方案 |
-| `prevention_code` | 进入真实模块、脚本或测试的预防门禁 |
-| `verification_code` | 测试、哈希、Review Gate 或真实复验 |
-| `first_seen_date` / `last_seen_date` / `last_verified_date` | 只记录日期，不记录任务标识 |
-| `recurrence_count` | 相同问题的复发次数 |
+| `improvement_id` | 稳定的 `OL-NNN` 历史事项编号 |
+| `status` | `OPEN`、`INTEGRATING`、`VERIFIED`、`CLOSED` 或 `RECURRENT` 的历史快照 |
+| `scope_code` | 当时受影响的最窄系统模块 |
+| `blocker_code` | 当时登记的可复现卡点 |
+| `root_cause_code` | 当时证据支持的根因 |
+| `solution_code` | 当时已实施或计划方案 |
+| `prevention_code` | 当时进入模块、脚本或测试的预防门禁 |
+| `verification_code` | 当时测试、哈希、Review Gate 或复验状态 |
+| `first_seen_date` / `last_seen_date` / `last_verified_date` | 历史日期 |
+| `recurrence_count` | 旧 registry 中记录的复发次数 |
 
-## 固定代码
+## 历史固定代码
+
+以下代码仅用于解释旧数据，不是新事故的活动 taxonomy：
 
 | 类型 | 已登记代码 |
 |---|---|
@@ -35,11 +47,15 @@
 | prevention | `archive-before-content`、`truthful-agent-trace`、`field-and-external-rel-audit`、`minimal-review-schema`、`preview-preflight`、`invalidate-test-on-candidate-change`、`verified-rollback-state-machine`、`pre-post-source-integrity-check` |
 | verification | `archive-regression-and-live-idempotency`、`pending-ab-measurement`、`ooxml-structural-diff`、`pending-next-review-run`、`controlled-preview-pass`、`candidate-binding-tests-pass`、`pending-restore-drill`、`pending-source-owner-reconciliation` |
 
-## 更新流程
+## 当前维护入口
 
-1. 对当前任务卡点完成敏感检查；不能安全抽象时只在当前会话报告。
-2. 使用固定代码形成或更新同一中央事项。
-3. 运行 `scripts/manage_improvements.py` 的 schema 校验和原子 upsert；未知字段、自由文本或重复 blocker 必须失败。
-4. 将预防措施落实到真实 Core、Router、Domain、Review、Orchestrator、Script 或 Test。
-5. 通过候选后测试和独立审核，再更新为 `VERIFIED`／`CLOSED`。
-6. 事项验证后，可按明确 ID 清单退出已归并的短期 observation；不得按目录、通配符或模糊条件清理。
+新问题不得调用旧 registry 更新流程。当前统一使用：
+
+1. 生产任务先完成当前交付；
+2. 有真实实质失败才按 `evolution-policy.md` 记录脱敏 `INC/EV`；
+3. `status` 读取活动待办；
+4. 维护层形成候选并运行相关回归；
+5. 通过真实证据、权限判断和独立审核后，以 `RES` 或正式 `EVO` 闭合；
+6. 需要回滚时走当前 EVO 回滚机制。
+
+因此：**旧 improvements 是历史，INC/EV 是当前待办真源，RES/EVO 是当前闭环真源。**

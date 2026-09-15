@@ -1,6 +1,8 @@
 # Sol Cabinet v1.5 System Architecture
 
-单一真源：`/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet/`。
+代码与正式维护单一真源：`guanhongyu82-source/ChatGPT:skills/sol-cabinet/`。
+
+本机 `/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet/` 是 Codex／Work 的运行部署树，只执行已选定 GitHub commit 的部署版本，不作为第二维护真源。本机出现差异时视为 runtime drift，先比对 GitHub 基线，不得反向覆盖正式版本。部署、核验和回滚见 [Deployment Contract](../platform-adapter/deployment-contract.md)。
 
 ```text
 sol-cabinet/
@@ -31,15 +33,17 @@ sol-cabinet/
 | Memory / Evolution | `memory-evolution/` | 短期脱敏观察、三级提案、Direct Policy Change、中央卡点闭环和 Core 变更边界 |
 | Templates | `templates/` | 结构化运行、审核、进化和交付模板 |
 | Examples | `examples/` | 匿名路由示例 |
-| Platform Adapter | `platform-adapter/` | Codex CLI/Desktop、Agent 配置与安装 |
+| Platform Adapter | `platform-adapter/` | Chat／Work／Codex 运行适配、Agent 配置、部署与安装 |
 | Tests | `tests/` | 路由、结构、安全、源资产和前向行为验证 |
 
-## 单一版本原则
+## 单一版本与部署原则
 
-- CLI 与 Desktop 通过同一 Skill 符号链接和同一 `~/.codex` Agent 配置使用本真源。
+- GitHub `skills/sol-cabinet/` 保存正式维护版本和 Git 历史；Chat 中的定稿只有在正式写入 GitHub 后才成为持久版本。
+- CLI 与 Desktop 使用同一已部署 Skill 入口和同一 `~/.codex` Agent 配置；本机运行树必须能追溯到一个明确 GitHub commit。
+- 本机部署不得把运行态日志、锁文件、缓存、临时证据或任务文件反推回仓库；只有用户定稿并授权的最小变更才进入 GitHub。
 - Domain 模块不是 11 个自动触发 Skill；入口只加载当前任务需要的模块。
 - 用户长期记忆、当前业务正文和脱敏技术事故分开处理。依2026-09-12/13授权，真实事故在收尾记录为INC/EV并进入待办；无事故零写入。生产不改规则，维护按证据和权限修复。旧 improvements 为历史，不作为新事故待办真源。
-- Grok 资产只在 `source-index/` 留存路径、哈希和迁移决策，不成为运行依赖。
+- Grok 资产只在 `source-index/` 留存历史路径、哈希和迁移决策，不成为运行依赖。
 
 ## v1.2 核心蒸馏
 
@@ -57,4 +61,8 @@ sol-cabinet/
 
 ## v1.5 执行闭环修复
 
-唯一生效入口为 Codex Home 的 `skills/sol-cabinet`，指向同一真源；重复发现入口移除，备份只在维护归档中保留压缩原稿，不作为技能加载。开工、定级、文件命名、必要审核、临时留存、结束小结和事故记录在交付契约统一核验。Codex钩子按任务触发并需宿主信任，无后台守护进程；第二次失败停止自动续跑并明确PARTIAL。新事故状态只以INC/EV及有证据的RES/EVO闭合判断，不以道歉或自报PASS替代。
+唯一运行入口为 Codex Home 的 `skills/sol-cabinet`，指向本机部署树；重复发现入口移除，备份只在维护归档中保留压缩原稿，不作为技能加载。开工、定级、文件命名、必要审核、临时留存、结束小结和事故记录在交付契约统一核验。Codex钩子按任务触发并需宿主信任，无后台守护进程；第二次失败停止自动续跑并明确PARTIAL。新事故状态只以INC/EV及有证据的RES/EVO闭合判断，不以道歉或自报PASS替代。
+
+## v1.5.x 维护方向
+
+1.5.x 不改变主结构和 T1-T10。该维护线只收口三类问题：GitHub→本机的单向部署可追溯性、旧进化入口的只读退役、当前 Chat／Work／Codex 宿主的交付与能力适配。任何后续优化仍以“任务不变、边界不扩”为前提。
