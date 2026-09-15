@@ -3,6 +3,7 @@
 
 CLI: --contract PATH; JSON state/issues; exit 0 PASS, 2 FAIL.
 The host must invoke this checker to enforce a delivery boundary.
+Expected artifacts come only from the locked Task Card; contract.artifacts are Actual.
 """
 import argparse
 import hashlib
@@ -13,6 +14,67 @@ from datetime import datetime
 from pathlib import Path
 
 NAME = re.compile(r'^\d{4}-\d{2}-\d{2}_[^_\s]+_[^_\s]{3,10}_(?:v[1-9]\d*|终)\.[^.]+$')
+FORMAT = re.compile(r'^\.[A-Za-z0-9]{1,10}$')
+
+
+def _load_locked_task_card(c, require):
+    ref = c.get('task_card')
+    require(isinstance(ref, dict), 'task_card reference required')
+    if not isinstance(ref, dict):
+        return None
+    raw_path = ref.get('path')
+    path = Path(raw_path) if isinstance(raw_path, str) else Path('.')
+    valid_path = isinstance(raw_path, str) and path.is_absolute() and path.is_file()
+    require(valid_path, 'task_card path must be an existing absolute file')
+    if not valid_path:
+        return None
+    try:
+        data = path.read_bytes()
+        require(hashlib.sha256(data).hexdigest() == ref.get('sha256'), 'task_card changed after contract lock')
+        card = json.loads(data)
+        require(isinstance(card, dict), 'task_card must be an object')
+        return card if isinstance(card, dict) else None
+    except (OSError, ValueError, UnicodeError):
+        require(False, 'task_card cannot be read or parsed')
+        return None
+
+
+def _expected_artifacts(c, root, require):
+    card = _load_locked_task_card(c, require)
+    if card is None:
+        return {}
+    require(card.get('task_instance_id') == c.get('task_id'), 'task_card task_instance_id does not match task_id')
+    deliverables = card.get('deliverables')
+    require(isinstance(deliverables, list), 'task_card deliverables must be an array')
+    expected = {}
+    for item in deliverables if isinstance(deliverables, list) else []:
+        if not isinstance(item, dict):
+            require(False, 'invalid expected deliverable')
+            continue
+        artifact_id = item.get('artifact_id')
+        required = item.get('required')
+        fmt = item.get('format')
+        role = item.get('target_role')
+        directory = item.get('target_directory')
+        override = item.get('filename_override')
+        valid_id = isinstance(artifact_id, str) and bool(artifact_id.strip()) and artifact_id not in expected
+        require(valid_id, 'expected artifact_id missing or duplicated')
+        require(type(required) is bool, 'expected required must be boolean: ' + str(artifact_id))
+        require(isinstance(fmt, str) and FORMAT.fullmatch(fmt) is not None, 'invalid expected format: ' + str(artifact_id))
+        require(isinstance(role, str) and bool(role.strip()), 'expected target_role required: ' + str(artifact_id))
+        target = Path(directory) if isinstance(directory, str) else Path('.')
+        valid_target = isinstance(directory, str) and target.is_absolute() and target.is_dir()
+        require(valid_target, 'expected target_directory must be an existing absolute directory: ' + str(artifact_id))
+        if valid_target and root.is_absolute() and root.is_dir():
+            require(target.resolve().is_relative_to(root.resolve()), 'expected target_directory outside output root: ' + str(artifact_id))
+        valid_override = override is None or (isinstance(override, str) and bool(override.strip())
+                                             and Path(override).name == override and '/' not in override and '\\' not in override)
+        require(valid_override, 'invalid filename_override: ' + str(artifact_id))
+        if isinstance(override, str) and isinstance(fmt, str):
+            require(Path(override).suffix.lower() == fmt.lower(), 'filename_override format mismatch: ' + str(artifact_id))
+        if valid_id:
+            expected[artifact_id] = item
+    return expected
 
 
 def check(c, contract_path=None):
@@ -76,21 +138,44 @@ def check(c, contract_path=None):
     if storage.get('archive_status') == 'done':
         archive = Path(storage.get('archive_root') or '.')
         require(archive.is_absolute() and archive.is_dir() and root.resolve().is_relative_to(archive.resolve()), 'archive root does not contain output root')
+
+    expected = _expected_artifacts(c, root, require)
     artifacts = c.get('artifacts')
-    require(isinstance(artifacts, list) and bool(artifacts), 'artifact manifest required')
+    require(isinstance(artifacts, list), 'artifact manifest must be an array')
     hashes = {}
+    actual_ids = set()
     for item in artifacts if isinstance(artifacts, list) else []:
         if not isinstance(item, dict) or not isinstance(item.get('path'), str):
             issues.append('invalid artifact entry')
             continue
+        artifact_id = item.get('artifact_id')
+        valid_actual_id = isinstance(artifact_id, str) and bool(artifact_id.strip()) and artifact_id not in actual_ids
+        require(valid_actual_id, 'actual artifact_id missing or duplicated')
+        if valid_actual_id:
+            actual_ids.add(artifact_id)
+        spec = expected.get(artifact_id) if isinstance(artifact_id, str) else None
+        require(spec is not None, 'unauthorized actual artifact: ' + str(artifact_id))
         p = Path(item['path'])
         require(p.is_absolute() and p.is_file(), 'artifact missing or relative: ' + str(p))
         require(p.resolve().is_relative_to(root.resolve()), 'artifact outside output root: ' + str(p))
-        require(bool(NAME.fullmatch(p.name)) or bool(item.get('user_filename_override')), 'artifact filename not normalized: ' + p.name)
+        if spec is not None:
+            target = Path(spec.get('target_directory') or '.')
+            require(p.parent.resolve() == target.resolve(), 'artifact in wrong target directory: ' + str(artifact_id))
+            require(p.suffix.lower() == str(spec.get('format', '')).lower(), 'artifact format mismatch: ' + str(artifact_id))
+            require(item.get('role') == spec.get('target_role'), 'artifact role mismatch: ' + str(artifact_id))
+            override = spec.get('filename_override')
+            if override is not None:
+                require(p.name == override, 'artifact filename does not match locked override: ' + str(artifact_id))
+            else:
+                require(bool(NAME.fullmatch(p.name)), 'artifact filename not normalized: ' + p.name)
         if p.is_file():
             digest = hashlib.sha256(p.read_bytes()).hexdigest()
             require(digest == item.get('sha256'), 'artifact hash mismatch: ' + str(p))
             hashes[str(p)] = digest
+    for artifact_id, spec in expected.items():
+        if spec.get('required') is True:
+            require(artifact_id in actual_ids, 'required expected artifact missing: ' + artifact_id)
+
     required = 2 if type(level) is int and level >= 7 else (1 if type(level) is int and level >= 4 else 0)
     reviewers = set()
     reviews = c.get('reviews', [])
