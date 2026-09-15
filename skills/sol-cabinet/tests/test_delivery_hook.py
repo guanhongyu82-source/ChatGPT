@@ -40,6 +40,16 @@ class HookTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    r=Path(d);state_root=r/'state';self.activate(r,state_root);hook.declare_analysis('test-session-123',state_root);state=self.state(state_root)
    self.assertEqual(state['phase'],'READY');self.assertEqual(state['mode'],'analysis');self.assertIsNone(state['contract'])
+ def test_file_mode_cannot_downgrade_to_analysis(self):
+  with tempfile.TemporaryDirectory() as d:
+   r=Path(d);state_root=r/'state';p=r/'contract.json';p.write_text('{}');self.activate(r,state_root);hook.register('test-session-123',p,state_root,r)
+   with self.assertRaisesRegex(ValueError,'cannot downgrade'):hook.declare_analysis('test-session-123',state_root)
+   self.assertEqual(self.state(state_root)['mode'],'file')
+ def test_analysis_mode_cannot_switch_to_file(self):
+  with tempfile.TemporaryDirectory() as d:
+   r=Path(d);state_root=r/'state';p=r/'contract.json';p.write_text('{}');self.activate(r,state_root);hook.declare_analysis('test-session-123',state_root)
+   with self.assertRaisesRegex(ValueError,'locked'):hook.register('test-session-123',p,state_root,r)
+   self.assertEqual(self.state(state_root)['mode'],'analysis')
  def test_missing_declaration_blocks_once_then_enters_terminal(self):
   with tempfile.TemporaryDirectory() as d:
    r=Path(d);state_root=r/'state';self.activate(r,state_root);e=self.stop(r,last_assistant_message='完成检查，耗时1秒 [文稿](/a.docx)')
