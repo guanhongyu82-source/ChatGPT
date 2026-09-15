@@ -5,7 +5,7 @@
 - Canonical path: `skills/sol-cabinet/`
 - Legacy command/name: `/sol cabinet`
 - Entry point: `SKILL.md`
-- Current maintenance line: `1.5.x`
+- Current version: `1.5.1`
 - Repository role: authoritative source for maintained Skill content and version history
 - Local runtime role: deployed execution copy only; never overrides the repository baseline
 
