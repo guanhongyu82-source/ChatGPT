@@ -1,0 +1,18 @@
+{
+  "record_id": "testrun-59d41e981994409c804d43293d4b6d94",
+  "kind": "test",
+  "candidate_sha256": "de93a11aa21341ca634d6a02c9c63b8cf151ce864a68d86b7891ebc5a8c327bd",
+  "verdict": "PASS",
+  "error_type": null,
+  "source": "executor-capture",
+  "artifact_path": "testrun-59d41e981994409c804d43293d4b6d94.log",
+  "artifact_sha256": "9b7097ba24a9c18dbbbb56f5ea8a54cb6f3a93bac2b57772c0ab1fd39a75522b",
+  "exit_code": 0,
+  "test_results": {
+    "REG1": "PASS",
+    "REG2": "PASS",
+    "RC-INSTALL-001": "PASS"
+  },
+  "phase": "candidate",
+  "metadata_sha256": "ba21884b34205aae194928c9cdbbd416faf643dd85588f89bdc874677cb20305"
+}

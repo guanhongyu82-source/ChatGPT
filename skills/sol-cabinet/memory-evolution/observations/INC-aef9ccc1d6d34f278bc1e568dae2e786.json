@@ -1,0 +1,16 @@
+{
+  "incident_id": "INC-aef9ccc1d6d34f278bc1e568dae2e786",
+  "time": "2026-09-13T00:45:25.944794+00:00",
+  "failure_type": "incident_not_recorded",
+  "cause": "execution_failure",
+  "impact": "high",
+  "evidence": [
+    "EV-75dfee2ec980413b9da2297b66bc5fca"
+  ],
+  "capabilities": [
+    "maintenance"
+  ],
+  "repeated": false,
+  "hits": 1,
+  "permission": "record"
+}

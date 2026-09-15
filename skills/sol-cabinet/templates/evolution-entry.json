@@ -1,0 +1,19 @@
+{
+  "task_instance_id": "task-REPLACE-WITH-32-HEX-CHARACTERS",
+  "date": "YYYY-MM-DD",
+  "task_type": "other-non-sensitive",
+  "planned_t": 4,
+  "actual_t": 4,
+  "planned_agents": 2,
+  "used_agents": 2,
+  "skill_routes": [],
+  "outcome": "pass",
+  "feedback_codes": [],
+  "lesson_codes": [],
+  "level": 1,
+  "sensitive": false,
+  "sensitivity_checked": false,
+  "lifecycle_state": "intake",
+  "review_after_date": "YYYY-MM-DD",
+  "consolidated_improvement_id": null
+}

@@ -1,0 +1,41 @@
+{
+  "tested_at": "2026-08-24T21:32:06+08:00",
+  "sol_cabinet_version": "1.1",
+  "codex_cli": "0.149.0",
+  "cwd": "/Users/macbook/ChatGPT",
+  "sandbox": "read-only",
+  "ephemeral": true,
+  "parallel_smoke": true,
+  "archive_gate_discovery": {
+    "with_source_file": {
+      "verdict": "PASS",
+      "t_level": 1,
+      "content_read": false,
+      "result": "ARCHIVE_GATE=REQUIRED|T=1|CONTENT_READ=NO"
+    },
+    "without_source_file": {
+      "verdict": "PASS",
+      "t_level": 1,
+      "empty_original_directory_created": false,
+      "result": "ARCHIVE_GATE=NOT_APPLICABLE|T=1|EMPTY_ORIGINAL_DIR=NO"
+    }
+  },
+  "skill_entry": {
+    "verdict": "PASS",
+    "path": "/Users/macbook/.agents/skills/sol-cabinet",
+    "resolved_path": "/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet"
+  },
+  "custom_agent_runtime": {
+    "verdict": "PASS",
+    "mode": "managed regular-file copies",
+    "verification": "scripts/sync_agent_runtime.py --check"
+  },
+  "writes_requested": false,
+  "sensitive_material_used": false,
+  "warnings": [
+    "Pre-existing Otty hooks failed because their registered executable is missing.",
+    "One model-list refresh timed out without affecting the smoke result.",
+    "State database discrepancy warnings used the built-in fallback.",
+    "One analytics event request failed after the local smoke result was already produced."
+  ]
+}

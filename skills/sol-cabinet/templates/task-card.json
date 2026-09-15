@@ -1,0 +1,88 @@
+{
+  "task_instance_id": "task-REPLACE-WITH-32-HEX-CHARACTERS",
+  "run_id": "YYYYMMDD-HHMMSS-slug",
+  "goal": "",
+  "deliverables": [],
+  "scope": {
+    "in": [],
+    "out": []
+  },
+  "authorization": "answer",
+  "deadline": "none",
+  "quality": "normal",
+  "materials": "READY",
+  "source_archive": {
+    "source_files_present": false,
+    "source_asset_count": 0,
+    "required": false,
+    "state": "NOT_APPLICABLE",
+    "task_archive_relative_path": null,
+    "manifest_relative_path": null,
+    "verified_count": 0,
+    "gate_code": null
+  },
+  "sensitivity": "normal",
+  "timeliness": "stable",
+  "reference_mode": "none",
+  "artifact": "chat",
+  "target_path": "chat",
+  "t_level": 1,
+  "score": 0,
+  "score_axes": {
+    "scope": 0,
+    "reasoning": 0,
+    "evidence": 0,
+    "delivery": 0,
+    "risk": 0,
+    "duration": 0
+  },
+  "hard_gates": [],
+  "t_reason": "",
+  "resource_mode": "balanced",
+  "risk_tags": [],
+  "access_policy": {
+    "external_access": "task-dependent",
+    "network": "task-dependent",
+    "connectors": "task-dependent",
+    "persistent_context": "explicit-user-authorization-required",
+    "tool_scope": "minimum-required"
+  },
+  "skill_routes": [],
+  "agents_planned": null,
+  "agents_used": 0,
+  "distinct_agent_ids": [],
+  "role_tasks": [],
+  "resource_deviation": null,
+  "agent_plan": [],
+  "review_plan": [],
+  "stage": {
+    "current": "",
+    "authorized_actions": [],
+    "out_of_scope": [],
+    "acceptance": [],
+    "complete": false,
+    "next_stage_authorized": false,
+    "stop_after_delivery": true
+  },
+  "capability_requirements": {
+    "reasoning_need": "",
+    "verification_need": "",
+    "uncertainty": "",
+    "runtime_adjustment_available": null,
+    "limitation": null
+  },
+  "resource_plan": {
+    "independent_units": [],
+    "parallel_benefit": "unknown",
+    "available_subagent_slots": null,
+    "additional_execution_agent_budget": null,
+    "quota_data": "unknown-not-queried"
+  },
+  "evidence_pack": {
+    "sources": [],
+    "coverage": [],
+    "facts": [],
+    "conflicts": [],
+    "unread": []
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "record_id": "testrun-d6a67bb1aa5843eb9299f4b48c91a6d8",
+  "kind": "test",
+  "candidate_sha256": "f28a75409a340d89c58930280fc95a52e91d9a1f03e4c8306843ebf2312e2472",
+  "verdict": "PASS",
+  "error_type": null,
+  "source": "executor-capture",
+  "artifact_path": "testrun-d6a67bb1aa5843eb9299f4b48c91a6d8.log",
+  "artifact_sha256": "0e4478fc4ac5e745c32d605a7e18589d210126c93ae6f7052b8b415ec8e382d6",
+  "exit_code": 0,
+  "test_results": {
+    "delivery-suite": "PASS",
+    "hook-suite": "PASS",
+    "intake-suite": "PASS",
+    "structure": "PASS",
+    "RC-CLASSIFICATION-001": "PASS",
+    "RC-DELIVERY-001": "PASS",
+    "RC-INTAKE-001": "PASS"
+  },
+  "phase": "candidate"
+}

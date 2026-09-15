@@ -1,0 +1,50 @@
+[
+  {
+    "case_id": "RC-INSTALL-001",
+    "incident_id": "INC-11111111111111111111111111111111",
+    "failure_type": "runtime-compatibility",
+    "cause": "runtime_issue",
+    "impact": "high",
+    "trigger": "用户规则替代旧托管块后，安装器仍强制旧标记，产生真实基线失败。",
+    "correct_behavior": "对用户自有规则核验登记哈希，对仍托管的规则核验块；保留用户 Work/Codex 分工。",
+    "no_regression": "规则漂移、托管块缺失、重复归属、技能哈希及 Agent 漂移仍拒绝。",
+    "pass_condition": "原始错误可复现，受控规则替代被接受，改变用户规则仍失败；实际安装检查通过。",
+    "test": "test_evolution_loop.py:test_user_owned_rule_drift_is_rejected"
+  },
+  {
+    "case_id": "RC-CLASSIFICATION-001",
+    "incident_id": "INC-9c7918f806614c37b7115b4419a26a27",
+    "failure_type": "task_underclassification",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "正式材料新增义务被按低级局部改写处理。",
+    "correct_behavior": "识别正式材料新增内容并拒绝低级流程捷径。",
+    "no_regression": "原有权限、保密和必要质量门禁保留；合成回归不冒充生产事故。",
+    "pass_condition": "登记方法实际唯一发现并执行成功，相关负向输入受到拒绝或待办正确可见。",
+    "test": "test_delivery_rules.py:test_t3_formal_additions_fail"
+  },
+  {
+    "case_id": "RC-DELIVERY-001",
+    "incident_id": "INC-6864502ef4754fcc88d26c6036f0355a",
+    "failure_type": "file_delivery_uncontrolled",
+    "cause": "rule_conflict",
+    "impact": "high",
+    "trigger": "成品临时目录或命名未受交付规则约束。",
+    "correct_behavior": "未说明的临时路径和不合规成品名必须阻断交付。",
+    "no_regression": "原有权限、保密和必要质量门禁保留；合成回归不冒充生产事故。",
+    "pass_condition": "登记方法实际唯一发现并执行成功，相关负向输入受到拒绝或待办正确可见。",
+    "test": "test_delivery_rules.py:test_unjustified_temp_and_bad_name_fail"
+  },
+  {
+    "case_id": "RC-INTAKE-001",
+    "incident_id": "INC-aef9ccc1d6d34f278bc1e568dae2e786",
+    "failure_type": "incident_not_recorded",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "真实失败未记录，且没有候选时从维护提示消失。",
+    "correct_behavior": "普通事故一旦记录立即作为待办可见，无须先形成候选。",
+    "no_regression": "原有权限、保密和必要质量门禁保留；合成回归不冒充生产事故。",
+    "pass_condition": "登记方法实际唯一发现并执行成功，相关负向输入受到拒绝或待办正确可见。",
+    "test": "test_evolution_intake.py:test_ordinary_incident_visible_before_candidate"
+  }
+]

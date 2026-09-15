@@ -1,0 +1,17 @@
+{
+  "improvement_id": "OL-000",
+  "status": "OPEN|INTEGRATING|VERIFIED|CLOSED|RECURRENT",
+  "scope_code": "file-governance|routing|agent-orchestration|office|review|evolution|platform",
+  "blocker_code": "registered-code",
+  "root_cause_code": "registered-code",
+  "solution_code": "registered-code",
+  "prevention_code": "registered-code",
+  "verification_code": "registered-code",
+  "first_seen_date": "YYYY-MM-DD",
+  "last_seen_date": "YYYY-MM-DD",
+  "last_verified_date": null,
+  "recurrence_count": 1,
+  "sensitive": false,
+  "contains_sensitive_content": false,
+  "sensitivity_checked": true
+}

@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "indexed_at": "2026-08-23T19:20:00+08:00",
+  "scope": "All regular files in the 10 currently active Grok Build skill directories, plus 10 directly relevant knowledge-base references.",
+  "skill_roots_total_files": 56,
+  "skill_roots_total_bytes": 373482,
+  "key_references_total_files": 10,
+  "key_references_total_bytes": 72263,
+  "read_to_eof": true,
+  "source_git": {
+    "path": "/Users/macbook/Grok/lineage",
+    "head_before": "869322842003e03669073a6983d1398f42aa1a1a",
+    "status_before": "## main...origin/main"
+  },
+  "aggregate_algorithm": "sha256 of sorted lines: <file_sha256><two spaces><relative_path><newline>",
+  "roots": [
+    {
+      "name": "caveman",
+      "source_path": "/Users/macbook/.grok/skills/caveman",
+      "resolved_path": "/Users/macbook/.grok/skills/caveman",
+      "kind": "installed-directory",
+      "file_count": 1,
+      "total_bytes": 6039,
+      "aggregate_sha256": "440b0ef797854e3590177f649ae0ab0904e71729840c7cc4c821c916e8e1051d"
+    },
+    {
+      "name": "check-work",
+      "source_path": "/Users/macbook/.grok/skills/check-work",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/check-work",
+      "kind": "symlink",
+      "file_count": 1,
+      "total_bytes": 13775,
+      "aggregate_sha256": "e4b1e25ea100d60eea1ab08608e173ed84ef239d5b22f5e65b1f4f1e723c1fb9"
+    },
+    {
+      "name": "grok-cowork",
+      "source_path": "/Users/macbook/.grok/skills/grok-cowork",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/grok-cowork",
+      "kind": "symlink",
+      "file_count": 2,
+      "total_bytes": 95150,
+      "aggregate_sha256": "4988e6e5c8d2f82b3b8b2fe79ab8e9b69d712a6851db69045bbff12941906001"
+    },
+    {
+      "name": "octopus",
+      "source_path": "/Users/macbook/.grok/skills/octopus",
+      "resolved_path": "/Users/macbook/.grok/skills/octopus",
+      "kind": "installed-copy",
+      "file_count": 32,
+      "total_bytes": 152066,
+      "aggregate_sha256": "81e4fc8544abe80f5eda2ee55b03b08a26bc02d74802635b4ed5511c07215e95"
+    },
+    {
+      "name": "office-professional",
+      "source_path": "/Users/macbook/.grok/skills/office-professional",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/office-professional",
+      "kind": "symlink",
+      "file_count": 12,
+      "total_bytes": 66488,
+      "aggregate_sha256": "932611ef7c4a3998aecab9085fabbe38181076046ddb699f983dfff7e054a70f"
+    },
+    {
+      "name": "official-draft",
+      "source_path": "/Users/macbook/.grok/skills/official-draft",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/official-draft",
+      "kind": "symlink",
+      "file_count": 2,
+      "total_bytes": 14106,
+      "aggregate_sha256": "ad77ae311872cfc0dbe8f10c8cc812a28eea695edc0dfab847debcc520acfd48"
+    },
+    {
+      "name": "repo-health-check",
+      "source_path": "/Users/macbook/.grok/skills/repo-health-check",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/repo-health-check",
+      "kind": "symlink",
+      "file_count": 1,
+      "total_bytes": 3144,
+      "aggregate_sha256": "af57be2430b06c9185a757db7f84be722c3e5ac0c09bbdf994e18eb0445ec73b"
+    },
+    {
+      "name": "research-agent",
+      "source_path": "/Users/macbook/.grok/skills/research-agent",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/research-agent",
+      "kind": "symlink",
+      "file_count": 1,
+      "total_bytes": 4580,
+      "aggregate_sha256": "e37e9da76f92a9f26867d994f80de0ff3429b86caf93bfe1d5a481d12cb6f46b"
+    },
+    {
+      "name": "security-audit",
+      "source_path": "/Users/macbook/.grok/skills/security-audit",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/security-audit",
+      "kind": "symlink",
+      "file_count": 1,
+      "total_bytes": 2791,
+      "aggregate_sha256": "ef2d3e404cae847a744a9862529605d9e0c0ebff53ee2c661c226a4ecb7717bd"
+    },
+    {
+      "name": "whathappened",
+      "source_path": "/Users/macbook/.grok/skills/whathappened",
+      "resolved_path": "/Users/macbook/Grok/lineage/skills/whathappened",
+      "kind": "symlink",
+      "file_count": 3,
+      "total_bytes": 15343,
+      "aggregate_sha256": "66308718b433e23b1e3feef86fdfef559a1ccb650efb2e3a9bdaf03eba52c29d"
+    }
+  ],
+  "key_references": [
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/源文件深度画像-Office与PDF.md", "bytes": 6441, "sha256": "5286ab7557ec777e8a6016f1024e4e89430e4d288974081e766f079a7ec0cc17"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/样本保真与体例对齐.md", "bytes": 6817, "sha256": "d645f69fa6a41166c75da5472e889210a7ae1bb65aeec9ad36515d1b4ef8e4e5"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/写前解读与参照分流.md", "bytes": 8671, "sha256": "bcad9adf31afb279b6912526b2db47b127d20cae0b9a46fc0d34d62effbb2b1b"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/数字底座总索引.md", "bytes": 21173, "sha256": "e117c34962e6ae23fecd8299c63fae55cdcf41dc82917d2f43363764c6be7d43"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/核心-国企高层视角与顶级文案秘书铁律.md", "bytes": 12409, "sha256": "df30ec4d503996dfbe51e1377f23628f1879b5c99a076698b89efdefefb8529c"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/缩减套改与只动指定.md", "bytes": 2797, "sha256": "402204475db475fd9866ae0778d2637739ab9393c672d8398a019a1a53b4cd1a"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/成稿12项自检.md", "bytes": 2375, "sha256": "54e8893547fdfa4b5323a01bd760d748b24aa07b13c9cf8fd769f05b914c7a20"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/审阅停手与红黄绿意见.md", "bytes": 2624, "sha256": "2f134d45908c2dc2b92e4e01dba7d84adfb3ac224eb165a92d84ea1ed0686a44"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/源文溯源与只读审校.md", "bytes": 1913, "sha256": "b68e28b563e4b861be9c46b3aeb94523dabe708168846408f14a414fda6d3135"},
+    {"path": "/Users/macbook/Grok/knowledge-base/distilled/结构模板/台账语义拆行.md", "bytes": 7043, "sha256": "0bd2f659df3f58fa00f679983f061d0c36c25e4a78fc5c3205765b724334586d"}
+  ]
+}

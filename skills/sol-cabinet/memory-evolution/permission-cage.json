@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "authority": "2026-09-12 用户守边界自我进化一次性施工令",
+  "principle": "任务不变、边界不扩；能力升级、帮手增加；并行增强、速度提升；范围收敛、颗粒度加深；减少发散、提高精度与质量。质量优先，最终目的只有保证质量、提高速度。",
+  "frozen": [
+    "任务目标",
+    "工作边界",
+    "保密边界",
+    "完成定义",
+    "核心质量标准",
+    "禁止假完成",
+    "用户冻结规则",
+    "明确否决方案",
+    "核心权限",
+    "进化机制自身权限",
+    "最高根本遵循",
+    "原稿逐字节保护与不覆盖",
+    "全部既有测试与必要质量控制"
+  ],
+  "denied": [
+    "使用 LibreOffice、LibreOfficeDev、soffice 及其转换渲染链",
+    "主动侦测或同步旧工具来源",
+    "另建第二套 Cabinet",
+    "生产代理改写核心合同",
+    "固定周期外部技能搜索",
+    "以模型升级扩大职责",
+    "削减必要质量控制换速度",
+    "伪造后台执行、测试、审核、EVO 或完成"
+  ],
+  "auto_paths": [
+    "scripts/check_installation.py",
+    "scripts/classify_task.py",
+    "scripts/inspect_office.py",
+    "examples/routing-examples.md"
+  ],
+  "approve": [
+    "任务范围",
+    "保密",
+    "完成定义",
+    "核心质量 Gate",
+    "Agent 权限",
+    "模型核心策略",
+    "大规模架构",
+    "平台迁移",
+    "删除稳定能力"
+  ],
+  "self_protected_prefixes": [
+    "memory-evolution/",
+    "scripts/evolve.py",
+    "scripts/validate_evolution_proposal.py",
+    "scripts/verify_evidence.py",
+    "scripts/create_release_snapshot.py",
+    "templates/evolution",
+    "tests/test_evolution_loop.py",
+    "tests/test-registry.json",
+    "scripts/maintenance_boundary.py"
+  ],
+  "auto_conditions": [
+    "真实重复证据或高影响事故",
+    "根因明确",
+    "最小补丁",
+    "全部必要回归通过",
+    "双独立审核确认不触及冻结层",
+    "可验证回滚",
+    "维护层执行"
+  ],
+  "execution": "task-close-or-next-maintenance",
+  "background_daemon": false
+}

@@ -1,0 +1,16 @@
+{
+  "incident_id": "INC-11111111111111111111111111111111",
+  "time": "2026-09-12T00:43:33.439475+00:00",
+  "failure_type": "runtime-compatibility",
+  "cause": "runtime_issue",
+  "impact": "high",
+  "evidence": [
+    "EV-11111111111111111111111111111111"
+  ],
+  "capabilities": [
+    "installation"
+  ],
+  "repeated": false,
+  "hits": 1,
+  "permission": "record"
+}

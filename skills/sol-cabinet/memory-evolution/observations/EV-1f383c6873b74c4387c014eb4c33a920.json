@@ -1,0 +1,8 @@
+{
+  "evidence_id": "EV-1f383c6873b74c4387c014eb4c33a920",
+  "task_instance_id": "task-01a09654b69e7d42b2f6dbd99bf9cfef",
+  "failure_type": "file_delivery_uncontrolled",
+  "artifact_sha256": "cf59976d74d70353b69f3557526786d259dbd20e49d3dc47cb1b4642929072d4",
+  "source": "executor-capture",
+  "sanitized": true
+}

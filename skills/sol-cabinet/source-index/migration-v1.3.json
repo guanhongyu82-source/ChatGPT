@@ -1,0 +1,747 @@
+{
+  "version": "1.3",
+  "scope": "Grok源技能入口逐项处置，非复制或源系统修改",
+  "source_entries": 74,
+  "items": [
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/code-review/SKILL.md",
+      "name": "code-review",
+      "group": "Grok自有",
+      "classification": "C/D",
+      "target": "Codex原生代码审阅及repo-health-check专项",
+      "decision": "保留可维护性检查，删除审阅自动重构和行数硬阻断，不另装重复Skill",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/grok-cowork/SKILL.md",
+      "name": "grok-cowork",
+      "group": "Grok自有",
+      "classification": "A",
+      "target": "Sol Cabinet核心",
+      "decision": "1.2核心已融合，1.3保留与外围衔接",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/repo-health-check/SKILL.md",
+      "name": "repo-health-check",
+      "group": "Grok自有",
+      "classification": "C",
+      "target": "目标repo-health-check",
+      "decision": "已有独立技能原生化，去固定数量与旧平台规则",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/office-professional/SKILL.md",
+      "name": "office-professional",
+      "group": "Grok自有",
+      "classification": "A/D",
+      "target": "formal-writing/office-delivery/common-components",
+      "decision": "写作/保真已融合，原生生成器复用，缺陷检查机制重写",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/create-skill/SKILL.md",
+      "name": "create-skill",
+      "group": "Grok自有",
+      "classification": "D/E",
+      "target": "当前skill-creator",
+      "decision": "复用目标现有能力，不迁旧创建流程",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/research-agent/SKILL.md",
+      "name": "research-agent",
+      "group": "Grok自有",
+      "classification": "B",
+      "target": "research-agent → Sol Research",
+      "decision": "轻量兼容入口与复杂研究单向路由已收口",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/whathappened/SKILL.md",
+      "name": "whathappened",
+      "group": "Grok自有",
+      "classification": "B",
+      "target": "Sol Research研究框架",
+      "decision": "时间窗口/样本/观点分离已融合，不迁X专用API",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/check-work/SKILL.md",
+      "name": "check-work",
+      "group": "Grok自有",
+      "classification": "A/D",
+      "target": "review-system/verify_evidence",
+      "decision": "总审思想融合，实际证据校验复用，不迁旧平台执行合同",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/security-audit/SKILL.md",
+      "name": "security-audit",
+      "group": "Grok自有",
+      "classification": "C",
+      "target": "目标security-audit",
+      "decision": "保留专业边界，去旧平台与无谓流程",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/official-draft/SKILL.md",
+      "name": "official-draft",
+      "group": "Grok自有",
+      "classification": "A",
+      "target": "formal-writing",
+      "decision": "短引文、硬信息保全、结构映射与修改边界已融合，不保留第二入口",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/imagine/SKILL.md",
+      "name": "imagine",
+      "group": "Grok自有",
+      "classification": "D/E",
+      "target": "当前imagegen／视觉工具",
+      "decision": "复用目标原生工具，保留准确性与一致性原则，不迁旧接口",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/Grok/lineage/skills/help/SKILL.md",
+      "name": "help",
+      "group": "Grok自有",
+      "classification": "E",
+      "target": "当前产品文档能力",
+      "decision": "不迁Grok帮助索引",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/skills/octopus/SKILL.md",
+      "name": "octopus",
+      "group": "Grok自有",
+      "classification": "D/E",
+      "target": "durable-operations",
+      "decision": "复用有界状态、停止与恢复，不建第二中枢",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/skills/octopus/skills/loop-graph/SKILL.md",
+      "name": "loop-graph",
+      "group": "Grok自有",
+      "classification": "D/E",
+      "target": "durable-operations",
+      "decision": "复用按需状态机制，旧宿主运行器不迁",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/skills/caveman/SKILL.md",
+      "name": "caveman",
+      "group": "Grok自有",
+      "classification": "E",
+      "target": "无",
+      "decision": "不进入中文办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/design/SKILL.md",
+      "name": "design",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/resume-codex/SKILL.md",
+      "name": "resume-codex",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/resume-claude/SKILL.md",
+      "name": "resume-claude",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/game-ui-icons/SKILL.md",
+      "name": "game-ui-icons",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/execute-plan/SKILL.md",
+      "name": "execute-plan",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/resume-cursor/SKILL.md",
+      "name": "resume-cursor",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/pr-babysit/SKILL.md",
+      "name": "pr-babysit",
+      "group": "Grok内置",
+      "classification": "C/E",
+      "target": "Codex原生代码专业能力",
+      "decision": "不纳入办公总控，不复制专用执行器",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/code-review/SKILL.md",
+      "name": "code-review",
+      "group": "Grok内置",
+      "classification": "C/E",
+      "target": "Codex原生代码专业能力",
+      "decision": "不纳入办公总控，不复制专用执行器",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/create-workflow/SKILL.md",
+      "name": "create-workflow",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "原生任务工具和durable-operations",
+      "decision": "有界等待/依赖/停止复用，不迁Rhai或后台执行器",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/statusline/SKILL.md",
+      "name": "statusline",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/pdf/SKILL.md",
+      "name": "pdf",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "目标原生Office/PDF工具",
+      "decision": "生成与编辑复用，缺陷/禁用旧实现不迁",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/game-character-consistency/SKILL.md",
+      "name": "game-character-consistency",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/skill-design-principles/SKILL.md",
+      "name": "skill-design-principles",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "当前skill-creator",
+      "decision": "维护原则复用，不另装重复创建器",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/game-animation-frames/SKILL.md",
+      "name": "game-animation-frames",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/game-tilesets/SKILL.md",
+      "name": "game-tilesets",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/game-asset-core/SKILL.md",
+      "name": "game-asset-core",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/create-skill/SKILL.md",
+      "name": "create-skill",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "当前skill-creator",
+      "decision": "维护原则复用，不另装重复创建器",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/long-running-background-tasks/SKILL.md",
+      "name": "long-running-background-tasks",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "原生任务工具和durable-operations",
+      "decision": "有界等待/依赖/停止复用，不迁Rhai或后台执行器",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/pptx/SKILL.md",
+      "name": "pptx",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "目标原生Office/PDF工具",
+      "decision": "生成与编辑复用，缺陷/禁用旧实现不迁",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/review/SKILL.md",
+      "name": "review",
+      "group": "Grok内置",
+      "classification": "C/E",
+      "target": "Codex原生代码专业能力",
+      "decision": "不纳入办公总控，不复制专用执行器",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/build-with-ai/SKILL.md",
+      "name": "build-with-ai",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/implement/SKILL.md",
+      "name": "implement",
+      "group": "Grok内置",
+      "classification": "E",
+      "target": "无",
+      "decision": "编码大流程、游戏素材、旧宿主接力或产品绑定不进入办公核心",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/docx/SKILL.md",
+      "name": "docx",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "目标原生Office/PDF工具",
+      "decision": "生成与编辑复用，缺陷/禁用旧实现不迁",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/bundled/skills/imagine/SKILL.md",
+      "name": "imagine",
+      "group": "Grok内置",
+      "classification": "D/E",
+      "target": "当前imagegen",
+      "decision": "复用，不迁旧API",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-download/SKILL.md",
+      "name": "firecrawl-download",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-monitor/SKILL.md",
+      "name": "firecrawl-monitor",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-agent/SKILL.md",
+      "name": "firecrawl-agent",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-scrape/SKILL.md",
+      "name": "firecrawl-scrape",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-map/SKILL.md",
+      "name": "firecrawl-map",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-parse/SKILL.md",
+      "name": "firecrawl-parse",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-interact/SKILL.md",
+      "name": "firecrawl-interact",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-cli/SKILL.md",
+      "name": "firecrawl",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-search/SKILL.md",
+      "name": "firecrawl-search",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/firecrawl-grok-plugin-ba077673/skills/firecrawl-crawl/SKILL.md",
+      "name": "firecrawl-crawl",
+      "group": "Grok插件仓入口",
+      "classification": "B/D/E",
+      "target": "目标现有Firecrawl与研究路由",
+      "decision": "复用已装目标版本，不复制源插件、凭据或外传敏感文件",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/plugins-git-grok-ba06cd19/.kimi-plugin/skills/browser-use/SKILL.md",
+      "name": "browser-use",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/plugins-git-grok-ba06cd19/cursor/skills/browser-use/SKILL.md",
+      "name": "browser-use",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/plugins-git-grok-ba06cd19/qa/skills/qa/SKILL.md",
+      "name": "qa",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/plugins-git-grok-ba06cd19/grok/skills/browser-use/SKILL.md",
+      "name": "browser-use",
+      "group": "Grok插件仓入口",
+      "classification": "D/E",
+      "target": "目标当前浏览工具",
+      "decision": "使用实际可用工具，不迁旧宿主合同",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/chrome-devtools-mcp-2df60288/skills/debug-optimize-lcp/SKILL.md",
+      "name": "debug-optimize-lcp",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/chrome-devtools-mcp-2df60288/skills/troubleshooting/SKILL.md",
+      "name": "troubleshooting",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/chrome-devtools-mcp-2df60288/skills/chrome-devtools-cli/SKILL.md",
+      "name": "chrome-devtools-cli",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/chrome-devtools-mcp-2df60288/skills/chrome-devtools/SKILL.md",
+      "name": "chrome-devtools",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/chrome-devtools-mcp-2df60288/skills/memory-leak-debugging/SKILL.md",
+      "name": "memory-leak-debugging",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/chrome-devtools-mcp-2df60288/skills/a11y-debugging/SKILL.md",
+      "name": "a11y-debugging",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/exa-grok-plugin-f73327c3/skills/exa-search/SKILL.md",
+      "name": "exa-search",
+      "group": "Grok插件仓入口",
+      "classification": "B/E",
+      "target": "Sol Research可选来源能力",
+      "decision": "研究只用真实可用能力；不新增连接或迁移凭据，缺工具时披露",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/using-git-worktrees/SKILL.md",
+      "name": "using-git-worktrees",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/test-driven-development/SKILL.md",
+      "name": "test-driven-development",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/systematic-debugging/SKILL.md",
+      "name": "systematic-debugging",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/using-superpowers/SKILL.md",
+      "name": "using-superpowers",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/dispatching-parallel-agents/SKILL.md",
+      "name": "dispatching-parallel-agents",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/executing-plans/SKILL.md",
+      "name": "executing-plans",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/finishing-a-development-branch/SKILL.md",
+      "name": "finishing-a-development-branch",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/brainstorming/SKILL.md",
+      "name": "brainstorming",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/writing-plans/SKILL.md",
+      "name": "writing-plans",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/requesting-code-review/SKILL.md",
+      "name": "requesting-code-review",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/receiving-code-review/SKILL.md",
+      "name": "receiving-code-review",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/writing-skills/SKILL.md",
+      "name": "writing-skills",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/verification-before-completion/SKILL.md",
+      "name": "verification-before-completion",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    },
+    {
+      "source": "/Users/macbook/.grok/installed-plugins/superpowers-21e2a56d/skills/subagent-driven-development/SKILL.md",
+      "name": "subagent-driven-development",
+      "group": "Grok插件仓入口",
+      "classification": "E",
+      "target": "无",
+      "decision": "被禁用、其它宿主缓存或无办公增量，不迁移",
+      "disposition": "已完成本轮处置",
+      "validation": "迁移/复用/不迁移决策已核；真实办公A/B留1.4"
+    }
+  ]
+}

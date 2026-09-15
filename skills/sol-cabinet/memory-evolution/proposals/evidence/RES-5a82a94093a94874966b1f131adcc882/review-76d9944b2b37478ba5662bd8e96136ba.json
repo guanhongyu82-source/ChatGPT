@@ -1,0 +1,19 @@
+{
+  "record_id": "review-76d9944b2b37478ba5662bd8e96136ba",
+  "kind": "review",
+  "candidate_sha256": "f28a75409a340d89c58930280fc95a52e91d9a1f03e4c8306843ebf2312e2472",
+  "verdict": "PASS",
+  "error_type": null,
+  "source": "executor-capture",
+  "artifact_path": "review-76d9944b2b37478ba5662bd8e96136ba.log",
+  "artifact_sha256": "00da32f3eb1d4ec1d9a4116426568b3f49789481def9b95faf103d44bd140953",
+  "reviewer_id": "/root/audit_evolution",
+  "author_id": "/root",
+  "independent": true,
+  "must_fix": [],
+  "source_ref": {
+    "session_id": "01a0963d-491e-76a2-9d6d-db387a2da5c7",
+    "line": 986,
+    "message_id": "amsg_01a09841-3581-79b3-8882-d727835be63d"
+  }
+}

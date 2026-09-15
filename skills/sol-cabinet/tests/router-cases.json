@@ -1,0 +1,455 @@
+[
+  {
+    "id": "C01",
+    "description": "修改一句话中的两个标点",
+    "profile": {
+      "steps": 1,
+      "complexity": 0
+    },
+    "expected": {
+      "t_min": 1,
+      "t_max": 1,
+      "review": false
+    }
+  },
+  {
+    "id": "C02",
+    "description": "翻译两句普通通知",
+    "profile": {
+      "steps": 1,
+      "complexity": 0
+    },
+    "expected": {
+      "t_min": 1,
+      "t_max": 2,
+      "review": false
+    }
+  },
+  {
+    "id": "C03",
+    "description": "将三百字口语改成书面表达",
+    "profile": {
+      "steps": 2,
+      "complexity": 1,
+      "user_compact": true
+    },
+    "expected": {
+      "t_min": 2,
+      "t_max": 2,
+      "review": false
+    }
+  },
+  {
+    "id": "C04",
+    "description": "将一页会议要点整理成五项",
+    "profile": {
+      "file_count": 1,
+      "steps": 3,
+      "complexity": 1
+    },
+    "expected": {
+      "t_min": 2,
+      "t_max": 3,
+      "review": false
+    }
+  },
+  {
+    "id": "C05",
+    "description": "摘要本地十二页PDF并标页码",
+    "profile": {
+      "file_count": 1,
+      "input_size_kb": 200,
+      "complexity": 1,
+      "fact_risk": true
+    },
+    "expected": {
+      "t_min": 3,
+      "t_max": 3,
+      "review": false
+    }
+  },
+  {
+    "id": "C06",
+    "description": "清理单个Excel并补一列公式",
+    "profile": {
+      "file_count": 1,
+      "input_size_kb": 50,
+      "complexity": 2,
+      "office_artifact": true
+    },
+    "expected": {
+      "t_min": 4,
+      "t_max": 4,
+      "review": true
+    }
+  },
+  {
+    "id": "C07",
+    "description": "在正式Word指定段末补一句",
+    "profile": {
+      "file_count": 1,
+      "steps": 3,
+      "complexity": 1,
+      "office_artifact": true,
+      "bounded_edit": true
+    },
+    "expected": {
+      "t_min": 1,
+      "t_max": 2,
+      "review": false
+    }
+  },
+  {
+    "id": "C08",
+    "description": "整合正式通知中的多处批注并出新版本",
+    "profile": {
+      "file_count": 1,
+      "steps": 5,
+      "complexity": 2,
+      "office_artifact": true,
+      "formal_publish": true
+    },
+    "expected": {
+      "t_min": 4,
+      "t_max": 4,
+      "review": true
+    }
+  },
+  {
+    "id": "C09",
+    "description": "根据已审定提纲制作八页演示文稿",
+    "profile": {
+      "file_count": 1,
+      "steps": 5,
+      "complexity": 2,
+      "office_artifact": true,
+      "formal_publish": true
+    },
+    "expected": {
+      "t_min": 4,
+      "t_max": 4,
+      "review": true
+    }
+  },
+  {
+    "id": "C10",
+    "description": "填写本地PDF表单且字段均已提供",
+    "profile": {
+      "file_count": 1,
+      "steps": 4,
+      "complexity": 1,
+      "office_artifact": true
+    },
+    "expected": {
+      "t_min": 4,
+      "t_max": 4,
+      "review": true
+    }
+  },
+  {
+    "id": "C11",
+    "description": "制作单表KPI清单且权重合计一百",
+    "profile": {
+      "file_count": 1,
+      "steps": 5,
+      "complexity": 2,
+      "office_artifact": true,
+      "fact_risk": true,
+      "multi_angle": true
+    },
+    "expected": {
+      "t_min": 4,
+      "t_max": 5,
+      "review": true
+    }
+  },
+  {
+    "id": "C12",
+    "description": "核实现行公开政策并形成带出处说明",
+    "profile": {
+      "complexity": 2,
+      "needs_research": true,
+      "current_fact": true,
+      "fact_risk": true
+    },
+    "expected": {
+      "t_min": 5,
+      "t_max": 5,
+      "review": true
+    }
+  },
+  {
+    "id": "C13",
+    "description": "比较三款当前产品的价格和功能",
+    "profile": {
+      "complexity": 2,
+      "needs_research": true,
+      "current_fact": true,
+      "fact_risk": true,
+      "multi_source": true,
+      "multi_angle": true
+    },
+    "expected": {
+      "t_min": 5,
+      "t_max": 5,
+      "review": true
+    }
+  },
+  {
+    "id": "C14",
+    "description": "分析现行法律规则对内部流程的影响",
+    "profile": {
+      "complexity": 2,
+      "needs_research": true,
+      "current_fact": true,
+      "fact_risk": true,
+      "regulated": true,
+      "high_risk": true
+    },
+    "expected": {
+      "t_min": 6,
+      "t_max": 6,
+      "review": true
+    }
+  },
+  {
+    "id": "C15",
+    "description": "从八份内部材料起草一份综合报告",
+    "profile": {
+      "file_count": 8,
+      "input_size_kb": 180,
+      "complexity": 2,
+      "multi_source": true,
+      "fact_risk": true,
+      "formal_publish": true,
+      "office_artifact": true
+    },
+    "expected": {
+      "t_min": 5,
+      "t_max": 5,
+      "review": true
+    }
+  },
+  {
+    "id": "C16",
+    "description": "从多份制度形成责任分解表",
+    "profile": {
+      "file_count": 6,
+      "input_size_kb": 150,
+      "complexity": 2,
+      "multi_source": true,
+      "fact_risk": true,
+      "office_artifact": true,
+      "multi_angle": true
+    },
+    "expected": {
+      "t_min": 5,
+      "t_max": 5,
+      "review": true
+    }
+  },
+  {
+    "id": "C17",
+    "description": "对账四个月度工作簿并解释差异",
+    "profile": {
+      "file_count": 4,
+      "input_size_kb": 200,
+      "steps": 7,
+      "complexity": 3,
+      "multi_source": true,
+      "fact_risk": true,
+      "current_fact": true,
+      "office_artifact": true,
+      "multi_stage": true
+    },
+    "expected": {
+      "t_min": 6,
+      "t_max": 6,
+      "review": true
+    }
+  },
+  {
+    "id": "C18",
+    "description": "指标下降十八个百分点并诊断原因",
+    "profile": {
+      "steps": 6,
+      "complexity": 3,
+      "multi_angle": true,
+      "multi_source": true,
+      "fact_risk": true,
+      "multi_stage": true,
+      "high_risk": true
+    },
+    "expected": {
+      "t_min": 6,
+      "t_max": 6,
+      "review": true
+    }
+  },
+  {
+    "id": "C19",
+    "description": "起草中英双语公开稿并核最新统计数字",
+    "profile": {
+      "file_count": 2,
+      "steps": 7,
+      "complexity": 3,
+      "needs_research": true,
+      "current_fact": true,
+      "fact_risk": true,
+      "formal_publish": true,
+      "multi_stage": true
+    },
+    "expected": {
+      "t_min": 6,
+      "t_max": 6,
+      "review": true
+    }
+  },
+  {
+    "id": "C20",
+    "description": "根据含真实人名和具体案件的材料形成内部报告",
+    "profile": {
+      "file_count": 8,
+      "input_size_kb": 200,
+      "complexity": 3,
+      "multi_source": true,
+      "fact_risk": true,
+      "formal_publish": true,
+      "office_artifact": true,
+      "sensitive": true
+    },
+    "expected": {
+      "t_min": 7,
+      "t_max": 7,
+      "review": true
+    }
+  },
+  {
+    "id": "C21",
+    "description": "汇总三十份附件形成正式年度报告及附表",
+    "profile": {
+      "file_count": 30,
+      "input_size_kb": 800,
+      "deliverable_count": 2,
+      "steps": 12,
+      "complexity": 3,
+      "multi_source": true,
+      "fact_risk": true,
+      "formal_publish": true,
+      "office_artifact": true,
+      "multiple_deliverables": true,
+      "multi_stage": true
+    },
+    "expected": {
+      "t_min": 8,
+      "t_max": 8,
+      "review": true
+    }
+  },
+  {
+    "id": "C22",
+    "description": "对陌生仓库做只读体检并给最小安全建议",
+    "profile": {
+      "file_count": 100,
+      "input_size_kb": 500,
+      "steps": 6,
+      "complexity": 2,
+      "multi_angle": true,
+      "fact_risk": true
+    },
+    "expected": {
+      "t_min": 5,
+      "t_max": 5,
+      "review": true
+    }
+  },
+  {
+    "id": "C23",
+    "description": "审计仓库鉴权、密钥、注入和供应链风险",
+    "profile": {
+      "file_count": 100,
+      "input_size_kb": 500,
+      "steps": 8,
+      "complexity": 3,
+      "multi_angle": true,
+      "multi_source": true,
+      "fact_risk": true,
+      "multi_stage": true,
+      "high_risk": true,
+      "regulated": true
+    },
+    "expected": {
+      "t_min": 7,
+      "t_max": 7,
+      "review": true
+    }
+  },
+  {
+    "id": "C24",
+    "description": "完整蒸馏旧资产并建立长期个人办公系统",
+    "profile": {
+      "file_count": 50,
+      "input_size_kb": 1000,
+      "deliverable_count": 5,
+      "steps": 15,
+      "complexity": 3,
+      "multi_angle": true,
+      "multi_source": true,
+      "fact_risk": true,
+      "formal_publish": true,
+      "multiple_deliverables": true,
+      "multi_stage": true,
+      "system_build": true,
+      "long_running": true
+    },
+    "expected": {
+      "t_min": 10,
+      "t_max": 10,
+      "review": true
+    }
+  },
+  {
+    "id": "C25",
+    "description": "建立季度KPI持续采集和复盘流程但暂不定时运行",
+    "profile": {
+      "file_count": 8,
+      "input_size_kb": 200,
+      "deliverable_count": 3,
+      "steps": 12,
+      "complexity": 3,
+      "multi_angle": true,
+      "multi_source": true,
+      "fact_risk": true,
+      "formal_publish": true,
+      "multiple_deliverables": true,
+      "multi_stage": true,
+      "system_build": true
+    },
+    "expected": {
+      "t_min": 9,
+      "t_max": 9,
+      "review": true
+    }
+  },
+  {
+    "id": "C26",
+    "description": "把一个重复办公流程封装成新的Codex Skill",
+    "profile": {
+      "file_count": 6,
+      "input_size_kb": 120,
+      "deliverable_count": 2,
+      "steps": 8,
+      "complexity": 3,
+      "needs_research": true,
+      "current_fact": true,
+      "fact_risk": true,
+      "multiple_deliverables": true,
+      "multi_stage": true
+    },
+    "expected": {
+      "t_min": 5,
+      "t_max": 6,
+      "review": true
+    }
+  }
+]

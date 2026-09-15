@@ -1,0 +1,39 @@
+{
+  "E02": {
+    "status": "PASS",
+    "evidence": "Evolution proposal unit test and observation threshold validation"
+  },
+  "S02": {
+    "status": "PASS",
+    "evidence": "skill-creator quick_validate"
+  },
+  "S11": {
+    "status": "PASS",
+    "evidence": "Agent runtime interrupt rollback and installation checks"
+  },
+  "I06": {
+    "status": "RETIRED",
+    "historical_status": "PASS",
+    "evidence": "迁移期源完整性检查已退役，不访问外部AI系统；旧通过记录仅为历史。"
+  },
+  "A01": {
+    "status": "PASS",
+    "evidence": "SourceArchiveTests verified byte identity, live revalidation after tamper or deletion, strict manifest paths and hashes, symlink and workspace-root refusal, collision safety, failure cleanup, stale-lock fail-closed behavior, idempotency, and the global T1-T10 gate"
+  },
+  "E03": {
+    "status": "PASS",
+    "evidence": "Direct Policy Change tests verified explicit durable authorization, sensitivity gates, observation separation, candidate-bound test runs, dual reviews, approved versus applied candidate hashes, and post-verification"
+  },
+  "B01": {
+    "status": "PASS",
+    "evidence": "Improvement registry tests verified fixed taxonomy, sensitive and free-text rejection, single-item recurrence updates, duplicate-blocker refusal, and exact-ID observation retirement"
+  },
+  "W01": {
+    "status": "PASS",
+    "evidence": "Office regression contract prevents global updateFields for PAGE-only Word documents"
+  },
+  "S12": {
+    "status": "PASS",
+    "evidence": "Parallel ephemeral T1 smoke verified source files require Archive Gate before content read and no-source tasks do not create empty original directories"
+  }
+}

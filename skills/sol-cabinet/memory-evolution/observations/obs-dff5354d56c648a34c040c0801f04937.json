@@ -1,0 +1,29 @@
+{
+  "task_instance_id": "task-7f6dfecc2c28efffd9c3bcd7c70c6e5e",
+  "date": "2026-08-23",
+  "task_type": "system-build",
+  "planned_t": 10,
+  "actual_t": 10,
+  "planned_agents": 14,
+  "used_agents": 14,
+  "skill_routes": [
+    "sol-cabinet",
+    "skill-creator",
+    "openai-docs"
+  ],
+  "outcome": "pass",
+  "feedback_codes": [
+    "user-specified-router"
+  ],
+  "lesson_codes": [
+    "single-source-of-truth",
+    "source-protection",
+    "review-caught-defect",
+    "platform-drift",
+    "permission-boundary"
+  ],
+  "level": 1,
+  "sensitive": false,
+  "sensitivity_checked": true,
+  "observation_id": "obs-dff5354d56c648a34c040c0801f04937"
+}

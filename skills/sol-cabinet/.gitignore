@@ -1,0 +1,6 @@
+# Runtime-only artifacts excluded from the archival copy.
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+memory-evolution/proposals/.lock

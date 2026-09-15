@@ -1,0 +1,25 @@
+{
+  "record_id": "review-f056affd85c3458b8e586961ea5650ba",
+  "kind": "review",
+  "candidate_sha256": "de93a11aa21341ca634d6a02c9c63b8cf151ce864a68d86b7891ebc5a8c327bd",
+  "metadata_sha256": "ba21884b34205aae194928c9cdbbd416faf643dd85588f89bdc874677cb20305",
+  "verdict": "PASS",
+  "error_type": null,
+  "source": "executor-capture",
+  "artifact_path": "review-f056affd85c3458b8e586961ea5650ba.log",
+  "artifact_sha256": "3c76f77af2d87ea764808496a90f07446f58842a1acae5dc4354f211e0b47878",
+  "reviewer_id": "/root/audit",
+  "author_id": "/root",
+  "independent": true,
+  "must_fix": [],
+  "permission": "approve",
+  "frozen_impact": false,
+  "dimensions": {
+    "boundary": "PASS",
+    "speed": "PASS",
+    "non_regression": "PASS",
+    "quality": "PASS",
+    "fix": "PASS"
+  },
+  "sanitized_metadata": true
+}

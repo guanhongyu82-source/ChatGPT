@@ -1,0 +1,12 @@
+{
+  "actor": "user",
+  "candidate_sha256": "de93a11aa21341ca634d6a02c9c63b8cf151ce864a68d86b7891ebc5a8c327bd",
+  "base_sha256": "c3e92e57fa14cf149cbe34375d624ac6b2d99999f28da74f13b7971185f75a7a",
+  "changes_sha256": "ae318af6412593c3e3ed29b28c8ef72fe4a11648073ed1c921146ac4eb403df1",
+  "approval_ref": "turn-dae97ff32e3243d28fb462dc1205e6b8",
+  "purpose": "fix-runtime-compatibility",
+  "source": "executor-capture",
+  "approved": true,
+  "artifact_path": "turn-dae97ff32e3243d28fb462dc1205e6b8.log",
+  "artifact_sha256": "35d54e727370788d0f6ac832185bf74bc0b19339e6cc945e58c69bdb569dadf8"
+}

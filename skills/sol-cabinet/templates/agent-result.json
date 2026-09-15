@@ -1,0 +1,26 @@
+{
+  "role": "",
+  "object_id": "",
+  "status": "BLOCKED",
+  "findings": [
+    {
+      "issue_id": "",
+      "claim": "",
+      "evidence": [
+        {
+          "path": "",
+          "locator": ""
+        }
+      ],
+      "severity": "note",
+      "recommendation": ""
+    }
+  ],
+  "blockers": [],
+  "candidate": {
+    "path": null,
+    "sha256": null
+  },
+  "coverage": [],
+  "unverified": []
+}

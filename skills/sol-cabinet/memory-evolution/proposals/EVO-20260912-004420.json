@@ -1,0 +1,77 @@
+{
+  "EVO": "EVO-20260912-004420",
+  "time": "2026-09-12T00:44:20.835634+00:00",
+  "incident": {
+    "incident_id": "INC-11111111111111111111111111111111",
+    "time": "2026-09-12T00:43:33.439475+00:00",
+    "failure_type": "runtime-compatibility",
+    "cause": "runtime_issue",
+    "impact": "high",
+    "evidence": [
+      "EV-11111111111111111111111111111111"
+    ],
+    "capabilities": [
+      "installation"
+    ],
+    "repeated": false,
+    "hits": 1,
+    "permission": "record"
+  },
+  "cases": [
+    {
+      "case_id": "RC-INSTALL-001",
+      "incident_id": "INC-11111111111111111111111111111111",
+      "failure_type": "runtime-compatibility",
+      "cause": "runtime_issue",
+      "impact": "high",
+      "trigger": "用户规则替代旧托管块后，安装器仍强制旧标记，产生真实基线失败。",
+      "correct_behavior": "对用户自有规则核验登记哈希，对仍托管的规则核验块；保留用户 Work/Codex 分工。",
+      "no_regression": "规则漂移、托管块缺失、重复归属、技能哈希及 Agent 漂移仍拒绝。",
+      "pass_condition": "原始错误可复现，受控规则替代被接受，改变用户规则仍失败；实际安装检查通过。",
+      "test": "test_evolution_loop.py:test_user_owned_rule_drift_is_rejected"
+    }
+  ],
+  "root_cause": "runtime_issue",
+  "changes": {
+    "platform-adapter/installation-manifest.json": {
+      "before": {
+        "sha256": "d6b4f56729b8b00b11cb036fddd4439765d78a2dab338c38181cb32e18bfd300",
+        "size": 2474,
+        "mode": 420
+      },
+      "after": {
+        "sha256": "95b073b999bd85934815f1e8396d818cbef9f35ca731e20657776c9995f228a2",
+        "size": 2568,
+        "mode": 420
+      }
+    },
+    "scripts/check_installation.py": {
+      "before": {
+        "sha256": "daf4a874100c687dc5aa8f90d36483cba7c1612e223aa200a67415da735f2a4d",
+        "size": 9232,
+        "mode": 493
+      },
+      "after": {
+        "sha256": "86b224adb10691a33b4c73c2b30496a6033aba0aaa1640d1bc5b8682d2e7417d",
+        "size": 9803,
+        "mode": 493
+      }
+    }
+  },
+  "before": "c3e92e57fa14cf149cbe34375d624ac6b2d99999f28da74f13b7971185f75a7a",
+  "after": "de93a11aa21341ca634d6a02c9c63b8cf151ce864a68d86b7891ebc5a8c327bd",
+  "summary": "fix-runtime-compatibility",
+  "quality": "verified-improvement",
+  "speed": "not-measured",
+  "evidence_dir": "/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet/memory-evolution/proposals/evidence/EVO-20260912-004420",
+  "post_apply": "PASS",
+  "regression": "testrun-59d41e981994409c804d43293d4b6d94",
+  "reviews": [
+    "review-f056affd85c3458b8e586961ea5650ba",
+    "review-4521891a8b2541d090f5ec7292bf07cc"
+  ],
+  "permission": "approve",
+  "user_approval": "turn-dae97ff32e3243d28fb462dc1205e6b8",
+  "rollback_id": "snapshot-2026-09-12-v20260912004420",
+  "rollback_path": "/Users/macbook/ChatGPT/lineage/codex-root/配置库/90_归档备份/sol-cabinet/snapshot-2026-09-12-v20260912004420.tar.gz"
+}
