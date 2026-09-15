@@ -69,8 +69,9 @@ def validate_state(state, session_id=None):
 
 
 def load(path, session_id=None):
+    if path.is_symlink():raise ValueError('unsafe hook state file')
     if not path.exists():return None
-    if path.is_symlink() or not path.is_file():raise ValueError('unsafe hook state file')
+    if not path.is_file():raise ValueError('unsafe hook state file')
     return validate_state(json.loads(path.read_text(encoding='utf-8')),session_id)
 
 
@@ -99,6 +100,7 @@ def _activation(event):
 def register(session_id, contract, state_root=STATE, allowed_root=BASE):
     path=state_file(session_id,state_root);state=load(path,session_id)
     if state is None or state['phase']=='TERMINAL_PARTIAL':raise ValueError('active Sol Cabinet activation required before file registration')
+    if state['mode']=='analysis':raise ValueError('analysis delivery mode is locked for this activation')
     contract=Path(contract).resolve()
     if not contract.is_relative_to(allowed_root.resolve()) or not contract.is_file():raise ValueError('contract must exist inside the authorized working root')
     data=json.loads(contract.read_text(encoding='utf-8'))
@@ -111,6 +113,7 @@ def register(session_id, contract, state_root=STATE, allowed_root=BASE):
 def declare_analysis(session_id, state_root=STATE):
     path=state_file(session_id,state_root);state=load(path,session_id)
     if state is None or state['phase']=='TERMINAL_PARTIAL':raise ValueError('active Sol Cabinet activation required before analysis declaration')
+    if state['mode']=='file':raise ValueError('file delivery mode cannot downgrade to analysis in the same activation')
     state.update(phase='READY',mode='analysis',contract=None,contract_sha256=None,updated_at=_now())
     save(path,state)
 
@@ -127,14 +130,13 @@ def handle(event,state_root=STATE,allowed_root=BASE):
         triggered=bool(TRIGGER.search(event.get('prompt') or ''))
         previous=load(path,session_id)
         if not triggered:
-            # A terminal task must never revive itself into the next unrelated turn.
             if previous is not None and previous['phase']=='TERMINAL_PARTIAL':path.unlink()
             elif previous is not None:
                 previous.update(turn_id=event.get('turn_id'),updated_at=_now());save(path,previous)
             return {}
         state=_activation(event);save(path,state)
         return {'hookSpecificOutput':{'hookEventName':kind,'additionalContext':
-          'Sol Cabinet 执行提醒：开工先给简短小结，包含T级、当前目标、预期交付物、目标文件夹/位置、关键约束和停止条件；不要编造未来耗时承诺。沿用当前模型，不自行换型。文件任务先在Task Card的deliverables锁定唯一Expected清单，每项至少写artifact_id、required、format、target_role、target_directory，用户指定文件名才写filename_override；不得另建第二份Expected。最终目录只放正式成品，00_原稿只放原稿，work只放必要过程/审核证据。交付前生成delivery-contract.json：task_card只记录Task Card绝对路径和当前sha256，artifacts只记录Actual并以artifact_id对应Expected；用户改变交付要求时先更新Task Card再重新登记契约。然后调用 scripts/codex_delivery_hook.py --register --session-id '+event['session_id']+' --contract 绝对路径。Stop会校验Task Card锁、Expected↔Actual、目录与完工小结；收尾必须列实际成品及路径、目录状态、核验、未完成项和真实耗时/不可核实原因。有失误说明处置并按evolution-policy记录。无文件的分析答疑不虚造Task Card成品或文件契约，调用同脚本 --analysis-only --session-id '+event['session_id']+' 明确无文件交付。首次Stop失败只允许一次定向返工；再次失败进入TERMINAL_PARTIAL并停止自动重试。终态不会被普通后续消息复活，若确需重新进入钩子治理须再次显式触发Sol Cabinet。'}}
+          'Sol Cabinet 执行提醒：开工先给简短小结，包含T级、当前目标、预期交付物、目标文件夹/位置、关键约束和停止条件；不要编造未来耗时承诺。沿用当前模型，不自行换型。文件任务先在Task Card的deliverables锁定唯一Expected清单，每项至少写artifact_id、required、format、target_role、target_directory，用户指定文件名才写filename_override；不得另建第二份Expected。最终目录只放正式成品，00_原稿只放原稿，work只放必要过程/审核证据。交付前生成delivery-contract.json：task_card只记录Task Card绝对路径和当前sha256，artifacts只记录Actual并以artifact_id对应Expected；用户改变交付要求时先更新Task Card再重新登记契约。然后调用 scripts/codex_delivery_hook.py --register --session-id '+event['session_id']+' --contract 绝对路径。Stop会校验Task Card锁、Expected↔Actual、目录与完工小结；收尾必须列实际成品及路径、目录状态、核验、未完成项和真实耗时/不可核实原因。有失误说明处置并按evolution-policy记录。无文件的分析答疑不虚造Task Card成品或文件契约，调用同脚本 --analysis-only --session-id '+event['session_id']+' 明确无文件交付。同一激活内file/analysis模式一经声明即锁定，不得由执行端自行切换；需要改变交付模式必须重新显式触发Sol Cabinet。首次Stop失败只允许一次定向返工；再次失败进入TERMINAL_PARTIAL并停止自动重试。终态不会被普通后续消息复活，若确需重新进入钩子治理须再次显式触发Sol Cabinet。'}}
     state=load(path,session_id)
     if state is None:return {}
     if state['phase']=='TERMINAL_PARTIAL':
