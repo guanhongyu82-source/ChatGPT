@@ -11,13 +11,15 @@ import importlib.util
 import json
 import os
 import re
+import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'scripts'))
 from maintenance_boundary import guarded
 
-ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_STATE = Path('/Users/macbook/ChatGPT/system/sol-cabinet-deployment/state.json')
 REPOSITORY = 'guanhongyu82-source/ChatGPT'
 REPOSITORY_PATH = 'skills/sol-cabinet'
