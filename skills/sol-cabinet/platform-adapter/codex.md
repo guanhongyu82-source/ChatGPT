@@ -65,6 +65,23 @@ T0 命中真实人名加具体案件或 `secret-bearing` 时，除禁止联网�
 
 `sandbox_mode=read-only` 只约束文件写入，不是网络、插件或连接器的技术隔离。敏感 `TASK_CARD` 必须显式写 `external_access/network/connectors/persistent_context=deny`，并在每个 Agent 任务中重复。若宿主不能保证该工具边界，secret-bearing 任务进入 `BLOCKED` 或先去标识，不能仅凭提示词宣称隔离。
 
+## Hook 状态治理
+
+Hook 的唯一适配规则由本文件定义，`scripts/codex_delivery_hook.py` 只机械实现。Hook 只有在宿主实际加载并信任时才有阻断效力；脚本状态和合成测试不能证明宿主已经启用 Hook。
+
+短期状态只保存在 `/Users/macbook/ChatGPT/system/codex-home/sol-cabinet-runtime/`，使用 schema v2；只记录不透明 session/turn ID、开工模型、生命周期、交付模式、契约路径与哈希、失败次数和时间戳，不记录用户 prompt、附件正文或业务内容。状态不是长期记忆、GitHub 状态、发布证据或 Runtime 部署凭证。
+
+生命周期只有四个 phase：
+
+1. `AWAITING_DECLARATION`：显式 Sol Cabinet 触发后建立；尚未声明 file 或 analysis。
+2. `READY`：本轮已通过 `--register` 锁定文件契约，或通过 `--analysis-only` 声明无文件分析。
+3. `RETRY_REQUIRED`：首次 Stop 检查失败；只允许一次定向返工，失败次数保持为 1。重新登记契约只能更新本轮契约锁，**不得重置返工预算**。
+4. `TERMINAL_PARTIAL`：第二次失败或宿主已处于 stop-hook 重入时进入；停止自动重试，不得靠再次 Stop、重新登记或普通后续消息复活。
+
+`mode=undecided|file|analysis` 与 phase 正交：`AWAITING_DECLARATION` 必须是 undecided，`READY` 必须已经声明 file/analysis。`--register` 和 `--analysis-only` 都必须绑定当前已经存在的显式激活，不能凭 session_id 独立创建任务状态。文件契约内容变化后旧 `contract_sha256` 失效，必须重新登记；analysis 模式若回复声称交付文件则 FAIL。
+
+通过 Stop 检查后立即删除本任务短期状态。`TERMINAL_PARTIAL` 后出现普通、未触发 Sol Cabinet 的下一条用户消息时，只清除旧终态并保持 Hook 未激活，避免上一任务污染下一任务；如用户确需重新进入 Hook 治理，必须再次显式触发 Sol Cabinet，建立全新的 `AWAITING_DECLARATION` 和返工预算。无状态 Stop 永远不猜测任务归属、不补造状态。
+
 ## 历史能力与安装记录
 
 [runtime-snapshot.json](runtime-snapshot.json) 与 [installation-manifest.json](installation-manifest.json) 仅记录 2026-08-23/24 当时的能力、路径、安装身份和 smoke 结果。其内部历史 `source_of_truth`、模型、并发、哈希、installed_at 与 smoke_tests 字段只解释当时发生过什么，不是当前 Runtime 状态，也不得覆盖 GitHub 正式维护真源。
@@ -114,7 +131,7 @@ Work 负责办公生产；Chat 负责正式维护决策与 GitHub 版本；Codex
 - 非瞬时任务开工先给简短小结：T级、目标、预期交付物、目标文件夹／位置、关键约束和停止条件。**不要求也不编造未来耗时承诺。**
 - 文件任务优先遵守用户指定工作目录；未指定时使用最小分区：`00_原稿/`、`work/`、`outputs/`。`outputs/` 或用户指定最终目录只放正式成品和明确附件；审核证据、日志、缓存、测试件、候选和临时转换件留在 `work/` 或受控过程目录。
 - 文件任务在收尾前必须核预期成品清单与实际文件、枚举最终目录、确认原稿未覆盖并给完工小结。没有真实成品、目录不干净或缺完工小结时不得 PASS。
-- 本机 hooks.json 只登记受任务范围约束的事件，调用正式部署版本的 `scripts/codex_delivery_hook.py`。钩子只保留不透明会话ID、模型及本任务契约指针等短期运行态，不记录用户正文，不联网、不换型。只有经过宿主原生信任后才实际执行。未信任、宿主未加载或非本机环境，不称已自动强制。
-- 文件任务注册 delivery-contract；无文件分析显式 analysis-only。失败只要求一次定向返工，仍失败则 PARTIAL 并停止自动重试；不以循环耗额度换“通过”。该检查验证真实文件和记录一致性，不认证模型说法或替代内容审查。
+- 本机 hooks.json 只登记受任务范围约束的事件，调用正式部署版本的 `scripts/codex_delivery_hook.py`。钩子仅按上方 Hook 状态治理保存短期状态，不记录用户正文，不联网、不换型。只有经过宿主原生信任后才实际执行；未信任、宿主未加载或非本机环境，不称已自动强制。
+- 文件任务在本轮显式激活后注册 delivery-contract；无文件分析在本轮显式激活后声明 analysis-only。首次失败只允许一次定向返工，重新登记不重置预算；再次失败进入 `TERMINAL_PARTIAL` 并停止自动重试，不以循环耗额度换“通过”。该检查验证真实文件和记录一致性，不认证模型说法或替代内容审查。
 - Work读不到本机运行态时，按同一Skill主动完成收尾核验并保留脱敏待办；不得声称已经运行本机钩子。
 - 正式 GitHub 版本需要进入 Mac 运行环境时，按 [Deployment Contract](deployment-contract.md) 执行：锁定 GITHUB_STABLE commit 与源摘要 → 比 Runtime 漂移 → 备份 → 单向部署 → Agent 同步 → 写外部部署状态凭证 → `check_installation.py --expected-commit` 核验到 SYNCED → 报告。任何一步失败不得声称本机已更新。
