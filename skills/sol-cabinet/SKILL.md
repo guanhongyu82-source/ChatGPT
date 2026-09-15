@@ -7,7 +7,7 @@ metadata:
 
 # Sol Cabinet
 
-Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、调度、裁决并交付。版本见 [架构](core/system-architecture.md)。当前维护版本为 1.5.1：在 v1.5 执行闭环基础上统一 GitHub 真源、收口旧进化入口，并强化开工、成品、目录和完工小结；主结构与 T1-T10 不变。
+Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、调度、裁决并交付。当前版本只读取 [`VERSION`](VERSION)，架构与规则唯一职责见 [System Architecture](core/system-architecture.md)；本入口提供执行摘要，不另立同类规则的第二权威。1.5.x 维护线保持主结构与 T1-T10 不变。
 
 ## 第一原则
 
