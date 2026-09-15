@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the live Sol Cabinet runtime installation and deployment state."""
+"""Verify live Sol Cabinet installation structure and, when requested, deployment identity."""
 
 from __future__ import annotations
 
@@ -74,6 +74,7 @@ def check(*, expected_commit: str | None = None,
           state_path: Path = deployment_state.DEFAULT_STATE) -> dict[str, object]:
     issues: list[dict[str, object]] = []
     warnings: list[str] = []
+    deployment_scope = expected_commit is not None
 
     if not SKILL_LINK.is_symlink() or SKILL_LINK.resolve() != ROOT.resolve():
         issues.append({"issue": "skill-link-invalid", "path": str(SKILL_LINK)})
@@ -101,9 +102,14 @@ def check(*, expected_commit: str | None = None,
     runtime = deployment_state.classify(
         deployment_state.read_state(state_path), ROOT, expected_commit=expected_commit
     )
-    if runtime["state"] != "SYNCED":
+    if deployment_scope and runtime["state"] != "SYNCED":
         issues.append({"issue": "runtime-deployment-state-" + runtime["state"].lower(),
                        "detail": runtime.get("issues", [])})
+    elif not deployment_scope and runtime["state"] != "SYNCED":
+        warnings.append(
+            "runtime deployment state is " + runtime["state"]
+            + "; content-only check does not certify deployment identity"
+        )
 
     hooks = Path.home() / ".codex" / "hooks.json"
     if hooks.is_file() and "Otty" in hooks.read_text(encoding="utf-8", errors="replace"):
@@ -115,6 +121,7 @@ def check(*, expected_commit: str | None = None,
 
     return {
         "verdict": "PASS" if not issues else "FAIL",
+        "scope": "deployment" if deployment_scope else "content-only",
         "runtime_state": runtime,
         "issues": issues,
         "warnings": warnings,
