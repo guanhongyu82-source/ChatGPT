@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "authority": "2026-09-12 用户守边界自我进化一次性施工令",
+  "version": 2,
+  "authority": "2026-09-12 用户守边界自我进化一次性施工令；2026-09-16 Stable 发布权收口",
   "principle": "任务不变、边界不扩；能力升级、帮手增加；并行增强、速度提升；范围收敛、颗粒度加深；减少发散、提高精度与质量。质量优先，最终目的只有保证质量、提高速度。",
   "frozen": [
     "任务目标",
@@ -25,13 +25,23 @@
     "固定周期外部技能搜索",
     "以模型升级扩大职责",
     "削减必要质量控制换速度",
-    "伪造后台执行、测试、审核、EVO 或完成"
+    "伪造后台执行、测试、审核、EVO 或完成",
+    "未经用户明确定稿将任何 candidate 晋升为 Stable"
   ],
   "auto_paths": [
     "scripts/check_installation.py",
     "scripts/classify_task.py",
     "scripts/inspect_office.py",
     "examples/routing-examples.md"
+  ],
+  "auto_scope": "candidate-only",
+  "stable_release_authority": "user-only",
+  "stable_release_requires": [
+    "explicit-finalize-intent",
+    "current-candidate-sha256",
+    "current-base-sha256",
+    "current-changes-sha256",
+    "purpose-bound-approval-evidence"
   ],
   "approve": [
     "任务范围",
@@ -62,7 +72,8 @@
     "全部必要回归通过",
     "双独立审核确认不触及冻结层",
     "可验证回滚",
-    "维护层执行"
+    "维护层执行",
+    "最多自动到 CANDIDATE READY，不产生 Stable 写入权"
   ],
   "execution": "task-close-or-next-maintenance",
   "background_daemon": false
