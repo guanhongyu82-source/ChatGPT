@@ -1,16 +1,20 @@
 # Sol Cabinet
 
 - Canonical name: Sol Cabinet
-- Canonical path: skills/sol-cabinet/
-- Legacy command/name: /sol cabinet
-- Entry point: SKILL.md
-- Source skill version: 1.5, as declared by the source Skill and installation manifest
-- Archive date: 2026-09-15
-- Source: current local active Sol Cabinet skill at /Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet
-- Migration type: lossless archival migration
-- Functional changes: NONE
+- Canonical repository: `guanhongyu82-source/ChatGPT`
+- Canonical path: `skills/sol-cabinet/`
+- Legacy command/name: `/sol cabinet`
+- Entry point: `SKILL.md`
+- Current maintenance line: `1.5.x`
+- Repository role: authoritative source for maintained Skill content and version history
+- Local runtime role: deployed execution copy only; never overrides the repository baseline
 
-The source Skill files are copied byte-for-byte into the canonical path. The
-README, MANIFEST, and .gitignore are archival metadata and maintenance
-guardrails added at the repository layer. Python bytecode, runtime lock files,
-and generated log files are intentionally excluded from the Git archive.
+## Source-of-truth rule
+
+From the 2026-09-15 Cabinet baseline onward, `guanhongyu82-source/ChatGPT:skills/sol-cabinet/` is the only maintained source of truth for Sol Cabinet.
+
+The historical local tree at `/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet/` remains a runtime deployment target for Codex/Work compatibility. It is not an independent maintenance source. A local difference is runtime drift to be reconciled against an explicitly selected GitHub commit; it must not silently become a new canonical version.
+
+Formal changes follow: Chat review/finalization → GitHub minimum diff → verification → commit → local deployment of the selected commit when the Mac runtime must be updated → local installation check. The deployment contract is documented in `platform-adapter/deployment-contract.md`.
+
+The original 2026-09-15 import was a lossless archival migration. Python bytecode, runtime lock files, and generated log files were intentionally excluded. Repository metadata (`README.md`, `MANIFEST.md`, `.gitignore`) is not part of the runtime behavior contract unless explicitly referenced by a maintenance task.
