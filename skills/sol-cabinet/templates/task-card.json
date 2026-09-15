@@ -2,7 +2,16 @@
   "task_instance_id": "task-REPLACE-WITH-32-HEX-CHARACTERS",
   "run_id": "YYYYMMDD-HHMMSS-slug",
   "goal": "",
-  "deliverables": [],
+  "deliverables": [
+    {
+      "artifact_id": "artifact-REPLACE-WITH-STABLE-ID",
+      "required": true,
+      "format": ".docx",
+      "target_role": "final",
+      "target_directory": "/ABSOLUTE/FINAL/DIRECTORY",
+      "filename_override": null
+    }
+  ],
   "scope": {
     "in": [],
     "out": []
