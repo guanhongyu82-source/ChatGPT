@@ -140,6 +140,7 @@ def check(c, contract_path=None):
         require(archive.is_absolute() and archive.is_dir() and root.resolve().is_relative_to(archive.resolve()), 'archive root does not contain output root')
 
     expected = _expected_artifacts(c, root, require)
+    require(bool(expected), 'file delivery requires at least one expected artifact; use analysis-only for no-file tasks')
     artifacts = c.get('artifacts')
     require(isinstance(artifacts, list), 'artifact manifest must be an array')
     hashes = {}
