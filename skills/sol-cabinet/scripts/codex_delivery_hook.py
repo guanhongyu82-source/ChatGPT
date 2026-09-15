@@ -68,7 +68,7 @@ def handle(event,state_root=STATE,allowed_root=BASE):
         save(path,{'session_id':event['session_id'],'turn_id':event.get('turn_id'),
                    'model':event.get('model'),'mode':'undecided','started_at':datetime.now(timezone.utc).isoformat()})
         return {'hookSpecificOutput':{'hookEventName':kind,'additionalContext':
-          'Sol Cabinet 执行提醒：开工先给简短小结，包含T级、当前目标、预期交付物、目标文件夹/位置、关键约束和停止条件；不要编造未来耗时承诺。沿用当前模型，不自行换型。文件任务先锁定成品清单和目录职责：00_原稿只放原稿，work只放必要过程/审核证据，outputs或用户指定最终目录只放正式成品。文件交付前生成delivery-contract.json并调用 scripts/codex_delivery_hook.py --register --session-id '+event['session_id']+' --contract 绝对路径。Stop会校验登记文件；收尾必须写完工小结，列实际成品及路径、目录状态、核验、未完成项和真实耗时/不可核实原因。有失误说明处置并按evolution-policy记录。无文件的分析答疑不虚造文件契约，调用同脚本 --analysis-only --session-id '+event['session_id']+' 明确无文件交付。'}}
+          'Sol Cabinet 执行提醒：开工先给简短小结，包含T级、当前目标、预期交付物、目标文件夹/位置、关键约束和停止条件；不要编造未来耗时承诺。沿用当前模型，不自行换型。文件任务先在Task Card的deliverables锁定唯一Expected清单，每项至少写artifact_id、required、format、target_role、target_directory，用户指定文件名才写filename_override；不得另建第二份Expected。最终目录只放正式成品，00_原稿只放原稿，work只放必要过程/审核证据。交付前生成delivery-contract.json：task_card只记录Task Card绝对路径和当前sha256，artifacts只记录Actual并以artifact_id对应Expected；用户改变交付要求时先更新Task Card再重新登记契约。然后调用 scripts/codex_delivery_hook.py --register --session-id '+event['session_id']+' --contract 绝对路径。Stop会校验Task Card锁、Expected↔Actual、目录与完工小结；收尾必须列实际成品及路径、目录状态、核验、未完成项和真实耗时/不可核实原因。有失误说明处置并按evolution-policy记录。无文件的分析答疑不虚造Task Card成品或文件契约，调用同脚本 --analysis-only --session-id '+event['session_id']+' 明确无文件交付。'}}
     if not path.exists():return {}
     state=json.loads(path.read_text());last=event.get('last_assistant_message') or ''
     issues=[]
