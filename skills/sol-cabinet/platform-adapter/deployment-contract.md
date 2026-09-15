@@ -50,6 +50,8 @@ GitHub 与 Runtime 是两个独立状态域，禁止用一个域的状态替代�
 
 仓库内历史 `platform-adapter/runtime-snapshot.json` 与 `platform-adapter/installation-manifest.json` 只保留当时安装／能力证据，不作为当前 Runtime 状态输入；`scripts/check_installation.py` 不再以其中历史哈希决定当前 PASS。
 
+`scripts/check_installation.py` 有两个明确 scope：不带 `--expected-commit` 时只做 **content-only** 的当前安装结构核验，并附带报告 Runtime 状态；即使该检查 PASS，也**不能**据此声称 Runtime 已部署到某个 Git commit。只有正式调用 `--expected-commit <commit>` 时才进入 **deployment** scope，并把 Runtime 非 `SYNCED` 作为 FAIL。自我进化 post-apply 等尚未进入正式 GitHub→Mac 部署链的内部检查只能使用 content-only 结论，不能冒充部署完成。
+
 ## 何时允许部署
 
 只有同时满足以下条件才执行：
@@ -71,7 +73,7 @@ GitHub 与 Runtime 是两个独立状态域，禁止用一个域的状态替代�
 6. **DEPLOY**：只把选定 GitHub Stable commit 的 Sol Cabinet 维护内容部署到运行树。不得把 `.git`、任务输出、缓存或其他仓库内容带入运行树。
 7. **RUNTIME SYNC**：按既有机制同步受管 Agent 运行副本；不改用户模型、effort、全局插件、权限或其他 AI 配置。
 8. **CAPTURE STATE**：确认 Runtime 系统摘要等于第2步源摘要后，用 `scripts/deployment_state.py --capture` 写外部部署状态凭证。
-9. **VERIFY**：运行 `scripts/check_installation.py --expected-commit <commit>` 及本次改动相关回归；只有返回 `runtime_state.state=SYNCED` 且安装检查 PASS 才视为 Runtime 部署验证通过。
+9. **VERIFY**：运行 `scripts/check_installation.py --expected-commit <commit>` 及本次改动相关回归；只有返回 `scope=deployment`、`runtime_state.state=SYNCED` 且安装检查 PASS 才视为 Runtime 部署验证通过。
 10. **REPORT**：分别报告 GitHub Stable commit 与 Runtime 状态、实际测试、未核项和回滚点。任何一步失败均不得声称部署完成。
 
 ## 本机漂移处理
