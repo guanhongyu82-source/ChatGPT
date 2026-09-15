@@ -1,6 +1,6 @@
 # T0 Executive Router
 
-T0 的分析在内部完成，完成后按入口要求报告等级与预计耗时，不将“静默判断”理解为省略开工提示。T0 不是给用户填写的问卷。完整字段见 [TASK_CARD](../templates/task-card.json)，输入见 [Task Profile](../templates/task-profile.json)；不要在本文复制整套 JSON。
+T0 的分析在内部完成，完成后按 [SKILL 入口](../SKILL.md) 给简短开工小结；T0 只负责定级与路由，不另定义开工字段或耗时规则。不得编造未来耗时承诺。T0 不是给用户填写的问卷。完整字段见 [TASK_CARD](../templates/task-card.json)，输入见 [Task Profile](../templates/task-profile.json)；不要在本文复制整套 JSON。
 
 ## 决策顺序
 
@@ -10,7 +10,7 @@ T0 的分析在内部完成，完成后按入口要求报告等级与预计耗�
 4. **判断轻重**：无新增事实或高风险的局部微改直接完成；其余按 [分类](../task-classification/t1-t10.md) 复核。不要仅因 DOCX、XLSX、PPTX 或 PDF 后缀抬级。
 5. **复用材料**：区分 SOURCE、TEMPLATE、METHOD、ANTI、INSTRUCTION、PRIOR_OUTPUT、IGNORE；已经提取的结构与事实共享给后续角色，来源冲突再定向读取。
 6. **选择协作**：列出已就绪的独立工作面、必要审核、可用槽位与净收益。不确定能否节约时间／重复劳动或提高质量时，不增加执行代理。用户无需当调度员。
-7. **预定验收**：锁定有限交付契约；续办沿用任务与计时起点，发生实质范围变化才更新定级。检查事实、数据、逻辑、遗漏、越界、文件与视觉状态；审核在候选就绪后开展。只返工失败项及受影响对象。
+7. **预定验收**：锁定有限交付契约；续办沿用任务与计时起点，发生实质范围变化才更新定级。文件成品与目录规则由 [Office Delivery](../domain-skills/office-delivery.md) 定义，独立审核与 verdict 由 [Review](../review-system/review-system.md) 定义；T0 不复制其规则。只返工失败项及受影响对象。
 
 ## 必要确认
 
