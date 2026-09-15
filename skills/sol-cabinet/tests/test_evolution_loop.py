@@ -1,11 +1,9 @@
 """Mechanical fixtures; only RC-INSTALL-001 originates from a real observed failure."""
 import copy, importlib.util, json, sys, tempfile, unittest, hashlib
 from pathlib import Path
-from unittest.mock import patch
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'scripts'))
 import evolve
-import check_installation as install
 class EvolutionTests(unittest.TestCase):
     def incident(self):
         return {'incident_id':'INC-'+'1'*32,'time':'2026-09-12T00:00:00+00:00','failure_type':'runtime-compatibility','cause':'runtime_issue','impact':'high','evidence':['EV-'+'1'*32],'capabilities':['installation'],'repeated':False,'hits':1,'permission':'record'}
@@ -56,16 +54,11 @@ class EvolutionTests(unittest.TestCase):
     def test_case_binding(self):
         self.assertEqual(len(evolve.cases_for(ROOT,self.incident(),['RC-INSTALL-001'])),1)
         with self.assertRaises(ValueError): evolve.cases_for(ROOT,self.incident(),['fake'])
-    def test_user_owned_rule_drift_is_rejected(self):
-        with tempfile.TemporaryDirectory() as d:
-            p=Path(d)/'manifest.json';m=json.loads((ROOT/'platform-adapter/installation-manifest.json').read_text())
-            m['managed_rules']['user_owned']={str(install.GLOBAL_AGENTS):'0'*64};p.write_text(json.dumps(m))
-            with patch.object(install,'INSTALL_MANIFEST',p):
-                result=install.check()
-            self.assertTrue(any(x['issue']=='user-owned-rule-changed-review-required' for x in result['issues']))
-            m['managed_rules']['user_owned'][str(install.GLOBAL_AGENTS)]=install._sha256(install.GLOBAL_AGENTS);p.write_text(json.dumps(m))
-            with patch.object(install,'INSTALL_MANIFEST',p): fixed=install.check()
-            self.assertFalse(any(x['issue'] in {'managed-block-check-failed','user-owned-rule-changed-review-required'} for x in fixed['issues']))
+    def test_historical_install_manifest_is_not_live_checker_authority(self):
+        checker=(ROOT/'scripts/check_installation.py').read_text(encoding='utf-8')
+        self.assertNotIn('installation-manifest.json',checker)
+        self.assertNotIn('INSTALL_MANIFEST',checker)
+        self.assertIn('deployment_state.classify',checker)
     def test_failed_regression_cannot_verify(self):
         with tempfile.TemporaryDirectory() as d:
             r=Path(d);c=r/'candidate';e=r/'evidence';(c/'tests').mkdir(parents=True);(c/'scripts').mkdir()
