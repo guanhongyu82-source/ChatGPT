@@ -19,7 +19,7 @@ BASE = Path('/Users/macbook/ChatGPT')
 STATE = BASE / 'system/codex-home/sol-cabinet-runtime'
 SID = re.compile(r'^[A-Za-z0-9_-]{8,100}$')
 TRIGGER = re.compile(r'\$sol-cabinet|使用\s*sol\s*cabinet|交给\s*sol\s*cabinet|SC处理|<name>sol-cabinet</name>',re.I)
-DELIVERY_CLAIM = re.compile(r'(?:成品|交付文件|保存为|下载|deliverable).{0,180}(?:/|\.[a-zA-Z0-9]{2,8})',re.I)
+DELIVERY_CLAIM = re.compile(r'(?:成品|交付文件|实际成品|保存为|下载|deliverable).{0,180}(?:/|\.[a-zA-Z0-9]{2,8})',re.I)
 ARTIFACT = re.compile(r'\]\(<?(/[^\n)]+\.(?:docx|xlsx|pptx|pdf|md|csv|html))>?\)',re.I)
 
 def state_file(session_id, state_root=STATE):
@@ -68,7 +68,7 @@ def handle(event,state_root=STATE,allowed_root=BASE):
         save(path,{'session_id':event['session_id'],'turn_id':event.get('turn_id'),
                    'model':event.get('model'),'mode':'undecided','started_at':datetime.now(timezone.utc).isoformat()})
         return {'hookSpecificOutput':{'hookEventName':kind,'additionalContext':
-          'Sol Cabinet 执行提醒：先简述T级及预计耗时；沿用当前模型，不自行换型。按当前宿主路径规则保存，成品规范命名，过程文件最小留存。文件交付前生成一份delivery-contract.json并调用 scripts/codex_delivery_hook.py --register --session-id '+event['session_id']+' --contract 绝对路径。Stop会校验登记文件；收尾写结果、核验、未完成项及实际耗时，有失误说明处置并按evolution-policy记录。无文件的分析答疑不虚造文件契约，调用同脚本 --analysis-only --session-id '+event['session_id']+' 明确无文件交付。'}}
+          'Sol Cabinet 执行提醒：开工先给简短小结，包含T级、当前目标、预期交付物、目标文件夹/位置、关键约束和停止条件；不要编造未来耗时承诺。沿用当前模型，不自行换型。文件任务先锁定成品清单和目录职责：00_原稿只放原稿，work只放必要过程/审核证据，outputs或用户指定最终目录只放正式成品。文件交付前生成delivery-contract.json并调用 scripts/codex_delivery_hook.py --register --session-id '+event['session_id']+' --contract 绝对路径。Stop会校验登记文件；收尾必须写完工小结，列实际成品及路径、目录状态、核验、未完成项和真实耗时/不可核实原因。有失误说明处置并按evolution-policy记录。无文件的分析答疑不虚造文件契约，调用同脚本 --analysis-only --session-id '+event['session_id']+' 明确无文件交付。'}}
     if not path.exists():return {}
     state=json.loads(path.read_text());last=event.get('last_assistant_message') or ''
     issues=[]
@@ -84,6 +84,13 @@ def handle(event,state_root=STATE,allowed_root=BASE):
     elif DELIVERY_CLAIM.search(last) or '/outputs/' in last:issues.append('声明无文件分析但回复包含成品交付，须登记契约')
     if '耗时' not in last and 'elapsed' not in last.lower():issues.append('缺少实际耗时或不可核实的说明')
     if not any(s in last for s in ('完成','结果','核验','验证','检查','未完成','PARTIAL','BLOCKED')):issues.append('缺少结果与核验小结')
+    if contract:
+        if not (DELIVERY_CLAIM.search(last) or ARTIFACT.search(last) or '/outputs/' in last):
+            issues.append('文件任务完工小结未列实际成品或路径')
+        if not any(s in last for s in ('目录','文件夹','归档')):
+            issues.append('文件任务完工小结缺少目录或归档状态')
+        if not any(s in last for s in ('核验','验证','检查')):
+            issues.append('文件任务完工小结缺少真实核验状态')
     model_changed=bool(state.get('model') and event.get('model') and state['model']!=event['model'])
     if issues:
         if event.get('stop_hook_active') or state.get('blocked_once'):
