@@ -78,7 +78,7 @@ Hook 的唯一适配规则由本文件定义，`scripts/codex_delivery_hook.py` 
 3. `RETRY_REQUIRED`：首次 Stop 检查失败；只允许一次定向返工，失败次数保持为 1。重新登记契约只能更新本轮契约锁，**不得重置返工预算**。
 4. `TERMINAL_PARTIAL`：第二次失败或宿主已处于 stop-hook 重入时进入；停止自动重试，不得靠再次 Stop、重新登记或普通后续消息复活。
 
-`mode=undecided|file|analysis` 与 phase 正交：`AWAITING_DECLARATION` 必须是 undecided，`READY` 必须已经声明 file/analysis。`--register` 和 `--analysis-only` 都必须绑定当前已经存在的显式激活，不能凭 session_id 独立创建任务状态。文件契约内容变化后旧 `contract_sha256` 失效，必须重新登记；analysis 模式若回复声称交付文件则 FAIL。
+`mode=undecided|file|analysis` 与 phase 正交：`AWAITING_DECLARATION` 必须是 undecided，`READY` 必须已经声明 file/analysis。`--register` 和 `--analysis-only` 都必须绑定当前已经存在的显式激活，不能凭 session_id 独立创建任务状态。**同一 activation 内 mode 一经从 undecided 声明为 file 或 analysis 即锁定，禁止 file↔analysis 互换；需要改变交付模式必须再次显式触发 Sol Cabinet，建立新 activation。** 文件契约内容变化后旧 `contract_sha256` 失效，必须重新登记；analysis 模式若回复声称交付文件则 FAIL。
 
 通过 Stop 检查后立即删除本任务短期状态。`TERMINAL_PARTIAL` 后出现普通、未触发 Sol Cabinet 的下一条用户消息时，只清除旧终态并保持 Hook 未激活，避免上一任务污染下一任务；如用户确需重新进入 Hook 治理，必须再次显式触发 Sol Cabinet，建立全新的 `AWAITING_DECLARATION` 和返工预算。无状态 Stop 永远不猜测任务归属、不补造状态。
 
