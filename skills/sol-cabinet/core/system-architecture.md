@@ -1,6 +1,6 @@
-# Sol Cabinet v1.5 System Architecture
+# Sol Cabinet System Architecture
 
-代码与正式维护单一真源：`guanhongyu82-source/ChatGPT:skills/sol-cabinet/`。
+代码与正式维护单一真源：`guanhongyu82-source/ChatGPT:skills/sol-cabinet/`。当前版本身份只读取根目录 [`VERSION`](../VERSION)，本文件不复制“当前版本号”。
 
 本机 `/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet/` 是 Codex／Work 的运行部署树，只执行已选定 GitHub commit 的部署版本，不作为第二维护真源。本机出现差异时视为 runtime drift，先比对 GitHub 基线，不得反向覆盖正式版本。部署、核验和回滚见 [Deployment Contract](../platform-adapter/deployment-contract.md)。
 
@@ -35,6 +35,32 @@ sol-cabinet/
 | Examples | `examples/` | 匿名路由示例 |
 | Platform Adapter | `platform-adapter/` | Chat／Work／Codex 运行适配、Agent 配置、部署与安装 |
 | Tests | `tests/` | 路由、结构、安全、源资产和前向行为验证 |
+
+## Canonical Authority Map
+
+同一规则域只允许一个规范 owner；入口摘要、平台适配、脚本和测试可以引用或机械执行，但不得成为第二套政策来源。
+
+| 规则域 | Canonical owner | 边界 |
+|---|---|---|
+| 当前版本身份 | `VERSION` | 唯一当前版本号；README、SKILL、架构正文不得复制“当前版本=x.y.z” |
+| 长期不变量、阶段授权、保密、资产保护 | `core/core.md` | 其他模块只能增加本域具体规则，不得弱化 Core |
+| T0 目标理解与路由 | `t0-executive-router/router.md` | 负责路由，不定义 T 等级表、Office 交付细则或 Review verdict |
+| T1-T10 分级与核验强度 | `task-classification/t1-t10.md` | 不定义固定 Agent 套餐或具体文件交付政策 |
+| 文件、原稿、目录、预期成品与 Actual 对账政策 | `domain-skills/office-delivery.md` | `templates/task-card.json` 承载 Expected 数据；`scripts/delivery_gate.py` 只机械执行其可判定子集 |
+| 独立审核、证据、返工与 PASS/FAIL/BLOCKED verdict | `review-system/review-system.md` | 可审 Office 规则是否满足，但不另写第二套 Office 政策 |
+| Agent 编排、依赖与并发 | `agent-orchestrator/orchestration.md` | 不改变 T 分级、质量 Gate 或用户授权边界 |
+| 进化、candidate→Stable 发布权限与 EVO/回滚 | `memory-evolution/evolution-policy.md` | `permission-cage.json` 是该域冻结机器边界；`scripts/evolve.py` 是执行门禁，不自行发明授权 |
+| GitHub→Mac 正式部署 | `platform-adapter/deployment-contract.md` | 部署不等于发布；本机运行树不产生反向正式版本权威 |
+| Chat/Work/Codex 宿主差异与 Hook 接法 | `platform-adapter/codex.md` | 只描述宿主适配；不得改写 Core、Office、Review、Evolution 或 Deployment 的通用政策 |
+
+### 冲突与重复裁决
+
+1. 系统／开发者指令和当前用户明确授权始终高于仓库规则；仓库内部再按上表 owner 裁决。
+2. `SKILL.md` 是运行入口和最短路径摘要，不是各规则域的第二 owner。摘要与 canonical owner 不一致时，摘要视为缺陷并回指 owner，不把两份文字折中合并。
+3. Template 只定义数据形状；Script 只执行可机械判断的门禁；Test 只证明既定行为没有退化；Example 只示例。四者都不能单独创造新政策。
+4. `README.md`、`MANIFEST.md`、`source-index/` 和历史 smoke/runtime snapshot 属于导航、迁移或历史证据，不覆盖当前政策、版本或运行状态。`MANIFEST.md` 中哈希只表示原始导入基线，不是当前文件哈希注册表。
+5. 允许“摘要性重复”：非 owner 可用一句话说明并链接 owner；禁止“规范性重复”：不得在非 owner 重新列完整条件、阈值、权限或状态机，使其可独立解释同一规则域。
+6. 发现 owner 之间边界重叠时，先按职责切分后再修改；不得新增第二清单、第二状态机或兼容性镜像来回避裁决。
 
 ## 单一版本与部署原则
 
