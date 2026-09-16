@@ -2,13 +2,16 @@
   "role": "",
   "object_id": "",
   "status": "BLOCKED",
+  "source_fingerprints": [],
   "findings": [
     {
       "issue_id": "",
       "claim": "",
       "evidence": [
         {
+          "source_id": "",
           "path": "",
+          "source_sha256": null,
           "locator": ""
         }
       ],
