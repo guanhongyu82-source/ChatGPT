@@ -36,10 +36,12 @@ Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、�
 
 1. **T0**：锁定物件、动作、约束、依据、交付位置、当前阶段和停止条件。有源文件先归档。
 2. **轻改直接完成**：一句、一段或已知字段的局部修改，无新增事实或高风险时通常 T1-T2；保真、原稿和核验不省略，不因文件后缀升级全流程。
-3. **非轻量任务**：读 [Core](core/core.md)、[Router](t0-executive-router/router.md)、[分类](task-classification/t1-t10.md)，只加载命中的[领域规则](domain-skills/routing-map.md)。
-4. **材料与执行**：按 [中文写作](domain-skills/formal-writing.md) 复用材料角色、定位和画像；依赖已满足才起草。多 Agent 按 [编排](agent-orchestrator/orchestration.md) 执行，主代理唯一总控，角色不另组办公团队。
-5. **总审**：按 [Review](review-system/review-system.md) 验用户要求、遗漏、越界、真实文件和目录清单。T4+ 独立审核，T7+ 至少两条独立判断路径；T9+ 按阶段复核，不凑固定执行人数。
+3. **非轻量任务只加载会改变当前决策的规则**：先读 [Router](t0-executive-router/router.md)。有可用分类助手时用 `scripts/classify_task.py` 复核匿名画像；只有分类边界、风险门槛或解释需要时再读 [分类](task-classification/t1-t10.md)。只有需要选择专门 Skill 时读[领域路由](domain-skills/routing-map.md)。[Core](core/core.md) 与 [System Architecture](core/system-architecture.md) 面向系统维护、权威冲突和架构核验，普通办公执行不固定加载。
+4. **材料与执行**：来源首次必要读取后形成当前任务 `evidence_pack`，后续角色复用 locator、coverage、conflicts 与未核项；来源未变化时不默认重复全文读取。只有存在两个及以上独立 ready 单元且并行收益为正时才加载 [编排](agent-orchestrator/orchestration.md) 并启用多 Agent；单执行器任务不为形式加载完整编排规则。文本综合确实需要时读 [中文写作](domain-skills/formal-writing.md)，文件生成／交付才读 [Office Delivery](domain-skills/office-delivery.md) 及命中的领域规则。
+5. **总审按风险加载**：T1-T3 且无独立审核要求时按本入口和命中领域规则自检；需要独立审核或文件正式交付时再加载 [Review](review-system/review-system.md)。T4+ 独立审核，T7+ 至少两条独立判断路径；多个审核维度针对同一 immutable candidate 且互不依赖时并行。Reviewer 优先消费 evidence pack 并对关键／高风险事实定向回源，不机械重复整份材料解析。
 6. **交付并停止**：先确认预期成品与实际成品逐项对应、应进入目标文件夹的文件已进入、过程文件和无关产物未混入，再发**完工小结**。完工小结至少报告：完成内容、实际成品及路径、目录／归档状态、关键核验、未完成或限制、实际耗时或无法核实原因；本次有实质失误时附一句“失误与处置”，无实质失误不编反思。阶段任务附简短恢复信息；未经新授权不进入下一阶段、不创建后台续作。
+
+运行时模块遵循 **L0 热核最小、L1 按命中加载、L2 只在治理／维护触发时加载**。减少模块读取不是质量豁免；一旦任务风险、交付形态或阶段变化使某模块会改变决策，应立即加载该模块。目标是移除固定控制税，而不是省掉必要规则。
 
 ### 三项硬完成条件
 
