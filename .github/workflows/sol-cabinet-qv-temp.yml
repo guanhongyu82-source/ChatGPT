@@ -29,11 +29,20 @@ jobs:
       - name: Run QV module
         working-directory: /Users/macbook/ChatGPT
         run: python3 -m unittest -v skills/sol-cabinet/tests/test_quality_validation.py
-      - name: Run every test module in an isolated Python process
+      - name: Reproduce lifecycle test in a fresh process
+        continue-on-error: true
+        working-directory: /Users/macbook/ChatGPT
+        run: python3 -m unittest -v test_evolution_loop.EvolutionTests.test_lifecycle_transaction_and_rollback
+      - name: Run every test module and report all module results
         working-directory: /Users/macbook/ChatGPT
         run: |
-          set -euo pipefail
+          set +e
+          failed=0
           for test_file in skills/sol-cabinet/tests/test*.py; do
             echo "=== MODULE ${test_file} ==="
             python3 -m unittest -v "$test_file"
+            rc=$?
+            echo "=== MODULE_RESULT ${test_file} rc=${rc} ==="
+            if [ "$rc" -ne 0 ]; then failed=1; fi
           done
+          exit "$failed"
