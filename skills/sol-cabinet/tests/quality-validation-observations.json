@@ -2,6 +2,10 @@
   "validation_state": "in_progress",
   "cabinet_under_test": "1.5.2",
   "candidate_branch": "cabinet/sol-v1.5.3-quality-validation",
+  "known_baseline_from_user": {
+    "repo_native_tests": 161,
+    "verification_in_this_run": "not_reexecuted"
+  },
   "principle": "Evidence only. No Cabinet behavior change without a reproducible real failure.",
   "privacy": {
     "real_work_used": true,
@@ -110,6 +114,22 @@
       "failure_category": "noise",
       "action": "Corrected the test fixture only; no Cabinet rule or runtime logic changed.",
       "regression_needed": false
+    }
+  ],
+  "validation_environment_events": [
+    {
+      "event_id": "QV-RUNTIME-001",
+      "symptom": "The candidate repository has no GitHub Actions workflow, and the current isolated chat runner cannot check out or fetch the private repository to execute the repo-native suite.",
+      "failure_category": "runtime_issue",
+      "cabinet_failure": false,
+      "action": "Do not change Cabinet. Keep repo-native QV module and full-suite execution as an open target-runtime validation item."
+    },
+    {
+      "event_id": "QV-RUNTIME-002",
+      "symptom": "The repository runtime-snapshot.json is dated 2026-08-23 and explicitly requires re-checking when drift matters, so it is not current evidence of Mac Runtime 1.5.2 or SYNCED state on 2026-09-16.",
+      "failure_category": "runtime_issue",
+      "cabinet_failure": false,
+      "action": "Do not alter the snapshot or Cabinet during validation. Require current target-runtime deployment-state evidence before release closure."
     }
   ],
   "not_yet_closed": [
