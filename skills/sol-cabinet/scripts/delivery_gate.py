@@ -77,6 +77,52 @@ def _expected_artifacts(c, root, require):
     return expected
 
 
+def _normalize_review_scope(review, actual_by_id, hashes):
+    """Return (scope, artifact_ids, expected_hashes) or None for an invalid scope.
+
+    Backward-compatible review evidence without scope fields remains a full-candidate
+    review. Artifact-scoped review binds only the declared artifact hashes; a
+    cross-artifact review binds the complete current candidate hash map.
+    """
+    if not isinstance(review, dict):
+        return None
+    all_ids = set(actual_by_id)
+    scope = review.get('review_scope', 'full')
+    declared_ids = review.get('artifact_ids')
+
+    if scope == 'full':
+        if declared_ids is None:
+            ids = sorted(all_ids)
+        elif (isinstance(declared_ids, list) and declared_ids
+              and all(isinstance(item, str) and item in all_ids for item in declared_ids)
+              and len(declared_ids) == len(set(declared_ids))
+              and set(declared_ids) == all_ids):
+            ids = list(declared_ids)
+        else:
+            return None
+        return scope, ids, dict(hashes)
+
+    if not (isinstance(declared_ids, list) and declared_ids
+            and all(isinstance(item, str) and item in all_ids for item in declared_ids)
+            and len(declared_ids) == len(set(declared_ids))):
+        return None
+
+    if scope == 'artifact':
+        ids = list(declared_ids)
+        expected_hashes = {
+            actual_by_id[artifact_id]['path']: actual_by_id[artifact_id]['sha256']
+            for artifact_id in ids
+        }
+        return scope, ids, expected_hashes
+
+    if scope == 'cross_artifact':
+        if len(all_ids) < 2 or set(declared_ids) != all_ids:
+            return None
+        return scope, list(declared_ids), dict(hashes)
+
+    return None
+
+
 def check(c, contract_path=None):
     issues = []
     def require(ok, message):
@@ -134,7 +180,6 @@ def check(c, contract_path=None):
     require(root.is_absolute() and root.is_dir(), 'output_root must be an existing absolute directory')
     require(storage.get('archive_status') in ('done', 'not_applicable', 'deferred'), 'archive status required')
     require(storage.get('archive_status') != 'deferred' or bool(storage.get('archive_reason')), 'deferred archive reason required')
-    # done is checked against a declared archive root, not inferred from a label.
     if storage.get('archive_status') == 'done':
         archive = Path(storage.get('archive_root') or '.')
         require(archive.is_absolute() and archive.is_dir() and root.resolve().is_relative_to(archive.resolve()), 'archive root does not contain output root')
@@ -145,6 +190,7 @@ def check(c, contract_path=None):
     require(isinstance(artifacts, list), 'artifact manifest must be an array')
     hashes = {}
     actual_ids = set()
+    actual_by_id = {}
     for item in artifacts if isinstance(artifacts, list) else []:
         if not isinstance(item, dict) or not isinstance(item.get('path'), str):
             issues.append('invalid artifact entry')
@@ -173,12 +219,19 @@ def check(c, contract_path=None):
             digest = hashlib.sha256(p.read_bytes()).hexdigest()
             require(digest == item.get('sha256'), 'artifact hash mismatch: ' + str(p))
             hashes[str(p)] = digest
-    for artifact_id, spec in expected.items():
-        if spec.get('required') is True:
-            require(artifact_id in actual_ids, 'required expected artifact missing: ' + artifact_id)
+            if valid_actual_id:
+                actual_by_id[artifact_id] = {'path': str(p), 'sha256': digest}
+    required_ids = {
+        artifact_id for artifact_id, spec in expected.items()
+        if isinstance(spec, dict) and spec.get('required') is True
+    }
+    for artifact_id in required_ids:
+        require(artifact_id in actual_ids, 'required expected artifact missing: ' + artifact_id)
 
     required = 2 if type(level) is int and level >= 7 else (1 if type(level) is int and level >= 4 else 0)
     reviewers = set()
+    artifact_reviewers = {artifact_id: set() for artifact_id in required_ids}
+    cross_artifact_reviewed = len(actual_by_id) <= 1
     reviews = c.get('reviews', [])
     require(isinstance(reviews, list), 'reviews must be array')
     for review in reviews if isinstance(reviews, list) else []:
@@ -187,21 +240,25 @@ def check(c, contract_path=None):
             continue
         reviewer, author = review.get('reviewer_id'), review.get('author_id')
         evidence = Path(review.get('evidence_path') or '.')
-        valid = (isinstance(reviewer, str) and bool(reviewer.strip()) and isinstance(author, str)
+        scope_info = _normalize_review_scope(review, actual_by_id, hashes)
+        valid = (scope_info is not None
+                 and isinstance(reviewer, str) and bool(reviewer.strip()) and isinstance(author, str)
                  and bool(author.strip()) and reviewer != author and evidence.is_absolute()
                  and evidence.is_file() and evidence.stat().st_size > 0
-                 and review.get('candidate_sha256') == hashes and bool(hashes)
+                 and review.get('candidate_sha256') == scope_info[2] and bool(scope_info[2])
                  and review.get('verdict') == 'PASS' and review.get('must_fix') == [])
-        # Read exactly the bytes whose digest is checked; mutable external
-        # verdict declarations cannot override the recorded review decision.
         if valid:
             try:
                 data = evidence.read_bytes()
                 recorded = json.loads(data)
+                recorded_scope = _normalize_review_scope(recorded, actual_by_id, hashes)
                 fields = ('reviewer_id', 'author_id', 'verdict', 'must_fix', 'candidate_sha256', 'source_ref')
                 valid = (hashlib.sha256(data).hexdigest() == review.get('evidence_sha256')
                          and isinstance(recorded, dict)
                          and all(recorded.get(key) == review.get(key) for key in fields)
+                         and recorded_scope is not None
+                         and recorded_scope[0] == scope_info[0]
+                         and set(recorded_scope[1]) == set(scope_info[1])
                          and isinstance(recorded.get('source_ref'), str)
                          and bool(recorded['source_ref'].strip()))
             except (OSError, ValueError, UnicodeError):
@@ -209,7 +266,21 @@ def check(c, contract_path=None):
         require(valid, 'missing, changed, or inconsistent independent review JSON evidence')
         if valid:
             reviewers.add(reviewer)
+            scope, scope_ids, _ = scope_info
+            if scope in ('full', 'artifact'):
+                for artifact_id in scope_ids:
+                    if artifact_id in artifact_reviewers:
+                        artifact_reviewers[artifact_id].add(reviewer)
+            if scope in ('full', 'cross_artifact') and set(scope_ids) == set(actual_by_id):
+                cross_artifact_reviewed = True
     require(len(reviewers) >= required, 'insufficient independent reviews')
+    if required:
+        for artifact_id in sorted(required_ids):
+            require(len(artifact_reviewers.get(artifact_id, set())) >= required,
+                    'insufficient independent review coverage: ' + artifact_id)
+        if len(actual_by_id) > 1:
+            require(cross_artifact_reviewed, 'missing full or cross-artifact consistency review')
+
     retention = c.get('retention', {})
     if not isinstance(retention, dict):
         retention = {}
@@ -221,8 +292,6 @@ def check(c, contract_path=None):
             issues.append('invalid temporary path')
         elif Path(name).exists():
             require(isinstance(reasons, dict) and bool(reasons.get(name)), 'unjustified temporary file: ' + name)
-    # Inspect only the declared task process root and immediate output children.
-    # Do not follow directory symlinks into other tasks or roots.
     excluded = Path(contract_path).resolve() if contract_path else None
     reasons = reasons if isinstance(reasons, dict) else {}
     registered = set(name for name in (temporary if isinstance(temporary, list) else []) if isinstance(name, str))
@@ -234,7 +303,6 @@ def check(c, contract_path=None):
         require(valid_root, 'invalid task process root')
         if valid_root:
             process_path = Path(process)
-            # A task-specific directory must not be the entire output/root tree.
             safe_root = (process_path.resolve() != root.resolve()
                          and process_path.resolve() not in root.resolve().parents
                          and process_path.name not in ('workspace', 'maintenance'))
