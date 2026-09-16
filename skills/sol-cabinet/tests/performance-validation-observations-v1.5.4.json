@@ -36,18 +36,27 @@
       "interpretation": "Process-pool regression tests passed, but an inline-stdin benchmark could not be reloaded by macOS spawn. The benchmark harness was corrected to run from a real module file; no Cabinet quality gate was weakened."
     },
     {
-      "iteration": "office-batch-process",
+      "iteration": "office-batch-process-run-1",
       "environment": "GitHub-hosted macOS 14 ARM64",
       "workload": "8 independent synthetic DOCX inspections with 24000 paragraphs each",
-      "serial_seconds": [1.0251742909999848, 0.9654863329999444, 1.0188682090000611],
-      "parallel_seconds": [0.4558516250000366, 0.4502621660000159, 0.4754096249999975],
       "serial_median_seconds": 1.0188682090000611,
       "parallel_median_seconds": 0.4558516250000366,
       "wall_clock_ratio": 0.44740980332227565,
       "relative_wall_clock_reduction": 0.5525901966777244,
       "result": "KEEP_FOR_TARGETED_USE",
+      "finding_category": "measured_parallel_gain"
+    },
+    {
+      "iteration": "office-batch-process-run-2",
+      "environment": "GitHub-hosted macOS 14 ARM64",
+      "workload": "same benchmark shape as run-1",
+      "serial_median_seconds": 1.187302958000032,
+      "parallel_median_seconds": 0.5723975409999866,
+      "wall_clock_ratio": 0.4820989766286518,
+      "relative_wall_clock_reduction": 0.5179010233713482,
+      "result": "REPRODUCED",
       "finding_category": "measured_parallel_gain",
-      "interpretation": "The mechanical inspection segment improved materially for sufficiently heavy independent files. This is component-level synthetic evidence only and does not prove end-to-end real-office speed."
+      "interpretation": "Two separate hosted-macOS runs show the same direction and materially lower wall clock for sufficiently heavy independent Office inspection. This is component-level synthetic evidence only and does not prove end-to-end real-office speed."
     }
   ],
   "quality_and_regression_evidence": {
@@ -59,9 +68,11 @@
     },
     "hosted_macos_module_diagnostic": {
       "candidate_test_inventory": 180,
-      "pass_witnesses": 179,
-      "runtime_issue_witnesses": 1,
-      "known_runtime_issue": "test_lifecycle_transaction_and_rollback can fail on GitHub-hosted macOS because the maintenance sandbox cannot initialize in that hosted process state.",
+      "aggregate_pass_witnesses": 179,
+      "aggregate_runtime_issue_witnesses": 1,
+      "isolated_test_case_pass_witnesses": "180/180",
+      "fresh_process_lifecycle_witness": "PASS",
+      "known_runtime_issue": "The lifecycle case can fail inside the full test_evolution_loop module on GitHub-hosted macOS because the maintenance sandbox cannot initialize in that process state; the identical lifecycle case passes in a fresh process.",
       "cabinet_regression_established": false,
       "release_grade_full_suite": false
     },
