@@ -42,7 +42,7 @@ jobs:
       - name: Observe Office batch serial versus parallel wall clock
         working-directory: /Users/macbook/ChatGPT
         run: |
-          python3 - <<'PY'
+          cat > /Users/macbook/ChatGPT/.scratch/bench_office_batch.py <<'PY'
           import json
           import statistics
           import sys
@@ -54,47 +54,54 @@ jobs:
           from inspect_office_batch import inspect_many
 
           W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-          with tempfile.TemporaryDirectory(dir='/Users/macbook/ChatGPT/.scratch') as temp_dir:
-              root = Path(temp_dir)
-              body = ''.join(
-                  f'<w:p><w:r><w:t>段落{i:05d} 状态进行中 数值 {i}</w:t></w:r></w:p>'
-                  for i in range(12000)
-              )
-              paths = []
-              for index in range(8):
-                  path = root / f'sample-{index}.docx'
-                  with zipfile.ZipFile(path, 'w', compression=zipfile.ZIP_DEFLATED) as package:
-                      package.writestr(
-                          'word/document.xml',
-                          f'<w:document xmlns:w="{W}"><w:body>{body}</w:body></w:document>',
-                      )
-                  paths.append(path)
 
-              inspect_many(paths, max_workers=1)
-              serial = []
-              parallel = []
-              for round_index in range(4):
-                  if round_index % 2 == 0:
-                      serial.append(inspect_many(paths, max_workers=1)['wall_clock_seconds'])
-                      parallel.append(inspect_many(paths, max_workers=4)['wall_clock_seconds'])
-                  else:
-                      parallel.append(inspect_many(paths, max_workers=4)['wall_clock_seconds'])
-                      serial.append(inspect_many(paths, max_workers=1)['wall_clock_seconds'])
-              serial_median = statistics.median(serial)
-              parallel_median = statistics.median(parallel)
-              ratio = parallel_median / serial_median if serial_median else None
-              print(json.dumps({
-                  'benchmark': 'hosted-macos-synthetic-office-batch',
-                  'serial_seconds': serial,
-                  'parallel_seconds': parallel,
-                  'serial_median_seconds': serial_median,
-                  'parallel_median_seconds': parallel_median,
-                  'wall_clock_ratio': ratio,
-                  'directional_goal_ratio': 0.7,
-                  'hard_gate': False,
-                  'interpretation': 'diagnostic only; target-Mac real-work A/B remains required before speed claim',
-              }, ensure_ascii=False))
+          def main():
+              with tempfile.TemporaryDirectory(dir='/Users/macbook/ChatGPT/.scratch') as temp_dir:
+                  root = Path(temp_dir)
+                  body = ''.join(
+                      f'<w:p><w:r><w:t>段落{i:05d} 状态进行中 数值 {i}</w:t></w:r></w:p>'
+                      for i in range(24000)
+                  )
+                  paths = []
+                  for index in range(8):
+                      path = root / f'sample-{index}.docx'
+                      with zipfile.ZipFile(path, 'w', compression=zipfile.ZIP_DEFLATED) as package:
+                          package.writestr(
+                              'word/document.xml',
+                              f'<w:document xmlns:w="{W}"><w:body>{body}</w:body></w:document>',
+                          )
+                      paths.append(path)
+
+                  inspect_many(paths, max_workers=1)
+                  inspect_many(paths, max_workers=4)
+                  serial = []
+                  parallel = []
+                  for round_index in range(3):
+                      if round_index % 2 == 0:
+                          serial.append(inspect_many(paths, max_workers=1)['wall_clock_seconds'])
+                          parallel.append(inspect_many(paths, max_workers=4)['wall_clock_seconds'])
+                      else:
+                          parallel.append(inspect_many(paths, max_workers=4)['wall_clock_seconds'])
+                          serial.append(inspect_many(paths, max_workers=1)['wall_clock_seconds'])
+                  serial_median = statistics.median(serial)
+                  parallel_median = statistics.median(parallel)
+                  ratio = parallel_median / serial_median if serial_median else None
+                  print(json.dumps({
+                      'benchmark': 'hosted-macos-synthetic-office-batch-processes',
+                      'serial_seconds': serial,
+                      'parallel_seconds': parallel,
+                      'serial_median_seconds': serial_median,
+                      'parallel_median_seconds': parallel_median,
+                      'wall_clock_ratio': ratio,
+                      'directional_goal_ratio': 0.7,
+                      'hard_gate': False,
+                      'interpretation': 'diagnostic only; target-Mac real-work A/B remains required before speed claim',
+                  }, ensure_ascii=False))
+
+          if __name__ == '__main__':
+              main()
           PY
+          python3 /Users/macbook/ChatGPT/.scratch/bench_office_batch.py
       - name: Hosted full-suite module diagnostic
         continue-on-error: true
         working-directory: /Users/macbook/ChatGPT
