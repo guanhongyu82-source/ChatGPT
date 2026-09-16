@@ -4,7 +4,7 @@
   "candidate_branch": "cabinet/sol-v1.5.3-quality-validation",
   "known_baseline_from_user": {
     "repo_native_tests": 161,
-    "verification_in_this_run": "not_reexecuted"
+    "verification_in_this_run": "full suite attempted twice; hosted runners cannot execute the macOS sandbox-backed write boundary"
   },
   "principle": "Evidence only. No Cabinet behavior change without a reproducible real failure.",
   "privacy": {
@@ -18,7 +18,7 @@
     {
       "observation_id": "QV-01-SEM-001",
       "scenario": "QV-01",
-      "scope": "semantic output plus static route check",
+      "scope": "semantic output plus executed route regression",
       "source_kind": "real-work-derived-anonymized",
       "input": "检查相关会议是否及时跟进上级重要要求，是否结合职责提出贯彻措施和跟踪落实安排，防止只学习不部署、只传达不落实。",
       "request": "润色得更简洁，不新增事实。",
@@ -33,12 +33,12 @@
       },
       "verdict": "PASS",
       "failure_category": null,
-      "notes": "T2, no review, no Office/research/data route, no task-level tool call required."
+      "notes": "T2, no review, no Office/research/data route, no task-level tool call required. QV regression passed on both hosted validation runs."
     },
     {
       "observation_id": "QV-02-SEM-001",
       "scenario": "QV-02",
-      "scope": "semantic output plus static route check",
+      "scope": "semantic output plus executed route regression",
       "source_kind": "real-work-derived-anonymized",
       "input": "调阅相关会议纪要、学习材料等14份；参加相关会议8次；建立督办台账并持续跟踪。",
       "request": "整理为正式监督检查表述，不补充事实。",
@@ -53,12 +53,12 @@
       },
       "verdict": "PASS",
       "failure_category": null,
-      "notes": "Static route is T4 and requires independent review. This observation validates the wording and routing decision only; it is not evidence that a live independent reviewer was executed in the current chat surface."
+      "notes": "Executed route regression confirms T4 and independent-review requirement. The current chat surface did not execute a separate live reviewer, so release closure still requires the target-runtime review chain."
     },
     {
       "observation_id": "QV-03-SEM-001",
       "scenario": "QV-03",
-      "scope": "multi-source conflict handling demo plus static route check",
+      "scope": "multi-source conflict handling demo plus executed route regression",
       "source_kind": "minimal-demo-derived-from-real-work-pattern",
       "input": [
         "材料A：事项甲已完成，并于4月完成验收。",
@@ -77,12 +77,63 @@
       },
       "verdict": "PASS",
       "failure_category": null,
-      "notes": "Conflict is surfaced rather than silently reconciled. Static route is T5 with review."
+      "notes": "Conflict is surfaced rather than silently reconciled. Executed route regression confirms T5 with review. Target-runtime live review remains a release-closure item."
+    },
+    {
+      "observation_id": "QV-04-MECH-001",
+      "scenario": "QV-04",
+      "scope": "executed synthetic Word inspection regression",
+      "source_kind": "real-work-pattern-plus-minimal-demo-artifact",
+      "checks": {
+        "understanding": "PASS",
+        "routing": "PASS",
+        "quality": "PASS",
+        "delivery": "PASS",
+        "false_completion": "PASS",
+        "control_weight": "PASS"
+      },
+      "verdict": "PASS",
+      "failure_category": null,
+      "notes": "test_qv_04_word_source_is_preserved_during_inspection passed on both hosted runs: source bytes remained unchanged and source SHA-256 matched. This validates the mechanical inspection path, not a visual Word rendering review."
+    },
+    {
+      "observation_id": "QV-05-MECH-001",
+      "scenario": "QV-05",
+      "scope": "executed synthetic Excel ledger regression",
+      "source_kind": "real-work-derived-anonymized-structure",
+      "checks": {
+        "understanding": "PASS",
+        "routing": "PASS",
+        "quality": "PASS",
+        "delivery": "PASS",
+        "false_completion": "PASS",
+        "control_weight": "PASS"
+      },
+      "verdict": "PASS",
+      "failure_category": null,
+      "notes": "test_qv_05_excel_source_preserves_structure_and_formula passed on both hosted runs: sheet identity, formula text, incomplete-state recognition and source immutability were preserved."
+    },
+    {
+      "observation_id": "QV-06-MECH-001",
+      "scenario": "QV-06",
+      "scope": "executed two-deliverable Expected-to-Actual regression",
+      "source_kind": "minimal-demo-derived-from-real-work-pattern",
+      "checks": {
+        "understanding": "PASS",
+        "routing": "PASS",
+        "quality": "PASS",
+        "delivery": "PASS",
+        "false_completion": "PASS",
+        "control_weight": "PASS"
+      },
+      "verdict": "PASS",
+      "failure_category": null,
+      "notes": "test_qv_06_complex_delivery_cannot_pass_with_a_missing_required_artifact passed on both hosted runs: two required artifacts plus review evidence pass; removing one required artifact fails closed. Target-runtime live reviewer/tool-chain execution remains a release-closure item."
     },
     {
       "observation_id": "QV-07-SEM-001",
       "scenario": "QV-07",
-      "scope": "analysis-only demo plus static route check",
+      "scope": "analysis-only demo plus executed route regression",
       "source_kind": "minimal-demo",
       "input": [
         "材料A：任务按计划推进。",
@@ -101,7 +152,31 @@
       },
       "verdict": "PASS",
       "failure_category": null,
-      "notes": "T3, no review, no Office route, no Expected artifact or file contract."
+      "notes": "T3, no review, no Office route, no Expected artifact or file contract. QV regression passed on both hosted validation runs."
+    }
+  ],
+  "executed_test_runs": [
+    {
+      "run_id": 35046153706,
+      "host": "GitHub-hosted Ubuntu 24.04",
+      "candidate_commit": "b82b8a0c2484ce2f41f0a77ec5fbb7c046713e30",
+      "version_check": "PASS: 1.5.2",
+      "quality_validation_module": "PASS: 10/10",
+      "full_suite": "NOT_VALID_FOR_RELEASE: 171 discovered; 1 failure and 53 errors",
+      "root_cause": "maintenance_boundary requires the fixed Mac physical root and macOS sandbox; Ubuntu cannot provide that runtime",
+      "failure_category": "runtime_issue",
+      "cabinet_failure": false
+    },
+    {
+      "run_id": 35046225207,
+      "host": "GitHub-hosted macOS 14",
+      "candidate_commit": "6982b1c19478512568a28553e2c735e35e0ca779",
+      "version_check": "PASS: 1.5.2",
+      "quality_validation_module": "PASS: 10/10",
+      "full_suite": "NOT_VALID_FOR_RELEASE: 171 discovered; write-boundary tests blocked",
+      "root_cause": "canonical path was reproduced, but the hosted runner denies sandbox_init with Operation not permitted; maintenance_boundary correctly fails closed",
+      "failure_category": "runtime_issue",
+      "cabinet_failure": false
     }
   ],
   "test_harness_events": [
@@ -119,10 +194,10 @@
   "validation_environment_events": [
     {
       "event_id": "QV-RUNTIME-001",
-      "symptom": "The candidate repository has no GitHub Actions workflow, and the current isolated chat runner cannot check out or fetch the private repository to execute the repo-native suite.",
+      "symptom": "The current isolated chat runner cannot check out the private repository directly.",
       "failure_category": "runtime_issue",
       "cabinet_failure": false,
-      "action": "Do not change Cabinet. Keep repo-native QV module and full-suite execution as an open target-runtime validation item."
+      "action": "A temporary candidate-only GitHub Actions harness was used for execution evidence and is removed after use."
     },
     {
       "event_id": "QV-RUNTIME-002",
@@ -130,13 +205,24 @@
       "failure_category": "runtime_issue",
       "cabinet_failure": false,
       "action": "Do not alter the snapshot or Cabinet during validation. Require current target-runtime deployment-state evidence before release closure."
+    },
+    {
+      "event_id": "QV-RUNTIME-003",
+      "symptom": "GitHub-hosted macOS denies the repository's libsandbox activation even at the canonical physical path.",
+      "failure_category": "runtime_issue",
+      "cabinet_failure": false,
+      "action": "Do not weaken or bypass maintenance_boundary. Full repo-native suite remains a target-Mac requirement."
     }
   ],
+  "hot_path_observation": {
+    "optimization_performed": false,
+    "exact_host_telemetry_available": false,
+    "notes": "No hard thresholds introduced. QV-01 stayed T2 with no review/tool route; QV-06 stayed T6 with Office delivery and review gates. Exact loaded-module/decision-node counts require target-runtime telemetry and are not invented here."
+  },
   "not_yet_closed": [
-    "Execute the new quality-validation test module in a repository checkout.",
-    "Run the repo-native full suite after QV tests are executable in the target runtime.",
-    "Run QV-02/QV-03/QV-04/QV-05/QV-06 with the target runtime review/tool chain where independent review or Office delivery is required.",
-    "Capture current Mac deployment-state/SYNCED evidence from the target runtime; the repository runtime snapshot is historical only."
+    "Run the 171-test candidate full suite on the actual target Mac where maintenance_boundary sandbox activation is supported.",
+    "Run QV-02/QV-03/QV-06 through the target runtime's actual independent-review chain and retain review evidence.",
+    "Capture current Mac deployment-state/SYNCED evidence for the v1.5.2 baseline from the external runtime state file and installation checker."
   ],
   "cabinet_changes_from_failures": []
 }
