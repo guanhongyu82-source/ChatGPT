@@ -47,8 +47,6 @@ RELATIONSHIPS_NS = "{http://schemas.openxmlformats.org/package/2006/relationship
 
 VERIFIED_FORMAT_PARTS = {
     ".docx": {
-        "docProps/core.xml": ("application/vnd.openxmlformats-package.core-properties+xml", {"core-properties"}),
-        "docProps/app.xml": ("application/vnd.openxmlformats-officedocument.extended-properties+xml", {"extended-properties"}),
         "word/styles.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", {"styles"}),
         "word/settings.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml", {"settings"}),
         "word/webSettings.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml", {"webSettings"}),
@@ -56,8 +54,6 @@ VERIFIED_FORMAT_PARTS = {
         "word/numbering.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml", {"numbering"}),
     },
     ".xlsx": {
-        "docProps/core.xml": ("application/vnd.openxmlformats-package.core-properties+xml", {"core-properties"}),
-        "docProps/app.xml": ("application/vnd.openxmlformats-officedocument.extended-properties+xml", {"extended-properties"}),
         "xl/styles.xml": ("application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml", {"styles"}),
         "xl/calcChain.xml": ("application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml", {"calcChain"}),
     },
@@ -251,8 +247,33 @@ def _resolve_relationship_target(rel_name: str, target: str) -> str | None:
     return candidate
 
 
-def _relationship_kind(type_uri: str) -> str:
-    return type_uri.rstrip("/").rsplit("/", 1)[-1]
+# Exact supported Transitional OOXML types. Strict packages are not supported by
+# inspect_office; URI suffixes, aliases and custom namespaces grant no coverage.
+RELATIONSHIP_KINDS = {
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument": "officeDocument",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet": "worksheet",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings": "sharedStrings",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header": "header",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer": "footer",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes": "footnotes",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes": "endnotes",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments": "comments",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties": "extended-properties",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles": "styles",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings": "settings",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings": "webSettings",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable": "fontTable",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering": "numbering",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain": "calcChain",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme": "theme",
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings": "printerSettings",
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties": "core-properties",
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail": "thumbnail",
+}
+
+
+def _relationship_kind(type_uri: str) -> str | None:
+    return RELATIONSHIP_KINDS.get(type_uri)
 
 
 def _verified_format_part(
@@ -298,6 +319,8 @@ def _relationship_unread(
         if not type_uri or not target:
             raise ValueError("Office relationship entry is malformed")
         kind = _relationship_kind(type_uri)
+        if kind is None:
+            unread.append(f"{source_id}:{label}-uninspected-relationship-type:{rel_name}:{rel_id}:{type_uri}")
         if rel.get("TargetMode") == "External":
             unread.append(f"{source_id}:{label}-uninspected-external-relationship:{rel_name}:{rel_id}:{kind}")
             continue
@@ -305,7 +328,7 @@ def _relationship_unread(
         if resolved is None or resolved not in package.namelist():
             unread.append(f"{source_id}:{label}-unverified-relationship-target:{rel_name}:{rel_id}:{kind}")
             continue
-        if resolved in parts_read:
+        if kind is not None and resolved in parts_read:
             continue
         content_type = _content_type_for(resolved, defaults, overrides)
         is_format, expected_kinds = _verified_format_part(resolved, suffix, content_type)

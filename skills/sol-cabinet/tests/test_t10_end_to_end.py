@@ -28,6 +28,13 @@ W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 def make_docx(path: Path, text: str) -> None:
     with zipfile.ZipFile(path, "w") as package:
         package.writestr(
+            "[Content_Types].xml",
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Override PartName="/word/document.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            '</Types>',
+        )
+        package.writestr(
             "word/document.xml",
             f'<w:document xmlns:w="{W}"><w:body><w:p><w:r><w:t>{escape(text)}</w:t></w:r></w:p></w:body></w:document>',
         )
@@ -46,6 +53,16 @@ def make_xlsx(path: Path, rows: list[list[str]] | None = None) -> None:
         xml_rows.append(f'<row r="{row_index}">{"".join(cells)}</row>')
     with zipfile.ZipFile(path, "w") as package:
         package.writestr(
+            "[Content_Types].xml",
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Override PartName="/xl/workbook.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            '<Override PartName="/xl/worksheets/sheet1.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            '</Types>',
+        )
+        package.writestr(
             "xl/workbook.xml",
             f'<workbook xmlns="{inspect_office.X[1:-1]}" xmlns:r="{inspect_office.R[1:-1]}">'
             '<sheets><sheet name="验证台账" sheetId="1" r:id="rId1"/></sheets></workbook>',
@@ -53,7 +70,8 @@ def make_xlsx(path: Path, rows: list[list[str]] | None = None) -> None:
         package.writestr(
             "xl/_rels/workbook.xml.rels",
             f'<Relationships xmlns="{inspect_office.P[1:-1]}">'
-            '<Relationship Id="rId1" Target="worksheets/sheet1.xml"/>'
+            '<Relationship Id="rId1" Target="worksheets/sheet1.xml" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"/>'
             "</Relationships>",
         )
         package.writestr(

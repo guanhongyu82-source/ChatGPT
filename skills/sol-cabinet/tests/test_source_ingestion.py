@@ -219,15 +219,11 @@ class SourceIngestionTests(unittest.TestCase):
                 "xl/styles.xml": "<styleSheet/>",
                 "xl/theme/theme1.xml": "<theme/>",
                 "xl/printerSettings/printerSettings1.bin": b"print-settings",
-                "docProps/core.xml": "<coreProperties/>",
-                "docProps/app.xml": "<Properties/>",
             },
             content_types={
                 "xl/styles.xml": "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml",
                 "xl/theme/theme1.xml": "application/vnd.openxmlformats-officedocument.theme+xml",
                 "xl/printerSettings/printerSettings1.bin": "application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings",
-                "docProps/core.xml": "application/vnd.openxmlformats-package.core-properties+xml",
-                "docProps/app.xml": "application/vnd.openxmlformats-officedocument.extended-properties+xml",
             },
         )
         with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=self.fake_office_inspect):
@@ -329,6 +325,43 @@ class SourceIngestionTests(unittest.TestCase):
         self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
         with self.assertRaises(ValueError):
             source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
+
+
+    def test_manifest_record_schema_basename_and_preservation_rejections(self):
+        original = json.loads(self.manifest.read_text(encoding="utf-8"))
+        mutations = [
+            {"unexpected": True}, {"source_name": "../材料.txt"},
+            {"source_name": "other.txt"}, {"source_role": ".."},
+            {"source_sha256": "0" * 64}, {"archived_sha256": "0" * 64},
+            {"byte_identical": False}, {"source_unmodified": False},
+            {"status": "PASS"}, {"size_bytes": True},
+            {"archived_relative_path": "00_原稿/../材料.txt"},
+        ]
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                data = json.loads(json.dumps(original))
+                data["files"][0].update(mutation)
+                self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    source_ingestion._load_units(self.task, self.manifest)
+
+    def test_duplicate_archive_path_and_source_identity_are_rejected(self):
+        original = json.loads(self.manifest.read_text(encoding="utf-8"))
+        for variant in ("path", "identity"):
+            with self.subTest(variant=variant):
+                data = json.loads(json.dumps(original))
+                duplicate = dict(data["files"][0])
+                if variant == "path":
+                    # A distinct claimed digest must not bypass duplicate path detection.
+                    duplicate["source_sha256"] = "0" * 64
+                else:
+                    # Path normalisation cannot disguise the same source identity.
+                    duplicate["archived_relative_path"] = duplicate["archived_relative_path"].replace("/", "//", 1)
+                data["files"].append(duplicate)
+                self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "duplicate archive manifest record"):
+                    source_ingestion._load_units(self.task, self.manifest)
+
 
 
 if __name__ == "__main__":

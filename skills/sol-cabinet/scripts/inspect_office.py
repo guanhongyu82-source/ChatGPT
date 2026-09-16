@@ -128,6 +128,45 @@ def _xlsx(z):
                                      '图片与图表未视觉核验', '未完成视觉渲染核验']}
 
 
+# Properties contain source facts, not merely rendering settings. Inventory all
+# XML text and attributes (including vectors and extension fields) with expanded
+# names and sibling indexes, so coverage does not depend on a field-name list.
+DOCUMENT_PROPERTY_ROOTS = {
+    'docProps/core.xml': '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}coreProperties',
+    'docProps/app.xml': '{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}Properties',
+}
+
+
+def _document_properties(z):
+    records, parts_read = [], []
+    for part, expected_root in DOCUMENT_PROPERTY_ROOTS.items():
+        if part not in z.namelist():
+            continue
+        tree = _xml(z, part)
+        if tree.tag != expected_root:
+            raise ValueError('unrecognized document properties root or namespace')
+
+        def record(locator, value):
+            if value and value.strip():
+                records.append({'locator': f'{part}:{locator}', 'text': value,
+                                'part': part, 'state': status_value(value)})
+
+        def walk(node, locator):
+            record(locator + '/text()', node.text)
+            for name, value in sorted(node.attrib.items()):
+                record(locator + '/@' + name, value)
+            counts = {}
+            for child in node:
+                counts[child.tag] = counts.get(child.tag, 0) + 1
+                child_locator = f'{locator}/{child.tag}[{counts[child.tag]}]'
+                walk(child, child_locator)
+                record(child_locator + '/tail()', child.tail)
+
+        walk(tree, tree.tag + '[1]')
+        parts_read.append(part)
+    return records, parts_read
+
+
 def inspect(path, stale=(), max_uncompressed_bytes=128*1024*1024):
     path = Path(path)
     if path.suffix.lower() not in {'.docx', '.xlsx'}:
@@ -140,6 +179,9 @@ def inspect(path, stale=(), max_uncompressed_bytes=128*1024*1024):
             raise ValueError('uncompressed size exceeds inspection limit')
         if z.testzip() is not None:raise ValueError('archive integrity failure')
         records, coverage = _docx(z) if path.suffix.lower() == '.docx' else _xlsx(z)
+        property_records, property_parts = _document_properties(z)
+        records.extend(property_records)
+        coverage['parts_read'].extend(property_parts)
     after = hashlib.sha256(path.read_bytes()).hexdigest()
     if before != after:raise ValueError('source changed during inspection')
     hits = []
