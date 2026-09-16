@@ -111,6 +111,7 @@
     }
   ],
   "quality_and_regression_evidence": {
+    "last_hosted_validated_commit": "c1f12e4f119dd195cbca43fd70d3d4b24993e447",
     "targeted_candidate_ci": {
       "parallel_planning": "PASS 7/7",
       "hot_path_policy": "PASS 9/9",
@@ -133,6 +134,7 @@
       "delivery_rules_group": "23 tests in approximately 0.06-0.08 seconds on hosted test fixtures",
       "interpretation": "These are fixture-level timings only, but they provide no present evidence that Delivery Gate mechanics are the dominant end-to-end cost."
     },
+    "temporary_ci_cleanup_commit": "4b78cb222e768bc0fb653e9737a6a9df116667ee",
     "quality_regression_found": false,
     "unsafe_parallelism_found": false
   },
@@ -146,7 +148,7 @@
     "candidate_deployed": false,
     "live_runtime_modified": false,
     "version_bumped": false,
-    "temporary_candidate_ci_present": true,
+    "temporary_candidate_ci_present": false,
     "internal_optimization_scope_frozen": true,
     "ready_for_finalization": false,
     "user_finalization_received": false
