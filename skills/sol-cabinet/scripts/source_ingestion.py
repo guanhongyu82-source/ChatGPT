@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -20,6 +21,19 @@ import inspect_office
 
 ARCHIVE_DIR_NAME = "00_原稿"
 MANIFEST_NAME = "原稿清单.json"
+ROLE_RE = re.compile(r"^[^/\\\x00-\x1f]{1,40}$")
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+RECORD_KEYS = {
+    "source_role",
+    "source_name",
+    "archived_relative_path",
+    "size_bytes",
+    "source_sha256",
+    "archived_sha256",
+    "byte_identical",
+    "source_unmodified",
+    "status",
+}
 TEXT_SUFFIXES = {".txt", ".md"}
 OFFICE_SUFFIXES = {".docx", ".xlsx"}
 
@@ -32,8 +46,12 @@ def _source_id(index: int, digest: str) -> str:
     return f"source-{index:03d}-{digest[:12]}"
 
 
-def _is_sha256(value: object) -> bool:
-    return isinstance(value, str) and len(value) == 64 and all(ch in "0123456789abcdef" for ch in value.lower())
+def _validate_basename(name: object) -> str:
+    if not isinstance(name, str) or not name or Path(name).name != name:
+        raise ValueError("source filename is invalid")
+    if any(ord(char) < 32 for char in name) or len(name.encode("utf-8")) > 180:
+        raise ValueError("source filename is invalid")
+    return name
 
 
 def _load_units(task_dir: Path, manifest_path: Path) -> list[dict]:
@@ -57,26 +75,26 @@ def _load_units(task_dir: Path, manifest_path: Path) -> list[dict]:
         raise ValueError("canonical archive manifest must be a regular file")
 
     manifest = json.loads(canonical_manifest.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
-        raise ValueError("unsupported archive manifest schema")
-    if manifest.get("archive_state") != "PASS":
-        raise ValueError("archive manifest is not PASS")
+    if not isinstance(manifest, dict) or set(manifest) != {"schema_version", "archive_state", "files"}:
+        raise ValueError("archive manifest schema is invalid")
+    if manifest["schema_version"] != 1 or manifest["archive_state"] != "PASS":
+        raise ValueError("archive manifest state is invalid")
     files = manifest.get("files")
     if not isinstance(files, list) or not files:
         raise ValueError("archive manifest has no source files")
 
     units = []
     seen_relative_paths = set()
+    seen_identities = set()
     for index, item in enumerate(files, 1):
-        if not isinstance(item, dict):
-            raise ValueError("invalid archive manifest entry")
+        if not isinstance(item, dict) or set(item) != RECORD_KEYS:
+            raise ValueError("archive manifest record schema is invalid")
         role = item.get("source_role")
         source_name = item.get("source_name")
         relative = item.get("archived_relative_path")
-        if not isinstance(role, str) or not role.strip() or role in {".", ".."}:
-            raise ValueError("source_role required")
-        if not isinstance(source_name, str) or not source_name or Path(source_name).name != source_name:
-            raise ValueError("source_name must be a basename")
+        if not isinstance(role, str) or not ROLE_RE.fullmatch(role) or role in {".", ".."}:
+            raise ValueError("source_role is invalid")
+        source_name = _validate_basename(source_name)
         if not isinstance(relative, str) or not relative.strip():
             raise ValueError("archived_relative_path required")
 
@@ -85,22 +103,31 @@ def _load_units(task_dir: Path, manifest_path: Path) -> list[dict]:
         expected_relative = Path(ARCHIVE_DIR_NAME) / expected_name
         if relative_path.is_absolute() or relative_path != expected_relative:
             raise ValueError("archived source is not a canonical 00_原稿 member")
-        if relative in seen_relative_paths:
-            raise ValueError("duplicate archived source path")
+        identity = (role, source_name, item["source_sha256"])
+        if relative in seen_relative_paths or identity in seen_identities:
+            raise ValueError("duplicate archive manifest record")
         seen_relative_paths.add(relative)
+        seen_identities.add(identity)
 
         path = canonical_archive / expected_name
         if path.is_symlink() or not path.is_file() or path.parent.resolve() != canonical_archive.resolve():
             raise ValueError("canonical archived source is missing, linked, or escapes 00_原稿")
 
+        size_bytes = item.get("size_bytes")
+        if type(size_bytes) is not int or size_bytes < 0:
+            raise ValueError("archive manifest size is invalid")
         source_digest = item.get("source_sha256")
         archived_digest = item.get("archived_sha256")
-        if not _is_sha256(source_digest) or not _is_sha256(archived_digest):
-            raise ValueError("archive manifest hashes must be SHA-256")
-        if source_digest.lower() != archived_digest.lower():
+        if not isinstance(source_digest, str) or not SHA256_RE.fullmatch(source_digest):
+            raise ValueError("archive manifest source hash is invalid")
+        if not isinstance(archived_digest, str) or not SHA256_RE.fullmatch(archived_digest):
+            raise ValueError("archive manifest archive hash is invalid")
+        if source_digest != archived_digest:
             raise ValueError("source and archived hashes differ")
+        if path.stat().st_size != size_bytes:
+            raise ValueError("archived source size does not match manifest")
         digest = sha256_file(path)
-        if digest != archived_digest.lower():
+        if digest != archived_digest:
             raise ValueError("archived source hash does not match manifest")
         if item.get("byte_identical") is not True or item.get("source_unmodified") is not True:
             raise ValueError("archive manifest does not prove source preservation")

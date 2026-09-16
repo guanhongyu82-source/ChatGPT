@@ -50,6 +50,7 @@ class SourceIngestionTests(unittest.TestCase):
                     "source_role": role,
                     "source_name": source_name,
                     "archived_relative_path": f"00_原稿/原稿_{role}_{source_name}",
+                    "size_bytes": path.stat().st_size,
                     "source_sha256": digest,
                     "archived_sha256": digest,
                     "byte_identical": True,
@@ -142,6 +143,26 @@ class SourceIngestionTests(unittest.TestCase):
         outside.write_bytes(self.paths[0].read_bytes())
         data = json.loads(self.manifest.read_text(encoding="utf-8"))
         data["files"][0]["archived_relative_path"] = "材料.txt"
+        self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
+
+    def test_manifest_schema_must_match_archive_writer_exactly(self):
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["unexpected"] = True
+        self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
+
+    def test_manifest_size_and_role_invariants_are_enforced(self):
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["files"][0]["size_bytes"] += 1
+        self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
+
+        data["files"][0]["size_bytes"] -= 1
+        data["files"][0]["source_role"] = "bad/role"
         self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
         with self.assertRaises(ValueError):
             source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
