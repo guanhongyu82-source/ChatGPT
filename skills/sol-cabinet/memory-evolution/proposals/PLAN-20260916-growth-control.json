@@ -20,6 +20,8 @@
     "sparse call-chain design from router to only the task-relevant modules",
     "explicit dependency and branch relationship rules to prevent cross-module mesh coupling",
     "clear separation of shared contracts from domain-specific behavior",
+    "treat the eight Custom Agents as part of the Cabinet system optimization surface without making them a fixed execution pipeline",
+    "target Agent changes only to the role whose responsibility, prompt, boundary, or output is actually implicated; do not mechanically rewrite unaffected Agents for version synchronization",
     "worktree-based isolation for maintenance candidates and major experiments",
     "lifecycle rules for short-lived feature/fix worktrees and long-lived major-version architecture worktrees",
     "2.0.0 refactor triggers when 1.x structural constraints are no longer sufficient"
@@ -29,6 +31,7 @@
     "hot_path": "L0 remains effectively constant; L1 load grows with the current task's actual breadth rather than total Cabinet size; L2 remains exception-only.",
     "runtime_call_chain": "T0 router -> lightweight capability metadata/index -> selected leaf domain modules -> orchestrator only when dependency/concurrency exists -> review only when task risk requires it -> L2 governance only for maintenance/evolution/deployment exceptions.",
     "runtime_dependency_rule": "Domain branches are leaf capabilities under shared contracts; they may depend on Core and approved shared/common components, but should not form arbitrary lateral dependency chains or duplicate another domain's canonical policy.",
+    "agent_optimization_rule": "The eight reusable Custom Agents belong to the Cabinet architecture and may be optimized when evidence points to their own role behavior, but unchanged roles stay unchanged. Routing, scheduling, concurrency, or over-dispatch problems are fixed in orchestration rather than copied into all Agent prompts.",
     "maintenance_topology": "Stable source remains a single authoritative Git history. Independent fixes, fine-grained policy candidates, risky experiments, and future major-version architecture work use isolated Git branches/worktrees so maintenance can proceed in parallel without making those worktrees runtime dependencies.",
     "worktree_rule": "A worktree is a maintenance isolation unit, not a runtime module. Runtime never discovers or chains capabilities by scanning worktrees. Short-lived worktrees close after integration or rejection; only explicitly approved major-version architecture work may remain long-lived.",
     "integration_rule": "All worktree candidates rejoin through the canonical owner and normal candidate -> validation -> user-finalization path. No worktree becomes a second source of truth, second Stable, or permanent compatibility mirror.",
@@ -61,10 +64,11 @@
     "no main-branch modification",
     "no full architecture refactor in 1.5.4 finegrain",
     "no speculative prebuilding for hypothetical future workloads",
-    "no permanent one-worktree-per-domain topology"
+    "no permanent one-worktree-per-domain topology",
+    "no version-wide mechanical rewrite of all Custom Agents"
   ],
   "base_ref": "cabinet/sol-v1.5.4-finegrain",
-  "base_sha256": "35bd8ecb7ab6e957692115e18276cc48b2d9b734",
+  "base_sha256": "ce962950318d63d3fea36121f5bd971c132f7ea6",
   "validation": [
     "confirm compatibility with existing L0/L1/L2 model",
     "confirm no increase to routine L0 load",
@@ -72,6 +76,8 @@
     "confirm direct user requests do not automatically become new modules",
     "confirm a hypothetical 10x increase in registered capabilities does not require ordinary tasks to load or traverse those capabilities",
     "confirm dependency direction remains Core/shared contracts -> selected leaf domains, without uncontrolled lateral mesh coupling",
+    "confirm the eight Custom Agents remain on-demand reusable roles and are modified only when evidence implicates that role rather than for version synchronization",
+    "confirm orchestration problems are fixed at the orchestrator layer instead of being duplicated across Agent prompts",
     "confirm worktrees isolate maintenance but do not become runtime routing inputs or parallel sources of truth",
     "confirm candidate reintegration preserves existing GitHub Stable / Candidate / Runtime state separation",
     "confirm 2.0 triggers are observable structural symptoms rather than version-age or arbitrary time thresholds"
