@@ -15,7 +15,7 @@
       "area": "multi_source_read_and_extraction",
       "priority": "high",
       "finding": "Independent source reads were logically parallelizable but could still be followed by duplicate full-source rereads by Final Lead, writers or reviewers.",
-      "candidate_action": "Build same-wave ready sets, extract once into a reusable evidence_pack, pass evidence-pack slices, and allow only reasoned targeted rereads when source bytes change, coverage is incomplete, facts conflict, or high-risk facts require direct source verification."
+      "candidate_action": "Build same-wave ready sets, extract once into a reusable evidence_pack, pass evidence-pack slices, and allow only reasoned targeted rereads when source bytes change, coverage is incomplete, facts conflict, or high-risk facts require direct source verification. Agent handoffs bind locators to source fingerprints so reuse cannot silently cross source versions."
     },
     {
       "area": "multi_artifact_generation",
@@ -27,7 +27,7 @@
       "area": "multi_artifact_review",
       "priority": "high",
       "finding": "One reviewer walking multiple independent final artifacts serially can recreate a review queue after parallel production.",
-      "candidate_action": "Permit artifact-scoped read-only review instances on immutable candidates when net benefit is positive, then perform one cross-artifact consistency join without weakening minimum independent review strength."
+      "candidate_action": "Permit artifact-scoped read-only review instances on immutable candidates when net benefit is positive, then perform one cross-artifact consistency join without weakening minimum independent review strength. Every scoped review remains bound to the same complete immutable candidate hash map."
     },
     {
       "area": "office_mechanical_inspection",
@@ -52,9 +52,10 @@
     "T0 builds a minimal dependency map and same-wave ready-set for independent positive-benefit work.",
     "Performance scenarios themselves carry the representative parallel profile instead of tests secretly injecting fan-out parameters.",
     "Source extraction is reused through evidence_pack; unreasoned duplicate full-source rereads are disallowed.",
+    "Agent Result evidence locators now carry source identity/fingerprint fields so downstream reuse can detect source-version mismatch without a blind full reread.",
     "Routine non-light control-plane fixed loading is reduced from four modules to Router-only, with other modules loaded on demand.",
     "Independent final artifacts use one writer per artifact/path and may be produced in parallel after a stable shared fact baseline.",
-    "Independent immutable artifacts may use artifact-scoped parallel review followed by one cross-artifact consistency join.",
+    "Independent immutable artifacts may use artifact-scoped parallel review followed by one cross-artifact consistency join; each scoped review still binds the full immutable candidate hash map.",
     "Independent nontrivial DOCX/XLSX mechanical inspections may use a process-parallel batch path only when expected net benefit is positive.",
     "Office process-parallel inspection falls back to the same serial checks when process infrastructure is unavailable, and the fallback cannot be counted as parallel speedup.",
     "Simple tasks remain single-executor and required independent review strength remains unchanged."
@@ -111,7 +112,7 @@
     }
   ],
   "quality_and_regression_evidence": {
-    "last_hosted_validated_commit": "c1f12e4f119dd195cbca43fd70d3d4b24993e447",
+    "last_hosted_validated_commit": "54b07918f3cfbcd2a62d1056bb0e5c7d073e6dbb",
     "targeted_candidate_ci": {
       "parallel_planning": "PASS 7/7",
       "hot_path_policy": "PASS 9/9",
@@ -134,7 +135,7 @@
       "delivery_rules_group": "23 tests in approximately 0.06-0.08 seconds on hosted test fixtures",
       "interpretation": "These are fixture-level timings only, but they provide no present evidence that Delivery Gate mechanics are the dominant end-to-end cost."
     },
-    "temporary_ci_cleanup_commit": "4b78cb222e768bc0fb653e9737a6a9df116667ee",
+    "temporary_ci_cleanup_commit": "70157b6ab6a083933474996af055be1adc0eb4fc",
     "quality_regression_found": false,
     "unsafe_parallelism_found": false
   },
