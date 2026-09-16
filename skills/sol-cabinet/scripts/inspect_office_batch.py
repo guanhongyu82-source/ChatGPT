@@ -2,8 +2,10 @@
 """Batch read-only DOCX/XLSX inspection for independent Office artifacts.
 
 Runs the existing inspect_office.inspect implementation concurrently across
-independent files. It does not change inspection semantics, mutate inputs,
-render Office files, access the network, or convert formats.
+independent files when process parallelism is available. It does not change
+inspection semantics, mutate inputs, render Office files, access the network,
+or convert formats. If process infrastructure is unavailable, it safely falls
+back to the same serial inspections instead of weakening or skipping checks.
 """
 from __future__ import annotations
 
@@ -13,6 +15,7 @@ import os
 import time
 import zipfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -28,6 +31,7 @@ EXPECTED_ERRORS = (
     zipfile.BadZipFile,
     RuntimeError,
 )
+PROCESS_INFRA_ERRORS = (BrokenProcessPool, OSError, RuntimeError)
 
 
 def _run_one(payload):
@@ -51,6 +55,12 @@ def _run_one(payload):
     }
 
 
+def _run_serial(payloads, results):
+    for payload in payloads:
+        item = _run_one(payload)
+        results[item["index"]] = item
+
+
 def inspect_many(paths, stale=(), max_workers=None):
     items = [Path(path) for path in paths]
     if not items:
@@ -59,22 +69,30 @@ def inspect_many(paths, stale=(), max_workers=None):
         raise ValueError("max_workers must be a positive integer")
 
     runtime_width = max(1, os.cpu_count() or 1)
-    workers = min(len(items), max_workers if max_workers is not None else runtime_width)
+    requested_workers = min(len(items), max_workers if max_workers is not None else runtime_width)
     stale_tuple = tuple(stale)
     payloads = [(index, str(path), stale_tuple) for index, path in enumerate(items)]
     results = [None] * len(items)
+    execution_mode = "serial" if requested_workers == 1 else "process_parallel"
+    fallback_reason = None
+    actual_width = requested_workers
 
     batch_started = time.perf_counter()
-    if workers == 1:
-        for payload in payloads:
-            item = _run_one(payload)
-            results[item["index"]] = item
+    if requested_workers == 1:
+        _run_serial(payloads, results)
     else:
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(_run_one, payload): payload[0] for payload in payloads}
-            for future in as_completed(futures):
-                item = future.result()
-                results[item["index"]] = item
+        try:
+            with ProcessPoolExecutor(max_workers=requested_workers) as executor:
+                futures = {executor.submit(_run_one, payload): payload[0] for payload in payloads}
+                for future in as_completed(futures):
+                    item = future.result()
+                    results[item["index"]] = item
+        except PROCESS_INFRA_ERRORS as exc:
+            results = [None] * len(items)
+            execution_mode = "serial_fallback"
+            fallback_reason = type(exc).__name__
+            actual_width = 1
+            _run_serial(payloads, results)
 
     wall = time.perf_counter() - batch_started
     serial_sum = sum(item["elapsed_seconds"] for item in results)
@@ -84,12 +102,15 @@ def inspect_many(paths, stale=(), max_workers=None):
         "overall_verdict": "NOT_ASSESSED",
         "read_only": True,
         "file_count": len(items),
-        "maximum_parallel_width": workers,
+        "requested_parallel_width": requested_workers,
+        "maximum_parallel_width": actual_width,
+        "execution_mode": execution_mode,
+        "parallel_fallback_reason": fallback_reason,
         "wall_clock_seconds": wall,
         "serial_work_seconds": serial_sum,
         "timing_basis": "parent/worker perf_counter; observational only, not a quality gate",
         "items": results,
-        "limitation": "批量并行只缩短独立机械检查路径，不替代事实、内容、视觉验收或最终 Delivery Gate",
+        "limitation": "批量并行只缩短独立机械检查路径，不替代事实、内容、视觉验收或最终 Delivery Gate；并行基础设施不可用时退回同语义串行检查",
     }
 
 
