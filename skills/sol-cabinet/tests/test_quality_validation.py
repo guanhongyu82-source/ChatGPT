@@ -37,8 +37,8 @@ class QualityValidationTests(unittest.TestCase):
             [f"QV-{index:02d}" for index in range(1, 8)],
         )
 
-    def test_version_stays_1_5_2_during_validation(self):
-        self.assertEqual((ROOT / "VERSION").read_text(encoding="utf-8").strip(), "1.5.2")
+    def test_finalized_release_version_is_1_5_3(self):
+        self.assertEqual((ROOT / "VERSION").read_text(encoding="utf-8").strip(), "1.5.3")
 
     def test_routing_matches_frozen_v1_5_2_baseline(self):
         for case in CASES:

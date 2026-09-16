@@ -1,5 +1,5 @@
 {
-  "validation_state": "ready_for_finalization",
+  "validation_state": "finalized",
   "cabinet_under_test": "1.5.2",
   "candidate_branch": "cabinet/sol-v1.5.3-quality-validation",
   "principle": "Evidence only. No Cabinet behavior change without a reproducible real failure.",
@@ -340,9 +340,10 @@
     "live_v1_5_2_runtime_baseline": "SYNCED/PASS",
     "cabinet_real_failure_found": false,
     "cabinet_fix_required": false,
-    "version_bumped": false,
+    "version_bumped": true,
     "candidate_deployed": false,
-    "ready_for_user_finalization_command": true
+    "ready_for_user_finalization_command": false,
+    "user_finalization_received": true
   },
   "cabinet_changes_from_failures": []
 }
