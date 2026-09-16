@@ -1,0 +1,23 @@
+{
+  "plan_id": "PLAN-20260916-self-evolution-summary",
+  "source": "user_direct",
+  "request_ref": "project-chat:2026-09-16:self-evolution-summary-only",
+  "intent": "Keep evolution observation, incident recording, threshold counting, maintenance-plan creation, and permitted candidate preparation non-interruptive by default, and report the resulting state only in the completion summary.",
+  "canonical_owner": "skills/sol-cabinet/templates/delivery-summary.md",
+  "scope": [
+    "user-visible completion-summary evolution feedback",
+    "default silent progress behavior for evolution bookkeeping"
+  ],
+  "non_goals": [
+    "change incident thresholds",
+    "change candidate-to-stable authority",
+    "change evolution permission cage",
+    "create background or cross-task execution",
+    "add a new evolution state machine"
+  ],
+  "base_ref": "3c68cc3367bbed35e79a2edcd17a29c7d41f4eac",
+  "base_sha256": "2f2728403be835dacf64e684d2c8f88a60f567979ac7c55a03f5e678191bb3fc",
+  "candidate_sha256": "8f1e7d55a4c14bc3a70d775fcd4b4f101213b390eccb7812c140156098957557",
+  "validation": "Confirm only the completion-summary template changes, existing thresholds and release authority remain unchanged, and intermediate notices are limited to BLOCKED, user-decision, or final-release-authorization cases.",
+  "status": "implemented_on_finegrain_candidate"
+}
