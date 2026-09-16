@@ -80,6 +80,17 @@ class AuthorityContract(unittest.TestCase):
         self.assertIn('无真实缺口证据和用户单独批准新增职责', denied)
         self.assertIn('为预防假设性问题向普通任务 Hot Path 添加常驻规则', denied)
 
+    def test_legacy_operational_registry_cannot_regain_live_authority(self):
+        ledger = self.read('memory-evolution/operational-learnings.md')
+        policy = self.read('memory-evolution/evolution-policy.md')
+        self.assertIn('Legacy Read-Only Registry', ledger)
+        self.assertIn('不再作为新事故、待办、候选或晋升的活动真源', ledger)
+        self.assertIn('旧 improvements 是历史', ledger)
+        self.assertIn('INC/EV 是当前待办真源', ledger)
+        self.assertIn('RES/EVO 是当前闭环真源', ledger)
+        self.assertIn('INC/EV 为事故待办唯一真源', policy)
+        self.assertIn('旧 improvements 仅保留历史', policy)
+
 
 if __name__ == '__main__':
     unittest.main()
