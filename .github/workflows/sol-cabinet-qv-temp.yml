@@ -12,6 +12,7 @@ jobs:
     env:
       TMPDIR: /Users/macbook/ChatGPT/.scratch
       CODEX_HOME: /Users/macbook/.codex
+      PYTHONPATH: /Users/macbook/ChatGPT/skills/sol-cabinet/tests:/Users/macbook/ChatGPT/skills/sol-cabinet/scripts
     steps:
       - name: Checkout candidate
         uses: actions/checkout@v4
@@ -32,7 +33,6 @@ jobs:
         working-directory: /Users/macbook/ChatGPT
         run: |
           set -euo pipefail
-          total=0
           for test_file in skills/sol-cabinet/tests/test*.py; do
             echo "=== MODULE ${test_file} ==="
             python3 -m unittest -v "$test_file"
