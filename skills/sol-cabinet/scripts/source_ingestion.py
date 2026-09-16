@@ -11,10 +11,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 import inspect_office
 
@@ -39,23 +41,29 @@ OFFICE_SUFFIXES = {".docx", ".xlsx"}
 
 PACKAGE_CONTROL_PARTS = {
     "[Content_Types].xml",
-    "_rels/.rels",
-    "docProps/core.xml",
-    "docProps/app.xml",
 }
-DOCX_FORMAT_PARTS = {
-    "word/styles.xml",
-    "word/settings.xml",
-    "word/webSettings.xml",
-    "word/fontTable.xml",
-    "word/numbering.xml",
+CONTENT_TYPES_NS = "{http://schemas.openxmlformats.org/package/2006/content-types}"
+RELATIONSHIPS_NS = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+
+VERIFIED_FORMAT_PARTS = {
+    ".docx": {
+        "docProps/core.xml": ("application/vnd.openxmlformats-package.core-properties+xml", {"core-properties"}),
+        "docProps/app.xml": ("application/vnd.openxmlformats-officedocument.extended-properties+xml", {"extended-properties"}),
+        "word/styles.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", {"styles"}),
+        "word/settings.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml", {"settings"}),
+        "word/webSettings.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml", {"webSettings"}),
+        "word/fontTable.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml", {"fontTable"}),
+        "word/numbering.xml": ("application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml", {"numbering"}),
+    },
+    ".xlsx": {
+        "docProps/core.xml": ("application/vnd.openxmlformats-package.core-properties+xml", {"core-properties"}),
+        "docProps/app.xml": ("application/vnd.openxmlformats-officedocument.extended-properties+xml", {"extended-properties"}),
+        "xl/styles.xml": ("application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml", {"styles"}),
+        "xl/calcChain.xml": ("application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml", {"calcChain"}),
+    },
 }
-XLSX_FORMAT_PARTS = {
-    "xl/styles.xml",
-    "xl/calcChain.xml",
-}
-DOCX_FORMAT_PREFIXES = ("word/theme/",)
-XLSX_FORMAT_PREFIXES = ("xl/theme/", "xl/printerSettings/")
+THEME_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml"
+PRINTER_SETTINGS_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings"
 
 
 def sha256_file(path: Path) -> str:
@@ -169,20 +177,155 @@ def _load_units(task_dir: Path, manifest_path: Path) -> list[dict]:
     return units
 
 
-def _is_noncontent_office_part(name: str, suffix: str) -> bool:
+def _xml_root(package: zipfile.ZipFile, name: str) -> ET.Element:
+    raw = package.read(name)
+    normalized = raw.replace(b"\x00", b"").upper()
+    if b"<!DOCTYPE" in normalized or b"<!ENTITY" in normalized:
+        raise ValueError("DTD/entity declarations are not supported in Office package metadata")
+    return ET.fromstring(raw)
+
+
+def _content_type_index(package: zipfile.ZipFile) -> tuple[dict[str, str], dict[str, str]]:
+    if "[Content_Types].xml" not in package.namelist():
+        raise ValueError("Office package content-types manifest is missing")
+    root = _xml_root(package, "[Content_Types].xml")
+    if root.tag != CONTENT_TYPES_NS + "Types":
+        raise ValueError("Office package content-types manifest is malformed")
+    defaults: dict[str, str] = {}
+    overrides: dict[str, str] = {}
+    for item in root:
+        if item.tag == CONTENT_TYPES_NS + "Default":
+            extension = (item.get("Extension") or "").lower()
+            content_type = item.get("ContentType") or ""
+            if not extension or not content_type or extension in defaults:
+                raise ValueError("Office package default content type is malformed")
+            defaults[extension] = content_type
+        elif item.tag == CONTENT_TYPES_NS + "Override":
+            part_name = item.get("PartName") or ""
+            content_type = item.get("ContentType") or ""
+            if not part_name.startswith("/") or not content_type:
+                raise ValueError("Office package override content type is malformed")
+            canonical = part_name[1:]
+            if not canonical or canonical in overrides:
+                raise ValueError("Office package override content type is duplicated")
+            overrides[canonical] = content_type
+        else:
+            raise ValueError("Office package content-types manifest has an unknown element")
+    return defaults, overrides
+
+
+def _content_type_for(name: str, defaults: dict[str, str], overrides: dict[str, str]) -> str | None:
+    if name in overrides:
+        return overrides[name]
+    base = name.rsplit("/", 1)[-1]
+    if "." not in base:
+        return None
+    return defaults.get(base.rsplit(".", 1)[-1].lower())
+
+
+def _relationship_part(name: str) -> bool:
+    return name == "_rels/.rels" or (name.endswith(".rels") and "/_rels/" in name)
+
+
+def _relationship_base(name: str) -> str:
+    if name == "_rels/.rels":
+        return ""
+    prefix, filename = name.rsplit("/_rels/", 1)
+    if not filename.endswith(".rels"):
+        raise ValueError("Office relationship part path is malformed")
+    source_name = filename[:-5]
+    if not source_name:
+        raise ValueError("Office relationship source path is malformed")
+    return prefix
+
+
+def _resolve_relationship_target(rel_name: str, target: str) -> str | None:
+    if not target or "\\" in target or "#" in target:
+        return None
+    if target.startswith("/"):
+        candidate = posixpath.normpath(target.lstrip("/"))
+    else:
+        candidate = posixpath.normpath(posixpath.join(_relationship_base(rel_name), target))
+    if candidate in {"", ".", ".."} or candidate.startswith("../"):
+        return None
+    return candidate
+
+
+def _relationship_kind(type_uri: str) -> str:
+    return type_uri.rstrip("/").rsplit("/", 1)[-1]
+
+
+def _verified_format_part(
+    name: str,
+    suffix: str,
+    content_type: str | None,
+) -> tuple[bool, set[str]]:
+    exact = VERIFIED_FORMAT_PARTS.get(suffix, {}).get(name)
+    if exact is not None:
+        expected_type, relationship_kinds = exact
+        return content_type == expected_type, relationship_kinds
+
+    if re.fullmatch(r"(?:word|xl)/theme/theme[0-9]+\.xml", name):
+        return content_type == THEME_CONTENT_TYPE, {"theme"}
+    if suffix == ".xlsx" and re.fullmatch(r"xl/printerSettings/printerSettings[0-9]+\.bin", name):
+        return content_type == PRINTER_SETTINGS_CONTENT_TYPE, {"printerSettings"}
+    if re.fullmatch(r"docProps/thumbnail\.(?:jpeg|jpg|png|wmf|emf)", name, re.IGNORECASE):
+        return bool(content_type and content_type.startswith("image/")), {"thumbnail"}
+    return False, set()
+
+
+def _relationship_unread(
+    package: zipfile.ZipFile,
+    rel_name: str,
+    parts_read: set[str],
+    suffix: str,
+    defaults: dict[str, str],
+    overrides: dict[str, str],
+    source_id: str,
+    label: str,
+) -> tuple[list[str], set[str]]:
+    root = _xml_root(package, rel_name)
+    if root.tag != RELATIONSHIPS_NS + "Relationships":
+        raise ValueError("Office relationship part is malformed")
+    unread: list[str] = []
+    semantic_targets: set[str] = set()
+    for rel in root:
+        if rel.tag != RELATIONSHIPS_NS + "Relationship":
+            raise ValueError("Office relationship part has an unknown element")
+        rel_id = rel.get("Id") or "unknown"
+        type_uri = rel.get("Type") or ""
+        target = rel.get("Target") or ""
+        if not type_uri or not target:
+            raise ValueError("Office relationship entry is malformed")
+        kind = _relationship_kind(type_uri)
+        if rel.get("TargetMode") == "External":
+            unread.append(f"{source_id}:{label}-uninspected-external-relationship:{rel_name}:{rel_id}:{kind}")
+            continue
+        resolved = _resolve_relationship_target(rel_name, target)
+        if resolved is None or resolved not in package.namelist():
+            unread.append(f"{source_id}:{label}-unverified-relationship-target:{rel_name}:{rel_id}:{kind}")
+            continue
+        if resolved in parts_read:
+            continue
+        content_type = _content_type_for(resolved, defaults, overrides)
+        is_format, expected_kinds = _verified_format_part(resolved, suffix, content_type)
+        if is_format and kind in expected_kinds:
+            continue
+        semantic_targets.add(resolved)
+    return unread, semantic_targets
+
+
+def _is_verified_noncontent_office_part(
+    name: str,
+    suffix: str,
+    content_type: str | None,
+) -> bool:
     if not name or name.endswith("/"):
         return True
     if name in PACKAGE_CONTROL_PARTS:
         return True
-    if name.startswith("docProps/thumbnail."):
-        return True
-    if name.endswith(".rels") and (name.startswith("_rels/") or "/_rels/" in name):
-        return True
-    if suffix == ".docx":
-        return name in DOCX_FORMAT_PARTS or name.startswith(DOCX_FORMAT_PREFIXES)
-    if suffix == ".xlsx":
-        return name in XLSX_FORMAT_PARTS or name.startswith(XLSX_FORMAT_PREFIXES)
-    return False
+    verified, _ = _verified_format_part(name, suffix, content_type)
+    return verified
 
 
 def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
@@ -221,6 +364,7 @@ def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
             missing = sorted(set(parts_read) - name_set)
             if missing:
                 raise ValueError("Office inspector reported package parts that do not exist")
+            defaults, overrides = _content_type_index(package)
             if suffix == ".docx":
                 for name in parts_read:
                     if not name.endswith(".xml"):
@@ -231,8 +375,28 @@ def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
                         break
 
             label = "docx" if suffix == ".docx" else "xlsx"
+            semantic_relationship_targets: set[str] = set()
+            for rel_name in sorted(name for name in name_set if _relationship_part(name)):
+                rel_unread, rel_semantic_targets = _relationship_unread(
+                    package,
+                    rel_name,
+                    set(parts_read),
+                    suffix,
+                    defaults,
+                    overrides,
+                    source_id,
+                    label,
+                )
+                unread.extend(rel_unread)
+                semantic_relationship_targets.update(rel_semantic_targets)
+
             for name in sorted(name_set):
-                if name in parts_read or _is_noncontent_office_part(name, suffix):
+                if name in parts_read or _relationship_part(name):
+                    continue
+                content_type = _content_type_for(name, defaults, overrides)
+                if name not in semantic_relationship_targets and _is_verified_noncontent_office_part(
+                    name, suffix, content_type
+                ):
                     continue
                 unread.append(f"{source_id}:{label}-uninspected-package-part:{name}")
 
