@@ -26,6 +26,14 @@
     "unnecessary_control_steps",
     "quality_result"
   ],
+  "control_plane_targets": {
+    "routine_nonlight_fixed_load": ["router"],
+    "conditional_only": ["classification-detail", "domain-routing-map", "core", "system-architecture", "orchestrator", "review"],
+    "duplicate_full_source_reads_without_invalidation": 0,
+    "final_lead_default_full_reread_after_trusted_extraction": false,
+    "review_default_full_source_reparse": false,
+    "review_targeted_direct_source_checks_required_for": ["critical_fact", "high_risk", "conflict", "coverage_gap", "unverified", "source_fingerprint_change"]
+  },
   "quality_dimensions": [
     "understanding",
     "routing",
@@ -39,6 +47,10 @@
       "id": "QV-01",
       "role": "control-weight-guardrail",
       "optimization_expected": false,
+      "profile_overrides": {
+        "independent_work_units": 0,
+        "parallel_benefit": "unknown"
+      },
       "before": ["single_executor"],
       "after": ["single_executor"],
       "must_not": ["agent_fanout", "office_pipeline", "extra_review"]
@@ -47,6 +59,11 @@
       "id": "QV-03",
       "role": "primary-parallel-benchmark",
       "optimization_expected": true,
+      "profile_overrides": {
+        "independent_work_units": 3,
+        "parallel_benefit": "positive",
+        "additional_execution_agent_budget": 3
+      },
       "before": [
         "source_a_read_verify",
         "source_b_read_verify",
@@ -60,7 +77,7 @@
         ["independent_review"]
       ],
       "join_requirements": ["source_attribution", "conflict_preservation", "missing_evidence"],
-      "must_not": ["source_mix_up", "silent_conflict_resolution", "review_before_candidate"]
+      "must_not": ["source_mix_up", "silent_conflict_resolution", "review_before_candidate", "duplicate_full_source_reread_without_reason"]
     },
     {
       "id": "QV-04",
@@ -90,6 +107,11 @@
       "id": "QV-06",
       "role": "primary-integrated-benchmark",
       "optimization_expected": true,
+      "profile_overrides": {
+        "independent_work_units": 4,
+        "parallel_benefit": "positive",
+        "additional_execution_agent_budget": 3
+      },
       "after_waves": [
         ["independent_source_reads_and_extracts"],
         ["fact_join_and_conflict_resolution"],
@@ -99,7 +121,7 @@
         ["delivery_gate"]
       ],
       "single_writer_scope": "one writer per final artifact; no concurrent writers to the same artifact",
-      "must_not": ["artifact_collision", "review_version_mismatch", "missing_required_artifact_pass", "false_completion"]
+      "must_not": ["artifact_collision", "review_version_mismatch", "missing_required_artifact_pass", "false_completion", "duplicate_full_source_reread_without_reason"]
     },
     {
       "id": "QV-07",
