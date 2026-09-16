@@ -9,7 +9,7 @@ T0 的分析在内部完成，完成后按 [SKILL 入口](../SKILL.md) 给简短
 3. **材料与原稿**：先做最小元数据识别；有既有输入就归档到 `00_原稿/` 并核验。`state!=PASS` 时禁止读取正文、转换、修改或生成。无源文件则为 NOT_APPLICABLE。
 4. **判断轻重**：无新增事实或高风险的局部微改直接完成；其余按 [分类](../task-classification/t1-t10.md) 复核。不要仅因 DOCX、XLSX、PPTX 或 PDF 后缀抬级。
 5. **复用材料**：区分 SOURCE、TEMPLATE、METHOD、ANTI、INSTRUCTION、PRIOR_OUTPUT、IGNORE；已经提取的结构与事实共享给后续角色，来源冲突再定向读取。
-6. **选择协作**：列出已就绪的独立工作面、必要审核、可用槽位与净收益。不确定能否节约时间／重复劳动或提高质量时，不增加执行代理。用户无需当调度员。
+6. **选择协作**：先画最小 dependency map，把当前工作面标成 `independent | depends_on | join_required | single_writer | review_required`。把当前已经满足依赖、能够同时启动的工作组成同一 ready-set，并把真实数量写入 `independent_work_units`；只有能够缩短 Critical Path、减少重复劳动或提高质量时才标 `parallel_benefit=positive`。同一 ready-set 有两个及以上独立单元且收益为正时，应在当前平台可承载范围内同波启动，不得无依据改成逐项等待；有依赖的工作仍按依赖串行，提交前统一 join。用户无需当调度员。
 7. **预定验收**：锁定有限交付契约；续办沿用任务与计时起点，发生实质范围变化才更新定级。文件成品与目录规则由 [Office Delivery](../domain-skills/office-delivery.md) 定义，独立审核与 verdict 由 [Review](../review-system/review-system.md) 定义；T0 不复制其规则。只返工失败项及受影响对象。
 
 ## 必要确认
