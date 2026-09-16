@@ -8,14 +8,23 @@ on:
 
 jobs:
   quality-validation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: macos-14
+    timeout-minutes: 15
     steps:
       - name: Checkout candidate
         uses: actions/checkout@v4
+      - name: Build canonical-path validation copy
+        run: |
+          sudo mkdir -p /Users/macbook/ChatGPT
+          sudo chown -R "$(id -un)":staff /Users/macbook
+          rsync -a --exclude '.git' ./ /Users/macbook/ChatGPT/
+          mkdir -p /Users/macbook/ChatGPT/.scratch
       - name: Confirm frozen version
+        working-directory: /Users/macbook/ChatGPT
         run: test "$(cat skills/sol-cabinet/VERSION)" = "1.5.2"
       - name: Run QV module
-        run: python3 -m unittest -v skills/sol-cabinet/tests/test_quality_validation.py
+        working-directory: /Users/macbook/ChatGPT
+        run: python3 skills/sol-cabinet/scripts/maintenance_boundary.py -- python3 -m unittest -v skills/sol-cabinet/tests/test_quality_validation.py
       - name: Run repo-native full suite
-        run: python3 -m unittest discover -v -s skills/sol-cabinet/tests -p 'test*.py'
+        working-directory: /Users/macbook/ChatGPT
+        run: python3 skills/sol-cabinet/scripts/maintenance_boundary.py -- python3 -m unittest discover -v -s skills/sol-cabinet/tests -p 'test*.py'
