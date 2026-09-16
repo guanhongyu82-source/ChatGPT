@@ -37,6 +37,26 @@ RECORD_KEYS = {
 TEXT_SUFFIXES = {".txt", ".md"}
 OFFICE_SUFFIXES = {".docx", ".xlsx"}
 
+PACKAGE_CONTROL_PARTS = {
+    "[Content_Types].xml",
+    "_rels/.rels",
+    "docProps/core.xml",
+    "docProps/app.xml",
+}
+DOCX_FORMAT_PARTS = {
+    "word/styles.xml",
+    "word/settings.xml",
+    "word/webSettings.xml",
+    "word/fontTable.xml",
+    "word/numbering.xml",
+}
+XLSX_FORMAT_PARTS = {
+    "xl/styles.xml",
+    "xl/calcChain.xml",
+}
+DOCX_FORMAT_PREFIXES = ("word/theme/",)
+XLSX_FORMAT_PREFIXES = ("xl/theme/", "xl/printerSettings/")
+
 
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -149,6 +169,22 @@ def _load_units(task_dir: Path, manifest_path: Path) -> list[dict]:
     return units
 
 
+def _is_noncontent_office_part(name: str, suffix: str) -> bool:
+    if not name or name.endswith("/"):
+        return True
+    if name in PACKAGE_CONTROL_PARTS:
+        return True
+    if name.startswith("docProps/thumbnail."):
+        return True
+    if name.endswith(".rels") and (name.startswith("_rels/") or "/_rels/" in name):
+        return True
+    if suffix == ".docx":
+        return name in DOCX_FORMAT_PARTS or name.startswith(DOCX_FORMAT_PREFIXES)
+    if suffix == ".xlsx":
+        return name in XLSX_FORMAT_PARTS or name.startswith(XLSX_FORMAT_PREFIXES)
+    return False
+
+
 def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
     coverage = inspected.get("coverage")
     if not isinstance(coverage, dict):
@@ -156,6 +192,11 @@ def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
     limitations = coverage.get("limitations")
     if not isinstance(limitations, list) or not all(isinstance(item, str) for item in limitations):
         raise ValueError("Office inspector limitations are malformed")
+    parts_read = coverage.get("parts_read")
+    if not isinstance(parts_read, list) or not all(isinstance(item, str) and item for item in parts_read):
+        raise ValueError("Office inspector parts_read coverage is malformed")
+    if len(parts_read) != len(set(parts_read)):
+        raise ValueError("Office inspector parts_read contains duplicates")
 
     unread: list[str] = []
     suffix = path.suffix.lower()
@@ -176,30 +217,24 @@ def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
     if zipfile.is_zipfile(path):
         with zipfile.ZipFile(path) as package:
             names = package.namelist()
+            name_set = set(names)
+            missing = sorted(set(parts_read) - name_set)
+            if missing:
+                raise ValueError("Office inspector reported package parts that do not exist")
             if suffix == ".docx":
-                unsupported_prefixes = {
-                    "word/media/": "docx-images-not-ocr",
-                    "word/charts/": "docx-charts-not-extracted",
-                    "word/embeddings/": "docx-embedded-objects-not-extracted",
-                }
-                xml_names = [name for name in names if name.startswith("word/") and name.endswith(".xml")]
-                if any(
-                    token in package.read(name)
-                    for name in xml_names
-                    for token in (b"fldSimple", b"instrText", b"fldChar")
-                ):
-                    unread.append(f"{source_id}:docx-fields-not-evaluated")
-            else:
-                unsupported_prefixes = {
-                    "xl/media/": "xlsx-images-not-inspected",
-                    "xl/charts/": "xlsx-charts-not-inspected",
-                    "xl/drawings/": "xlsx-drawings-not-inspected",
-                    "xl/embeddings/": "xlsx-embedded-objects-not-inspected",
-                    "xl/externalLinks/": "xlsx-external-links-not-resolved",
-                }
-            for prefix, reason in unsupported_prefixes.items():
-                if any(name.startswith(prefix) for name in names):
-                    unread.append(f"{source_id}:{reason}")
+                for name in parts_read:
+                    if not name.endswith(".xml"):
+                        continue
+                    raw = package.read(name)
+                    if any(token in raw for token in (b"fldSimple", b"instrText", b"fldChar")):
+                        unread.append(f"{source_id}:docx-fields-not-evaluated")
+                        break
+
+            label = "docx" if suffix == ".docx" else "xlsx"
+            for name in sorted(name_set):
+                if name in parts_read or _is_noncontent_office_part(name, suffix):
+                    continue
+                unread.append(f"{source_id}:{label}-uninspected-package-part:{name}")
 
     return list(dict.fromkeys(unread))
 
