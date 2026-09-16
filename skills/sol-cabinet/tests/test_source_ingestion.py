@@ -44,11 +44,12 @@ class SourceIngestionTests(unittest.TestCase):
         roles = ["正文", "Word", "Excel", "补充"]
         for role, path in zip(roles, self.paths):
             digest = sha(path)
+            source_name = path.name.split("_", 2)[-1]
             files.append(
                 {
                     "source_role": role,
-                    "source_name": path.name.split("_", 2)[-1],
-                    "archived_relative_path": str(path.relative_to(self.task)),
+                    "source_name": source_name,
+                    "archived_relative_path": f"00_原稿/原稿_{role}_{source_name}",
                     "source_sha256": digest,
                     "archived_sha256": digest,
                     "byte_identical": True,
@@ -65,17 +66,27 @@ class SourceIngestionTests(unittest.TestCase):
         path = Path(path)
         if path.suffix == ".docx":
             records = [{"locator": "word/document.xml:p[1]", "text": "责任部门=综合部"}]
+            coverage = {
+                "parts_read": ["word/document.xml"],
+                "tracked_deletion_groups": 0,
+                "limitations": ["图片未OCR", "字段未更新", "未完成视觉渲染核验"],
+            }
         elif path.suffix == ".xlsx":
             records = [
                 {"locator": "验证台账!A1", "text": "预算=120"},
                 {"locator": "验证台账!A2", "text": "阶段=完成"},
             ]
+            coverage = {
+                "sheets": [{"name": "验证台账", "formula_count": 0}],
+                "limitations": ["公式只读未重算，缓存可能过期", "图片与图表未视觉核验", "未完成视觉渲染核验"],
+            }
         else:
             raise AssertionError(path)
         return {
             "parse_status": "PASS",
             "source_sha256": sha(path),
             "records": records,
+            "coverage": coverage,
         }
 
     def test_same_wave_ingestion_builds_traceable_evidence_and_conflicts(self):
@@ -89,6 +100,9 @@ class SourceIngestionTests(unittest.TestCase):
         self.assertEqual(len(pack["sources"]), 4)
         self.assertFalse(pack["unread"])
         self.assertTrue(all(item["state"] == "EXTRACTED" for item in pack["coverage"]))
+        office_coverage = [item for item in pack["coverage"] if item["inspection_coverage"] is not None]
+        self.assertEqual(len(office_coverage), 2)
+        self.assertTrue(all(item["inspection_coverage"]["limitations"] for item in office_coverage))
         fact_text = {item["text"] for item in pack["facts"]}
         self.assertIn("项目=青山工程", fact_text)
         self.assertIn("责任部门=综合部", fact_text)
@@ -99,8 +113,36 @@ class SourceIngestionTests(unittest.TestCase):
         self.assertEqual(len(budget["evidence"]), 2)
         self.assertTrue(all(item["source_sha256"] for item in budget["evidence"]))
 
+    def test_actual_office_gap_marks_source_and_ingestion_partial(self):
+        def inspect_with_unread(path: Path):
+            result = self.fake_office_inspect(path)
+            if Path(path).suffix == ".docx":
+                result["coverage"]["tracked_deletion_groups"] = 1
+            return result
+
+        with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=inspect_with_unread):
+            result = source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("tracked-deletions-not-extracted" in item for item in result["evidence_pack"]["unread"]))
+        self.assertIn("PARTIAL", {item["state"] for item in result["evidence_pack"]["coverage"]})
+
     def test_manifest_hash_change_fails_closed(self):
         self.paths[0].write_text("项目=已变化\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
+
+    def test_noncanonical_manifest_path_is_rejected(self):
+        alternate = self.task / "claimed-pass.json"
+        alternate.write_bytes(self.manifest.read_bytes())
+        with self.assertRaises(ValueError):
+            source_ingestion.ingest_archive(self.task, alternate, max_workers=2)
+
+    def test_manifest_entry_must_be_canonical_archive_member(self):
+        outside = self.task / "材料.txt"
+        outside.write_bytes(self.paths[0].read_bytes())
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["files"][0]["archived_relative_path"] = "材料.txt"
+        self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
         with self.assertRaises(ValueError):
             source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
 
