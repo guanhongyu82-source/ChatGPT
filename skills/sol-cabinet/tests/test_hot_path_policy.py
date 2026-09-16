@@ -31,13 +31,17 @@ class HotPathPolicyTests(unittest.TestCase):
             ["router"],
         )
 
-    def test_task_card_has_reusable_evidence_and_resource_plan_surfaces(self):
+    def test_task_card_and_agent_result_support_reusable_evidence_and_timing(self):
         self.assertIn("resource_plan", self.task_card)
         self.assertIn("independent_units", self.task_card["resource_plan"])
         self.assertIn("evidence_pack", self.task_card)
         for key in ("sources", "coverage", "facts", "conflicts", "unread"):
             self.assertIn(key, self.task_card["evidence_pack"])
         self.assertIn("source_fingerprints", self.agent_result)
+        self.assertIn("work_type", self.agent_result)
+        self.assertIn("dispatch", self.agent_result)
+        for key in ("dispatch_id", "wave_id", "ready_at", "started_at", "completed_at", "timing_basis"):
+            self.assertIn(key, self.agent_result["dispatch"])
         evidence = self.agent_result["findings"][0]["evidence"][0]
         for key in ("source_id", "path", "source_sha256", "locator"):
             self.assertIn(key, evidence)
@@ -47,6 +51,19 @@ class HotPathPolicyTests(unittest.TestCase):
         self.assertIn("已有可信提取时不重新全文读取", self.router)
         self.assertIn("来源指纹", self.router)
         self.assertIn("重复全文读取", self.router)
+
+    def test_source_ingestion_is_manifest_first_parallel_and_not_fake_fanout(self):
+        self.assertIn("材料提取 Critical Path", self.orchestrator)
+        self.assertIn("先建 manifest，再派工", self.orchestrator)
+        self.assertIn("默认按来源并发，不盲拆单文件", self.orchestrator)
+        self.assertIn("如果每个子任务仍会把整份文件重新解码一遍", self.orchestrator)
+        self.assertIn("结果一到即回流", self.orchestrator)
+        self.assertIn("不得为了“等齐一波”阻塞", self.orchestrator)
+        focus = self.performance["critical_path_focus"]["source_ingestion"]
+        self.assertEqual(focus["start"], "source_archive_pass")
+        self.assertEqual(focus["end"], "evidence_coverage_ready")
+        for metric in ("source_dispatch_delay", "source_extraction_tail", "evidence_join_delay"):
+            self.assertIn(metric, self.performance["metrics"])
 
     def test_final_lead_cannot_default_to_full_source_reread(self):
         self.assertIn("不默认让 Final Lead 重新全文读取", self.orchestrator)
@@ -73,17 +90,26 @@ class HotPathPolicyTests(unittest.TestCase):
         self.assertIn("必须直接读取对应原始片段", self.review)
         self.assertIn("reuse extraction, re-decide independently", self.review)
 
-    def test_multi_artifact_review_can_parallelize_without_weakening_cross_artifact_join(self):
-        self.assertIn("按 artifact/object 切成多个独立只读实例同波执行", self.review)
-        self.assertIn("跨成品一致性 join", self.review)
-        self.assertIn("不降低最低独立审核强度", self.review)
-        self.assertIn("整套 immutable candidate manifest/hash map", self.review)
-        self.assertIn("整套当前成品 hash map", self.review)
+    def test_review_dispatch_and_completion_feedback_are_not_serialized(self):
+        self.assertIn("候选冻结前准备 reviewer ready-set", self.orchestrator)
+        self.assertIn("冻结即同波派工", self.orchestrator)
+        self.assertIn("完工反馈事件化", self.orchestrator)
+        self.assertIn("不得形成“reviewer A 完成后才创建 reviewer B”的无依赖串行链", self.review)
+        self.assertIn("不得额外增加“已完成，请再次查询结果”的二次反馈链", self.review)
+        for metric in ("review_dispatch_delay", "review_tail", "review_join_delay", "completion_feedback_delay"):
+            self.assertIn(metric, self.performance["metrics"])
+
+    def test_scoped_review_preserves_quality_and_targeted_revalidation(self):
+        self.assertIn("review_scope=artifact", self.review)
+        self.assertIn("review_scope=cross_artifact", self.review)
+        self.assertIn("按每个必交 artifact 分别核最低 reviewer 覆盖强度", self.review)
+        self.assertIn("其他 artifact 的 bytes/hash 与所依赖事实均未变化时，其 scoped review 可保留", self.review)
         qv06 = next(item for item in self.performance["scenarios"] if item["id"] == "QV-06")
-        review_wave = qv06["after_waves"][3]
+        review_wave = qv06["after_waves"][4]
         self.assertIn("docx_artifact_review", review_wave)
         self.assertIn("xlsx_artifact_review", review_wave)
-        self.assertIn("cross_artifact_consistency_join", qv06["after_waves"][4])
+        self.assertIn("cross_artifact_consistency_review", qv06["after_waves"][5])
+        self.assertIn("invalidates only that artifact scope", qv06["targeted_revalidation"])
 
     def test_performance_guard_rejects_unreasoned_duplicate_full_reads(self):
         targets = self.performance["control_plane_targets"]
