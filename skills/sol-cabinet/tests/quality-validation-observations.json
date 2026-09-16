@@ -1,5 +1,5 @@
 {
-  "validation_state": "in_progress",
+  "validation_state": "ready_for_finalization",
   "cabinet_under_test": "1.5.2",
   "candidate_branch": "cabinet/sol-v1.5.3-quality-validation",
   "principle": "Evidence only. No Cabinet behavior change without a reproducible real failure.",
@@ -9,8 +9,8 @@
     "candidate_discovered_tests": 171,
     "qv_module_executed": "PASS 10/10",
     "isolated_pass_witnesses": "171/171",
-    "release_grade_full_suite": "PENDING target Mac",
-    "reason": "Hosted macOS can validate every test case, but its process-level sandbox behavior is not identical to the target Mac and cannot substitute for one target-runtime full-suite PASS."
+    "release_grade_full_suite": "PASS 171/171 on target Mac",
+    "reason": "The repo-native full suite passed 171/171 on the actual target Mac with TMPDIR pre-set to the existing maintenance-boundary scratch directory. A prior bare system-TMPDIR run produced 170 PASS + 1 sandbox-related error and is retained as runtime_issue evidence; sandbox enforcement was not disabled, bypassed, or weakened."
   },
   "privacy": {
     "real_work_used": true,
@@ -28,33 +28,33 @@
     },
     {
       "id": "QV-02",
-      "verdict": "ISSUE",
-      "failure_category": "runtime_issue",
-      "evidence": "Formal wording and T4 review routing passed; an actual independent reviewer in the target runtime has not been executed from this chat surface."
+      "verdict": "PASS",
+      "failure_category": null,
+      "evidence": "Formal supplied facts stayed T4, required one independent reviewer, and passed the target-Mac reviewer chain without adding subjects, dates, quantities, or completion claims."
     },
     {
       "id": "QV-03",
-      "verdict": "ISSUE",
-      "failure_category": "runtime_issue",
-      "evidence": "Conflict handling and T5 review routing passed; target-runtime independent review evidence remains unavailable here."
+      "verdict": "PASS",
+      "failure_category": null,
+      "evidence": "Three-source status conflict stayed T5, was explicitly preserved rather than guessed away, and passed independent target-Mac review."
     },
     {
       "id": "QV-04",
-      "verdict": "ISSUE",
-      "failure_category": "runtime_issue",
-      "evidence": "Synthetic Word source-preservation regression passed and a real formal Word sample was inspected read-only with byte hash unchanged; target-Mac end-to-end artifact delivery/review remains to be executed."
+      "verdict": "PASS",
+      "failure_category": null,
+      "evidence": "Word artifact route stayed T4 with office-artifact-skill and independent review; source, 00_原稿 copy, and final artifact were byte-identical in the final anonymous fixture, Office inspection and package integrity passed, and delivery_gate returned PASS."
     },
     {
       "id": "QV-05",
-      "verdict": "ISSUE",
-      "failure_category": "runtime_issue",
-      "evidence": "Synthetic Excel formula/state/structure regression passed and a real ledger sample remained byte-identical under read-only structural inspection; target-Mac end-to-end workbook delivery/review remains to be executed."
+      "verdict": "PASS",
+      "failure_category": null,
+      "evidence": "Excel route stayed T4 with office-artifact-skill + data-analytics and independent review; workbook structure, visible sheet, state, quantity, and SUM formula were preserved without claiming native Excel recalculation, and delivery_gate returned PASS."
     },
     {
       "id": "QV-06",
-      "verdict": "ISSUE",
-      "failure_category": "runtime_issue",
-      "evidence": "Two-deliverable Expected-to-Actual regression passed and fails closed when a required artifact is removed; target-runtime live review/tool chain is still required."
+      "verdict": "PASS",
+      "failure_category": null,
+      "evidence": "Complex two-artifact case stayed T6 with office delivery/review controls; all anonymous sources and 00_原稿 copies were byte-identical, both required artifacts passed Expected-to-Actual and review checks, and removing one required artifact made delivery_gate fail closed."
     },
     {
       "id": "QV-07",
@@ -82,7 +82,7 @@
       "observation_id": "QV-02-SEM-001",
       "source_kind": "real-work-derived-anonymized",
       "request": "Convert supplied supervision facts into formal office wording without adding facts.",
-      "result": "PASS within semantic/routing scope",
+      "result": "PASS",
       "checks": {
         "understanding": "PASS",
         "routing": "PASS",
@@ -140,6 +140,54 @@
     "cabinet_failure": false,
     "reason": "This was an input-data defect observed during validation, not a requested edit silently missed by an executed Cabinet task. Existing ledger-data rules already require blank/omission and consistency checks, so no rule gap is established."
   },
+  "target_mac_validation": {
+    "candidate_commit": "3ccec2350543f84bdda8219adeace9ca58c094ed",
+    "candidate_version": "1.5.2",
+    "candidate_deployed": false,
+    "repo_native_full_suite": {
+      "command_environment": "TMPDIR=/Users/macbook/ChatGPT/.scratch",
+      "discovered": 171,
+      "passed": 171,
+      "failed": 0,
+      "errors": 0,
+      "result": "PASS",
+      "maintenance_boundary_triggered": true
+    },
+    "initial_system_tmpdir_run": {
+      "discovered": 171,
+      "passed": 170,
+      "failed": 0,
+      "errors": 1,
+      "failure_category": "runtime_issue",
+      "finding": "The system temporary directory was created before maintenance-boundary sandbox activation; a later state-directory write under that system temp root was denied by the sandbox. Re-running with the existing governed .scratch TMPDIR passed without weakening sandbox controls."
+    },
+    "review_tool_chain": {
+      "QV-02": "PASS",
+      "QV-03": "PASS",
+      "QV-04": "PASS",
+      "QV-05": "PASS",
+      "QV-06": "PASS",
+      "independent_review_units_completed": 5,
+      "additional_execution_agents_added": 0,
+      "persistent_sensitive_fixture_content": false
+    }
+  },
+  "live_runtime_baseline": {
+    "verified_commit": "b85963f8000183c7afe0526cef9726a0cc248129",
+    "source_version": "1.5.2",
+    "deployment_state": "SYNCED",
+    "installation_verdict": "PASS",
+    "installation_scope": "deployment",
+    "issues": [],
+    "warnings": [],
+    "agent_runtime_issues": [],
+    "system_sha256": "9a8a5fd448a7bfc61f669f845db754e1a78fddc31fe18dedd33580fa5034f242",
+    "resolved_live_root": "/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet",
+    "skill_link_is_symlink": true,
+    "deployment_state_file_unchanged": true,
+    "candidate_deployed": false,
+    "interpretation": "The current v1.5.2 live Runtime baseline is healthy and remains separate from the undeployed v1.5.3 validation candidate, satisfying the pre-finalization boundary."
+  },
   "executed_test_runs": [
     {
       "run_id": 35046153706,
@@ -179,7 +227,18 @@
       "aggregate_failure": "The lifecycle subprocess case can fail after earlier sandbox activation in the same hosted-runner module process, while the identical case passes in a fresh process.",
       "failure_category": "runtime_issue",
       "cabinet_failure": false,
-      "release_interpretation": "Strong regression evidence, but not a substitute for one repo-native full-suite PASS on the actual target Mac."
+      "release_interpretation": "Strong regression evidence, superseded for release-grade closure by the actual target-Mac full-suite PASS."
+    },
+    {
+      "run_id": "target-mac-2026-09-16",
+      "host": "actual target Mac/Codex Runtime",
+      "candidate_commit": "3ccec2350543f84bdda8219adeace9ca58c094ed",
+      "version_check": "PASS 1.5.2",
+      "quality_validation_rollup": "PASS QV-01 through QV-07",
+      "aggregate_result": "PASS 171/171",
+      "failure_category": null,
+      "cabinet_failure": false,
+      "release_interpretation": "Release-grade candidate regression witness for the pre-finalization quality-validation stage."
     }
   ],
   "test_harness_events": [
@@ -194,42 +253,96 @@
       "symptom": "An isolated-module diagnostic initially omitted the tests directory from PYTHONPATH.",
       "failure_category": "noise",
       "action": "Corrected temporary runner environment only; no Cabinet/test logic change."
+    },
+    {
+      "event_id": "QV-HARNESS-003",
+      "symptom": "The first QV-02 anonymous demo added a completion-judgment sentence that was not part of the supplied facts.",
+      "failure_category": "noise",
+      "action": "Corrected the temporary fixture and re-reviewed; no Cabinet change."
+    },
+    {
+      "event_id": "QV-HARNESS-004",
+      "symptom": "The first QV-04 anonymous demo added a supplemental judgment not present in the source.",
+      "failure_category": "noise",
+      "action": "Corrected the temporary fixture and re-reviewed; no Cabinet change."
+    },
+    {
+      "event_id": "QV-HARNESS-005",
+      "symptom": "The first QV-05 review was attempted before its delivery contract had been established.",
+      "failure_category": "noise",
+      "action": "Established the required temporary contract and reran the review; no Cabinet change."
+    },
+    {
+      "event_id": "QV-HARNESS-006",
+      "symptom": "The first QV-06 review was attempted before its delivery contract was established and its temporary ledger still contained content from the prior QV-05 fixture.",
+      "failure_category": "noise",
+      "action": "Rebuilt the anonymous temporary fixture from the QV-06 source and reran the review; no Cabinet change."
+    },
+    {
+      "event_id": "QV-HARNESS-007",
+      "symptom": "One temporary hash diagnostic had an argument-concatenation error.",
+      "failure_category": "noise",
+      "action": "Corrected the diagnostic command only; no Cabinet change."
+    },
+    {
+      "event_id": "QV-HARNESS-008",
+      "symptom": "One independent diagnostic import omitted the scripts directory.",
+      "failure_category": "noise",
+      "action": "Corrected the temporary diagnostic environment and reran it; no Cabinet change."
     }
   ],
   "validation_environment_events": [
     {
       "event_id": "QV-RUNTIME-001",
       "failure_category": "runtime_issue",
-      "finding": "Current chat runner cannot directly check out the private repository; temporary candidate-only GitHub Actions was used for execution evidence."
+      "finding": "Current chat runner could not directly check out the private repository; temporary candidate-only GitHub Actions was used for early execution evidence."
     },
     {
       "event_id": "QV-RUNTIME-002",
       "failure_category": "runtime_issue",
-      "finding": "Repository runtime-snapshot is historical and cannot prove current target-Mac deployment state."
+      "finding": "Repository runtime-snapshot was historical and could not prove current target-Mac deployment state; live runtime evidence was later captured directly on the target Mac."
     },
     {
       "event_id": "QV-RUNTIME-003",
       "failure_category": "runtime_issue",
-      "finding": "GitHub-hosted macOS sandbox/process semantics differ from the actual target Mac; no hosted result is treated as current deployment-state evidence."
+      "finding": "GitHub-hosted macOS sandbox/process semantics differed from the actual target Mac; hosted results were not used as final deployment-state evidence."
+    },
+    {
+      "event_id": "QV-RUNTIME-004",
+      "failure_category": "runtime_issue",
+      "finding": "A bare target-Mac full-suite run inherited the system TMPDIR and produced one sandbox-denied TemporaryDirectory state write; the same suite passed 171/171 with the existing governed .scratch TMPDIR and unchanged sandbox controls."
+    },
+    {
+      "event_id": "QV-RUNTIME-005",
+      "failure_category": "noise",
+      "finding": "Deployment checks first run from the candidate checkout compared the live canonical runtime against the candidate ROOT, producing runtime_root mismatch and skill-link-invalid. Re-running from the live Skill canonical path returned SYNCED/PASS without any runtime change."
     }
   ],
   "failure_classification_summary": {
     "execution_failure": 0,
     "rule_gap": 0,
     "rule_conflict": 0,
-    "runtime_issue": 5,
-    "noise": 2,
+    "runtime_issue": 4,
+    "noise": 9,
+    "current_blockers": 0,
     "cabinet_changes_required": 0
   },
   "hot_path_observation": {
     "optimization_performed": false,
     "hard_thresholds_added": false,
-    "notes": "QV-01 remained T2 with no review/tool route; QV-06 remained T6 with Office delivery and review gates. Exact target-runtime loaded-module/decision-node counts were not invented."
+    "notes": "QV-01 remained T2 with no review/tool route; QV-06 remained T6 with Office delivery and review gates. No Hot Path optimization or new threshold was introduced."
   },
-  "not_yet_closed": [
-    "Run the 171-test candidate full suite once on the actual target Mac and capture one repo-native PASS record.",
-    "Run QV-02/QV-03/QV-04/QV-05/QV-06 through the target runtime's actual independent-review/tool chain where required and retain the minimum review evidence.",
-    "Capture current target-Mac deployment-state/SYNCED evidence for the v1.5.2 baseline from the live external state file and installation checker."
-  ],
+  "not_yet_closed": [],
+  "finalization_readiness": {
+    "candidate_quality_validation": "PASS",
+    "target_mac_full_suite": "PASS 171/171",
+    "target_runtime_review_tool_chain": "PASS",
+    "live_v1_5_2_runtime_baseline": "SYNCED/PASS",
+    "cabinet_real_failure_found": false,
+    "cabinet_fix_required": false,
+    "version_bumped": false,
+    "candidate_deployed": false,
+    "ready_for_user_finalization_command": true
+  },
   "cabinet_changes_from_failures": []
 }
