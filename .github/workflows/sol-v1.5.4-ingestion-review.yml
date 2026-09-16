@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
 
+# Temporary candidate-only validation workflow. Remove after evidence capture.
 jobs:
   candidate-validation:
     runs-on: macos-14
