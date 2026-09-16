@@ -4,6 +4,13 @@
   "request_ref": "project-chat:2026-09-16:cabinet-growth-control",
   "intent": "Prevent Sol Cabinet from becoming progressively heavier or uncontrollable as new work types and user requests accumulate, while preserving the current 1.5.4 core architecture and reserving at least an order of magnitude of structural growth headroom before any 2.0 refactor.",
   "canonical_owner": "core/system-architecture.md",
+  "architecture_decision": {
+    "decision": "extend_1x_without_core_redesign",
+    "recommended_next_version": "1.5.5",
+    "1_5_5_role": "Expansion Governance / Worktree Maintenance Topology",
+    "reason": "The current L0/L1/L2 separation, T0 routing, DAG orchestration, canonical-owner model, candidate/stable separation, and one-way deployment contract already provide the correct runtime skeleton. The missing layer is explicit growth admission and isolated maintenance topology, not a new runtime architecture.",
+    "2_0_role": "Reserved for evidence-based architectural reset only when 1.x structural constraints demonstrably fail."
+  },
   "scope": [
     "admission rules for new capabilities",
     "hot-path growth control",
@@ -13,16 +20,29 @@
     "sparse call-chain design from router to only the task-relevant modules",
     "explicit dependency and branch relationship rules to prevent cross-module mesh coupling",
     "clear separation of shared contracts from domain-specific behavior",
+    "worktree-based isolation for maintenance candidates and major experiments",
+    "lifecycle rules for short-lived feature/fix worktrees and long-lived major-version architecture worktrees",
     "2.0.0 refactor triggers when 1.x structural constraints are no longer sufficient"
   ],
   "architecture_targets": {
     "capacity_headroom": "Design 1.x so that a >=10x increase in total domains/capabilities/rules does not cause an approximately 10x increase in the control plane loaded by a typical single-domain task.",
     "hot_path": "L0 remains effectively constant; L1 load grows with the current task's actual breadth rather than total Cabinet size; L2 remains exception-only.",
-    "call_chain": "T0 router -> lightweight capability metadata/index -> selected domain modules -> orchestrator only when dependency/concurrency exists -> review only when task risk requires it -> L2 governance only for maintenance/evolution/deployment exceptions.",
-    "dependency_rule": "Domain branches are leaf capabilities under shared contracts; they may depend on Core and approved shared/common components, but should not form arbitrary lateral dependency chains or duplicate another domain's canonical policy.",
+    "runtime_call_chain": "T0 router -> lightweight capability metadata/index -> selected leaf domain modules -> orchestrator only when dependency/concurrency exists -> review only when task risk requires it -> L2 governance only for maintenance/evolution/deployment exceptions.",
+    "runtime_dependency_rule": "Domain branches are leaf capabilities under shared contracts; they may depend on Core and approved shared/common components, but should not form arbitrary lateral dependency chains or duplicate another domain's canonical policy.",
+    "maintenance_topology": "Stable source remains a single authoritative Git history. Independent fixes, fine-grained policy candidates, risky experiments, and future major-version architecture work use isolated Git branches/worktrees so maintenance can proceed in parallel without making those worktrees runtime dependencies.",
+    "worktree_rule": "A worktree is a maintenance isolation unit, not a runtime module. Runtime never discovers or chains capabilities by scanning worktrees. Short-lived worktrees close after integration or rejection; only explicitly approved major-version architecture work may remain long-lived.",
+    "integration_rule": "All worktree candidates rejoin through the canonical owner and normal candidate -> validation -> user-finalization path. No worktree becomes a second source of truth, second Stable, or permanent compatibility mirror.",
     "expansion_order": "parameterize/reuse -> extend existing canonical owner -> shared primitive when genuinely cross-domain -> new leaf domain only for an independently recurring responsibility -> new control layer/state machine only as last resort with explicit user approval.",
-    "no_preallocation": "10x headroom means structural capacity, not pre-creating empty modules, agents, gates, or policy files."
+    "no_preallocation": "10x headroom means structural capacity, not pre-creating empty modules, agents, gates, worktrees, or policy files."
   },
+  "proposed_1_5_5_deliverables": [
+    "A compact capability-admission contract defining reuse/owner/shared-primitive/new-domain/new-control-layer escalation order.",
+    "A lightweight capability metadata/index contract so routing does not require broad module reads as total capability count grows.",
+    "A dependency rule that keeps domain-to-domain lateral coupling exceptional and routes cross-domain work through shared contracts/artifacts/orchestrator.",
+    "A worktree maintenance contract defining creation, naming, base binding, scope, ownership, validation, reintegration, closure, and stale-worktree handling.",
+    "A branch/worktree relationship model separating Stable, fine-grained candidates, hotfixes, experiments, and future 2.0 architecture work without changing runtime deployment semantics.",
+    "Growth observability based on Activated Rules, Loaded Modules, Decision Nodes, Serial Gates, and Control/Work Ratio; no arbitrary repository-size threshold by itself."
+  ],
   "v2_refactor_triggers": [
     "ordinary-task Activated Rules / Loaded Modules / Decision Nodes trend upward mainly because repository size grew rather than because the task itself became broader",
     "L0 requires repeated additions to support new domains",
@@ -30,18 +50,21 @@
     "canonical ownership becomes ambiguous despite normal 1.x owner rules",
     "routing can no longer select relevant capability with lightweight metadata and begins requiring broad module reads",
     "control/work ratio or serial governance gates become a recurring production bottleneck that cannot be fixed by local reduction, reuse, merge, or downshift",
+    "maintenance worktrees require persistent cross-merges or synchronization to remain usable, indicating that 1.x ownership boundaries are failing",
     "the 1.x compatibility burden itself becomes more complex than a clean architectural reset"
   ],
   "non_goals": [
     "no new domain now",
     "no new agent layer now",
     "no new state machine now",
+    "no runtime dependency on Git worktrees",
     "no main-branch modification",
     "no full architecture refactor in 1.5.4 finegrain",
-    "no speculative prebuilding for hypothetical future workloads"
+    "no speculative prebuilding for hypothetical future workloads",
+    "no permanent one-worktree-per-domain topology"
   ],
   "base_ref": "cabinet/sol-v1.5.4-finegrain",
-  "base_sha256": "383aa68d629f5c6060bf0ea9819800675b107efc",
+  "base_sha256": "35bd8ecb7ab6e957692115e18276cc48b2d9b734",
   "validation": [
     "confirm compatibility with existing L0/L1/L2 model",
     "confirm no increase to routine L0 load",
@@ -49,6 +72,8 @@
     "confirm direct user requests do not automatically become new modules",
     "confirm a hypothetical 10x increase in registered capabilities does not require ordinary tasks to load or traverse those capabilities",
     "confirm dependency direction remains Core/shared contracts -> selected leaf domains, without uncontrolled lateral mesh coupling",
+    "confirm worktrees isolate maintenance but do not become runtime routing inputs or parallel sources of truth",
+    "confirm candidate reintegration preserves existing GitHub Stable / Candidate / Runtime state separation",
     "confirm 2.0 triggers are observable structural symptoms rather than version-age or arbitrary time thresholds"
   ],
   "status": "PLANNED",
