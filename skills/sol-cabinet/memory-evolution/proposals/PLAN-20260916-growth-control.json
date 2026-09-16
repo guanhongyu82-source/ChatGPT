@@ -2,20 +2,43 @@
   "plan_id": "PLAN-20260916-growth-control",
   "source": "user_direct",
   "request_ref": "project-chat:2026-09-16:cabinet-growth-control",
-  "intent": "Prevent Sol Cabinet from becoming progressively heavier or uncontrollable as new work types and user requests accumulate.",
+  "intent": "Prevent Sol Cabinet from becoming progressively heavier or uncontrollable as new work types and user requests accumulate, while preserving the current 1.5.4 core architecture and reserving at least an order of magnitude of structural growth headroom before any 2.0 refactor.",
   "canonical_owner": "core/system-architecture.md",
   "scope": [
     "admission rules for new capabilities",
     "hot-path growth control",
     "module reuse before expansion",
-    "default rejection of new persistent structure when an existing owner can absorb the need"
+    "default rejection of new persistent structure when an existing owner can absorb the need",
+    "10x structural headroom without linear growth of ordinary-task hot-path load",
+    "sparse call-chain design from router to only the task-relevant modules",
+    "explicit dependency and branch relationship rules to prevent cross-module mesh coupling",
+    "clear separation of shared contracts from domain-specific behavior",
+    "2.0.0 refactor triggers when 1.x structural constraints are no longer sufficient"
+  ],
+  "architecture_targets": {
+    "capacity_headroom": "Design 1.x so that a >=10x increase in total domains/capabilities/rules does not cause an approximately 10x increase in the control plane loaded by a typical single-domain task.",
+    "hot_path": "L0 remains effectively constant; L1 load grows with the current task's actual breadth rather than total Cabinet size; L2 remains exception-only.",
+    "call_chain": "T0 router -> lightweight capability metadata/index -> selected domain modules -> orchestrator only when dependency/concurrency exists -> review only when task risk requires it -> L2 governance only for maintenance/evolution/deployment exceptions.",
+    "dependency_rule": "Domain branches are leaf capabilities under shared contracts; they may depend on Core and approved shared/common components, but should not form arbitrary lateral dependency chains or duplicate another domain's canonical policy.",
+    "expansion_order": "parameterize/reuse -> extend existing canonical owner -> shared primitive when genuinely cross-domain -> new leaf domain only for an independently recurring responsibility -> new control layer/state machine only as last resort with explicit user approval.",
+    "no_preallocation": "10x headroom means structural capacity, not pre-creating empty modules, agents, gates, or policy files."
+  },
+  "v2_refactor_triggers": [
+    "ordinary-task Activated Rules / Loaded Modules / Decision Nodes trend upward mainly because repository size grew rather than because the task itself became broader",
+    "L0 requires repeated additions to support new domains",
+    "multiple domains require persistent lateral dependencies or policy duplication to function",
+    "canonical ownership becomes ambiguous despite normal 1.x owner rules",
+    "routing can no longer select relevant capability with lightweight metadata and begins requiring broad module reads",
+    "control/work ratio or serial governance gates become a recurring production bottleneck that cannot be fixed by local reduction, reuse, merge, or downshift",
+    "the 1.x compatibility burden itself becomes more complex than a clean architectural reset"
   ],
   "non_goals": [
-    "no new domain",
-    "no new agent layer",
-    "no new state machine",
+    "no new domain now",
+    "no new agent layer now",
+    "no new state machine now",
     "no main-branch modification",
-    "no full architecture refactor"
+    "no full architecture refactor in 1.5.4 finegrain",
+    "no speculative prebuilding for hypothetical future workloads"
   ],
   "base_ref": "cabinet/sol-v1.5.4-finegrain",
   "base_sha256": "383aa68d629f5c6060bf0ea9819800675b107efc",
@@ -23,7 +46,10 @@
     "confirm compatibility with existing L0/L1/L2 model",
     "confirm no increase to routine L0 load",
     "confirm new-work handling prefers reuse/downshift/merge before persistent expansion",
-    "confirm direct user requests do not automatically become new modules"
+    "confirm direct user requests do not automatically become new modules",
+    "confirm a hypothetical 10x increase in registered capabilities does not require ordinary tasks to load or traverse those capabilities",
+    "confirm dependency direction remains Core/shared contracts -> selected leaf domains, without uncontrolled lateral mesh coupling",
+    "confirm 2.0 triggers are observable structural symptoms rather than version-age or arbitrary time thresholds"
   ],
   "status": "PLANNED",
   "candidate_sha256": null
