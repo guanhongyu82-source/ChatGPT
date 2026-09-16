@@ -1,7 +1,16 @@
 {
   "role": "",
   "object_id": "",
+  "work_type": "",
   "status": "BLOCKED",
+  "dispatch": {
+    "dispatch_id": "",
+    "wave_id": "",
+    "ready_at": null,
+    "started_at": null,
+    "completed_at": null,
+    "timing_basis": null
+  },
   "source_fingerprints": [],
   "findings": [
     {
