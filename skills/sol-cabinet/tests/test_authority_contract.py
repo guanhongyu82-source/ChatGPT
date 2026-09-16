@@ -1,4 +1,5 @@
 """Regression guards for canonical rule ownership; no runtime policy is defined here."""
+import json
 import re
 import unittest
 from pathlib import Path
@@ -42,6 +43,7 @@ class AuthorityContract(unittest.TestCase):
             'memory-evolution/evolution-policy.md': '进化',
             'platform-adapter/deployment-contract.md': 'GitHub→Mac',
             'platform-adapter/codex.md': 'Chat/Work/Codex',
+            'core/system-architecture.md': 'Hot Path Weight',
         }
         for owner, label in required.items():
             with self.subTest(owner=owner):
@@ -60,6 +62,23 @@ class AuthorityContract(unittest.TestCase):
         self.assertIn('本入口提供执行摘要', skill)
         self.assertIn('不另立同类规则的第二权威', skill)
         self.assertIn('core/system-architecture.md', skill)
+
+    def test_hot_path_policy_has_one_owner_and_machine_guard(self):
+        architecture = self.read('core/system-architecture.md')
+        self.assertIn('## Hot Path Weight 与三层控制面', architecture)
+        for marker in ('L0 — Hot Core', 'L1 — Task Modules', 'L2 — Governance Plane'):
+            self.assertIn(marker, architecture)
+        self.assertIn('v1.5.2 — Structure Governance / Non-expansion Baseline', architecture)
+        self.assertIn('v1.5.3 — Quality Validation（框架）', architecture)
+        self.assertIn('v1.5.4 — Control Plane Reduction（框架）', architecture)
+        for relative in ('SKILL.md', 't0-executive-router/router.md'):
+            self.assertNotIn('Hot Path Weight', self.read(relative), relative)
+
+        cage = json.loads(self.read('memory-evolution/permission-cage.json'))
+        self.assertIn('普通任务常驻控制面不随能力增长而扩大', cage['frozen'])
+        denied = '\n'.join(cage['denied'])
+        self.assertIn('无真实缺口证据和用户单独批准新增职责', denied)
+        self.assertIn('为预防假设性问题向普通任务 Hot Path 添加常驻规则', denied)
 
 
 if __name__ == '__main__':
