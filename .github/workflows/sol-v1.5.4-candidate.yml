@@ -102,6 +102,9 @@ jobs:
               main()
           PY
           python3 /Users/macbook/ChatGPT/.scratch/bench_office_batch.py
+      - name: Fresh-process lifecycle witness
+        working-directory: /Users/macbook/ChatGPT/skills/sol-cabinet/tests
+        run: python3 -m unittest -v test_evolution_loop.EvolutionTests.test_lifecycle_transaction_and_rollback
       - name: Hosted full-suite module diagnostic
         continue-on-error: true
         working-directory: /Users/macbook/ChatGPT
