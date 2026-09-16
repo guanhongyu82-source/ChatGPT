@@ -21,20 +21,23 @@ def load_module(name: str, relative_path: str):
 
 classifier = load_module("sol_classifier_parallel_planning", "scripts/classify_task.py")
 CASES = json.loads((ROOT / "tests" / "quality-validation-cases.json").read_text(encoding="utf-8"))
+PERF = json.loads((ROOT / "tests" / "performance-validation-v1.5.4.json").read_text(encoding="utf-8"))
 
 
 def profile(case_id: str):
     return copy.deepcopy(next(item for item in CASES if item["id"] == case_id)["profile"])
 
 
+def performance_profile(case_id: str):
+    task = profile(case_id)
+    scenario = next(item for item in PERF["scenarios"] if item["id"] == case_id)
+    task.update(copy.deepcopy(scenario.get("profile_overrides", {})))
+    return task
+
+
 class ParallelPlanningTests(unittest.TestCase):
-    def test_qv_03_multi_source_ready_set_activates_parallel_execution_units(self):
-        task = profile("QV-03")
-        task.update(
-            independent_work_units=3,
-            parallel_benefit="positive",
-            additional_execution_agent_budget=3,
-        )
+    def test_qv_03_performance_scenario_activates_multi_source_ready_set(self):
+        task = performance_profile("QV-03")
 
         result = classifier.classify(task)
 
@@ -44,13 +47,8 @@ class ParallelPlanningTests(unittest.TestCase):
         self.assertEqual(result["review"]["minimum_independent_reviewers"], 1)
         self.assertEqual(result["agents"]["planned"], 5)
 
-    def test_qv_06_complex_task_uses_bounded_parallel_width_without_changing_t_level(self):
-        task = profile("QV-06")
-        task.update(
-            independent_work_units=4,
-            parallel_benefit="positive",
-            additional_execution_agent_budget=3,
-        )
+    def test_qv_06_performance_scenario_uses_bounded_parallel_width_without_changing_t_level(self):
+        task = performance_profile("QV-06")
 
         result = classifier.classify(task)
 
@@ -91,13 +89,19 @@ class ParallelPlanningTests(unittest.TestCase):
         self.assertEqual(result["agents"]["additional_execution_agents"], 0)
         self.assertTrue(result["agents"]["review_execution_blocked"])
 
-    def test_qv_01_remains_single_executor_even_under_speed_goal(self):
-        task = profile("QV-01")
+    def test_qv_01_performance_scenario_remains_single_executor(self):
+        task = performance_profile("QV-01")
 
         result = classifier.classify(task)
 
         self.assertEqual(result["agents"]["additional_execution_agents"], 0)
         self.assertEqual(result["agents"]["planned"], 1)
+
+    def test_performance_config_keeps_directional_goal_non_blocking(self):
+        goal = PERF["performance_goal"]
+        self.assertEqual(goal["directional_wall_clock_ratio"], 0.7)
+        self.assertFalse(goal["hard_gate"])
+        self.assertTrue(PERF["acceptance"]["speed_claim_requires_measured_ab"])
 
 
 if __name__ == "__main__":
