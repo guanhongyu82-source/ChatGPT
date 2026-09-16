@@ -36,6 +36,8 @@ sol-cabinet/
 | Platform Adapter | `platform-adapter/` | Chat／Work／Codex 运行适配、Agent 配置、部署与安装 |
 | Tests | `tests/` | 路由、结构、安全、源资产和前向行为验证 |
 
+Sol Cabinet 的版本优化范围按完整系统判断，包括总控 Skill、Agent Orchestrator、Review System 与 [8 个 Custom Agents](../platform-adapter/codex-agents/roster.md)。这不表示每次版本升级都同步修改所有组成部分：问题定位到总控、路由、调度或并发时修改相应控制面；问题定位到某一 Agent 自身职责、提示词、边界或输出质量时只修改对应 Agent；未被真实问题证据触及的 Agent 不为版本整齐而机械重写。8 个 Agent 始终是按需角色库，不转化为固定满编流程或普通任务常驻负担。
+
 ## Canonical Authority Map
 
 同一规则域只允许一个规范 owner；入口摘要、平台适配、脚本和测试可以引用或机械执行，但不得成为第二套政策来源。
@@ -49,6 +51,7 @@ sol-cabinet/
 | 文件、原稿、目录、预期成品与 Actual 对账政策 | `domain-skills/office-delivery.md` | `templates/task-card.json` 承载 Expected 数据；`scripts/delivery_gate.py` 只机械执行其可判定子集 |
 | 独立审核、证据、返工与 PASS/FAIL/BLOCKED verdict | `review-system/review-system.md` | 可审 Office 规则是否满足，但不另写第二套 Office 政策 |
 | Agent 编排、依赖与并发 | `agent-orchestrator/orchestration.md` | 不改变 T 分级、质量 Gate 或用户授权边界 |
+| Custom Agent 角色定义与角色级维护边界 | `platform-adapter/codex-agents/roster.md` | Agent 保持按需窄角色；编排问题回到 Orchestrator，不在全部 Agent 提示词中复制控制面政策 |
 | 进化、candidate→Stable 发布权限与 EVO/回滚 | `memory-evolution/evolution-policy.md` | `permission-cage.json` 是该域冻结机器边界；`scripts/evolve.py` 是执行门禁，不自行发明授权 |
 | GitHub→Mac 正式部署 | `platform-adapter/deployment-contract.md` | 部署不等于发布；本机运行树不产生反向正式版本权威 |
 | Chat/Work/Codex 宿主差异与 Hook 接法 | `platform-adapter/codex.md` | 只描述宿主适配；不得改写 Core、Office、Review、Evolution 或 Deployment 的通用政策 |
