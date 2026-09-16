@@ -6,7 +6,25 @@
     "directional_after_minutes": 7,
     "directional_wall_clock_ratio": 0.7,
     "hard_gate": false,
-    "interpretation": "Aim for roughly 30% lower end-to-end wall clock on comparable complex work when safe parallelism exists; do not trade quality, dependency correctness, independent review, source protection, delivery reliability, or fail-closed behavior for the target."
+    "interpretation": "Aim for roughly 30% lower end-to-end wall clock on comparable complex work when safe parallelism exists; do not trade quality, dependency correctness, independent review, source protection, delivery reliability, or fail-closed behavior for the target. Real-work attainment is a production-validation objective, not a laboratory release gate."
+  },
+  "laboratory_release_model": {
+    "purpose": "prove the complete v1.5.4 chain is internally coherent and fail-closed before production validation",
+    "required_before_finalization": [
+      "T10 end-to-end laboratory chain passes",
+      "structure validation passes",
+      "affected quality and delivery regressions pass",
+      "fresh-process evolution promote/rollback lifecycle witness passes",
+      "required independent candidate review evidence is complete"
+    ],
+    "production_validation_after_release": [
+      "real mixed-format source extraction accuracy and wall clock",
+      "real reviewer dispatch, tail, join and completion-feedback latency",
+      "real QV-03/QV-06-shaped end-to-end wall clock",
+      "directional 10-to-7-minute outcome",
+      "sanitized production incidents and self-evolution observations"
+    ],
+    "rule": "Laboratory validates chain integrity; production validates real effectiveness. Production observations do not self-promote Skill changes."
   },
   "metrics": [
     "wall_clock_time",
@@ -89,13 +107,7 @@
         "parallel_benefit": "positive",
         "additional_execution_agent_budget": 3
       },
-      "before": [
-        "source_a_read_verify",
-        "source_b_read_verify",
-        "source_c_read_verify",
-        "merge_conflicts",
-        "independent_review"
-      ],
+      "before": ["source_a_read_verify", "source_b_read_verify", "source_c_read_verify", "merge_conflicts", "independent_review"],
       "after_waves": [
         ["source_manifest"],
         ["source_a_read_verify", "source_b_read_verify", "source_c_read_verify"],
@@ -168,7 +180,11 @@
     "unsafe_parallelism": "blocker",
     "speed_claim_requires_measured_ab": true,
     "directional_goal_is_not_release_gate": true,
-    "full_suite_required_before_finalization": true,
-    "target_mac_required_before_finalization": true
+    "t10_laboratory_chain_required_before_finalization": true,
+    "affected_regression_suite_required_before_finalization": true,
+    "fresh_process_evolution_lifecycle_required_before_finalization": true,
+    "independent_candidate_reviews_required_before_finalization": 2,
+    "target_mac_real_work_performance_required_before_finalization": false,
+    "real_work_performance_validation_phase": "production"
   }
 }
