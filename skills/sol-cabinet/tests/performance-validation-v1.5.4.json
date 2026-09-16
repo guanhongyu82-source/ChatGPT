@@ -116,12 +116,13 @@
         ["independent_source_reads_and_extracts"],
         ["fact_join_and_conflict_resolution"],
         ["docx_production", "xlsx_production"],
-        ["docx_inspection", "xlsx_inspection", "independent_review"],
-        ["expected_actual_join", "review_evidence_join"],
+        ["docx_inspection", "xlsx_inspection", "docx_artifact_review", "xlsx_artifact_review"],
+        ["cross_artifact_consistency_join", "expected_actual_join", "review_evidence_join"],
         ["delivery_gate"]
       ],
       "single_writer_scope": "one writer per final artifact; no concurrent writers to the same artifact",
-      "must_not": ["artifact_collision", "review_version_mismatch", "missing_required_artifact_pass", "false_completion", "duplicate_full_source_reread_without_reason"]
+      "review_parallelism_scope": "artifact-scoped read-only review may run in parallel only after immutable candidates exist; cross-artifact consistency is joined once and required review strength is not reduced",
+      "must_not": ["artifact_collision", "review_version_mismatch", "review_before_candidate", "missing_required_artifact_pass", "false_completion", "duplicate_full_source_reread_without_reason"]
     },
     {
       "id": "QV-07",
