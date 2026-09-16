@@ -13,7 +13,7 @@
 
 `inspect_office.py <文件> [--stale 旧值]` 只输出JSON，不修改输入，不联网、不启动Office、宏或渲染程序。先按任务规则归档输入；输出保存于当前任务，不能写长期记忆。
 
-同一阶段存在两个及以上互不依赖的 DOCX／XLSX 机械检查时，优先一次调用 `inspect_office_batch.py <文件...>`，而不是由宿主逐文件串行重复调用 `inspect_office.py`。批量器只负责并发调度，实际解析仍逐文件调用同一 `inspect()`；任一文件 BLOCKED 时整体为 BLOCKED，不用其他文件的 PASS 覆盖失败。需要建立串行基线或当前环境不宜并发时可显式 `--max-workers 1`。批量器输出的 wall-clock 仅作性能观测，不是质量门槛。
+多个 DOCX／XLSX 只有在同一阶段互不依赖、检查负载非轻量，并且预期净收益明确为正时，才使用 `inspect_office_batch.py <文件...>`；不能仅因为文件数大于一就启动并行。小文件、少量文件、收益未知或当前环境进程启动成本可能高于检查本身时，继续使用单文件路径或 `--max-workers 1`。批量器只负责并发调度，实际解析仍逐文件调用同一 `inspect()`；任一文件 BLOCKED 时整体为 BLOCKED，不用其他文件的 PASS 覆盖失败。批量器输出的 wall-clock 仅作性能观测，不是质量门槛；没有 A/B 证据时不得声称更快。
 
 它们都不是完整事实或视觉验收器。`parse_status=PASS` 仅表示安全解析完成，`overall_verdict=NOT_ASSESSED` 表示内容质量未裁决；解析失败为BLOCKED，不读取ZIP二进制假装正文。检查器不重算公式、不解释完整样式继承、不OCR图片、不认证文档可在所有Office应用打开。字段／公式缓存与未核项必须继续披露。当前只支持识别的Transitional OOXML部件；Strict或不识别的命名空间返回BLOCKED，由原生文件工具按实际支持处理，不能当空文档。
 
