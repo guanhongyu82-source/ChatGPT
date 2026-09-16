@@ -1,5 +1,5 @@
 {
-  "validation_state": "candidate_hardening_in_progress",
+  "validation_state": "internally_hardened_external_validation_pending",
   "candidate_branch": "cabinet/sol-v1.5.4-quality-parallelism",
   "base_main": "6c2576266a2b6dd31f72281dcb40bbd5b447b243",
   "version_during_validation": "1.5.3",
@@ -33,7 +33,7 @@
       "area": "office_mechanical_inspection",
       "priority": "high_for_heavy_independent_files",
       "finding": "Thread parallelism was negative; process parallelism materially reduced wall clock for heavy independent OOXML inspections.",
-      "candidate_action": "Keep process-parallel batch inspection only for sufficiently heavy independent files with positive expected benefit; simple/light work stays on the original single-file path."
+      "candidate_action": "Keep process-parallel batch inspection only for sufficiently heavy independent files with positive expected benefit; simple/light work stays on the original single-file path. If process infrastructure is unavailable, run the same checks serially and record serial_fallback rather than skipping inspection or claiming speedup."
     },
     {
       "area": "fixed_control_plane_loading",
@@ -56,6 +56,7 @@
     "Independent final artifacts use one writer per artifact/path and may be produced in parallel after a stable shared fact baseline.",
     "Independent immutable artifacts may use artifact-scoped parallel review followed by one cross-artifact consistency join.",
     "Independent nontrivial DOCX/XLSX mechanical inspections may use a process-parallel batch path only when expected net benefit is positive.",
+    "Office process-parallel inspection falls back to the same serial checks when process infrastructure is unavailable, and the fallback cannot be counted as parallel speedup.",
     "Simple tasks remain single-executor and required independent review strength remains unchanged."
   ],
   "performance_iterations": [
@@ -80,19 +81,20 @@
     {
       "iteration": "office-batch-process-reproduced",
       "environment": "GitHub-hosted macOS 14 ARM64",
-      "workload": "5 separate runs of 8 independent synthetic DOCX inspections with 24000 paragraphs each",
+      "workload": "6 separate runs of 8 independent synthetic DOCX inspections with 24000 paragraphs each",
       "wall_clock_ratios": [
         0.44740980332227565,
         0.4820989766286518,
         0.45398612831371443,
         0.45902406562133735,
-        0.44002405980758497
+        0.44002405980758497,
+        0.42099578562448675
       ],
-      "median_wall_clock_ratio": 0.45398612831371443,
-      "median_relative_wall_clock_reduction": 0.5460138716862856,
+      "median_wall_clock_ratio": 0.45069796581799504,
+      "median_relative_wall_clock_reduction": 0.549302034182005,
       "result": "REPRODUCED_KEEP_FOR_TARGETED_USE",
       "finding_category": "measured_parallel_gain",
-      "interpretation": "Five hosted-macOS runs show the same direction and materially lower wall clock for sufficiently heavy independent Office inspection. This is component-level synthetic evidence only and does not prove end-to-end real-office speed."
+      "interpretation": "Six hosted-macOS runs show the same direction and materially lower wall clock for sufficiently heavy independent Office inspection. This is component-level synthetic evidence only and does not prove end-to-end real-office speed."
     },
     {
       "iteration": "fixed-control-plane-load",
@@ -112,15 +114,15 @@
     "targeted_candidate_ci": {
       "parallel_planning": "PASS 7/7",
       "hot_path_policy": "PASS 9/9",
-      "office_batch": "PASS 3/3",
+      "office_batch": "PASS 4/4",
       "frozen_quality_validation": "PASS 10/10",
-      "total": "PASS 29/29"
+      "total": "PASS 30/30"
     },
     "hosted_macos_module_diagnostic": {
-      "candidate_test_inventory": 190,
-      "aggregate_pass_witnesses": 189,
+      "candidate_test_inventory": 191,
+      "aggregate_pass_witnesses": 190,
       "aggregate_runtime_issue_witnesses": 1,
-      "isolated_test_case_pass_witnesses": "190/190",
+      "isolated_test_case_pass_witnesses": "191/191",
       "fresh_process_lifecycle_witness": "PASS",
       "known_runtime_issue": "The lifecycle case can fail inside the full test_evolution_loop module on GitHub-hosted macOS because the maintenance sandbox cannot initialize in that hosted process state; the identical lifecycle case passes in a fresh process.",
       "cabinet_regression_established": false,
@@ -145,6 +147,7 @@
     "live_runtime_modified": false,
     "version_bumped": false,
     "temporary_candidate_ci_present": true,
+    "internal_optimization_scope_frozen": true,
     "ready_for_finalization": false,
     "user_finalization_received": false
   }
