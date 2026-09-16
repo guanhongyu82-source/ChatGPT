@@ -101,7 +101,7 @@ def main():
     args = parser.parse_args()
     try:
         result = inspect_many(args.paths, args.stale, args.max_workers)
-    except (OSError, ValueError, TypeError) as exc:
+    except (OSError, ValueError, TypeError, RuntimeError) as exc:
         print(json.dumps({"parse_status": "BLOCKED", "reason": type(exc).__name__}, ensure_ascii=False))
         return 2
     print(json.dumps(result, ensure_ascii=False, indent=2))
