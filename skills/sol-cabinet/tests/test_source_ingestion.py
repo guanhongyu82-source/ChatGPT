@@ -5,6 +5,7 @@ import json
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -63,6 +64,27 @@ class SourceIngestionTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def _refresh_manifest_entry(self, index: int) -> None:
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        path = self.paths[index]
+        digest = sha(path)
+        data["files"][index]["size_bytes"] = path.stat().st_size
+        data["files"][index]["source_sha256"] = digest
+        data["files"][index]["archived_sha256"] = digest
+        self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    def _write_xlsx_package(self, extra_parts: dict[str, str | bytes] | None = None) -> None:
+        path = self.paths[2]
+        with zipfile.ZipFile(path, "w") as package:
+            package.writestr("[Content_Types].xml", "<Types/>")
+            package.writestr("_rels/.rels", "<Relationships/>")
+            package.writestr("xl/workbook.xml", "<workbook/>")
+            package.writestr("xl/_rels/workbook.xml.rels", "<Relationships/>")
+            package.writestr("xl/worksheets/sheet1.xml", "<worksheet/>")
+            for name, payload in (extra_parts or {}).items():
+                package.writestr(name, payload)
+        self._refresh_manifest_entry(2)
+
     def fake_office_inspect(self, path: Path):
         path = Path(path)
         if path.suffix == ".docx":
@@ -78,7 +100,12 @@ class SourceIngestionTests(unittest.TestCase):
                 {"locator": "验证台账!A2", "text": "阶段=完成"},
             ]
             coverage = {
-                "sheets": [{"name": "验证台账", "formula_count": 0}],
+                "parts_read": [
+                    "xl/workbook.xml",
+                    "xl/_rels/workbook.xml.rels",
+                    "xl/worksheets/sheet1.xml",
+                ],
+                "sheets": [{"name": "验证台账", "part": "xl/worksheets/sheet1.xml", "formula_count": 0}],
                 "limitations": ["公式只读未重算，缓存可能过期", "图片与图表未视觉核验", "未完成视觉渲染核验"],
             }
         else:
@@ -126,6 +153,55 @@ class SourceIngestionTests(unittest.TestCase):
         self.assertEqual(result["state"], "PARTIAL")
         self.assertTrue(any("tracked-deletions-not-extracted" in item for item in result["evidence_pack"]["unread"]))
         self.assertIn("PARTIAL", {item["state"] for item in result["evidence_pack"]["coverage"]})
+
+    def test_unparsed_semantic_xlsx_parts_fail_closed_by_default(self):
+        cases = [
+            "xl/comments1.xml",
+            "xl/threadedComments/threadedComment1.xml",
+            "xl/pivotTables/pivotTable1.xml",
+            "customXml/item1.xml",
+        ]
+        for part in cases:
+            with self.subTest(part=part):
+                self._write_xlsx_package({part: "<semantic/>"})
+                with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=self.fake_office_inspect):
+                    result = source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertTrue(
+                    any(part in item for item in result["evidence_pack"]["unread"]),
+                    result["evidence_pack"]["unread"],
+                )
+                xlsx_coverage = next(
+                    item
+                    for item in result["evidence_pack"]["coverage"]
+                    if item["inspection_coverage"] and "sheets" in item["inspection_coverage"]
+                )
+                self.assertEqual(xlsx_coverage["state"], "PARTIAL")
+
+    def test_known_structural_and_format_parts_do_not_create_false_partial(self):
+        self._write_xlsx_package(
+            {
+                "xl/styles.xml": "<styleSheet/>",
+                "xl/theme/theme1.xml": "<theme/>",
+                "xl/printerSettings/printerSettings1.bin": b"print-settings",
+                "docProps/core.xml": "<coreProperties/>",
+                "docProps/app.xml": "<Properties/>",
+            }
+        )
+        with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=self.fake_office_inspect):
+            result = source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
+        self.assertEqual(result["state"], "PASS")
+        self.assertFalse(result["evidence_pack"]["unread"])
+
+    def test_inspector_must_report_concrete_parts_read(self):
+        def malformed_inspect(path: Path):
+            result = self.fake_office_inspect(path)
+            result["coverage"].pop("parts_read", None)
+            return result
+
+        with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=malformed_inspect):
+            with self.assertRaises(ValueError):
+                source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
 
     def test_manifest_hash_change_fails_closed(self):
         self.paths[0].write_text("项目=已变化\n", encoding="utf-8")
