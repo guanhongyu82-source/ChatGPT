@@ -145,6 +145,8 @@ class SourceIngestionTests(unittest.TestCase):
             }
         else:
             raise AssertionError(path)
+        coverage.update(semantic_surface=source_ingestion.inspect_office.SEMANTIC_SURFACE,
+                        semantic_gaps=[], parts_complete=list(coverage["parts_read"]))
         return {
             "parse_status": "PASS",
             "source_sha256": sha(path),
@@ -213,7 +215,7 @@ class SourceIngestionTests(unittest.TestCase):
                 )
                 self.assertEqual(xlsx_coverage["state"], "PARTIAL")
 
-    def test_known_structural_and_format_parts_do_not_create_false_partial(self):
+    def test_uninspected_format_parts_do_not_prove_semantic_coverage(self):
         self._write_xlsx_package(
             {
                 "xl/styles.xml": "<styleSheet/>",
@@ -228,8 +230,9 @@ class SourceIngestionTests(unittest.TestCase):
         )
         with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=self.fake_office_inspect):
             result = source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
-        self.assertEqual(result["state"], "PASS")
-        self.assertFalse(result["evidence_pack"]["unread"])
+        self.assertEqual(result["state"], "PARTIAL")
+        for part in ("xl/styles.xml", "xl/theme/theme1.xml", "xl/printerSettings/printerSettings1.bin"):
+            self.assertTrue(any(part in item for item in result["evidence_pack"]["unread"]))
 
     def test_semantic_relationship_cannot_hide_inside_verified_format_path(self):
         rel_ns = "http://schemas.openxmlformats.org/package/2006/relationships"
@@ -313,6 +316,13 @@ class SourceIngestionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             source_ingestion.ingest_archive(self.task, self.manifest, max_workers=2)
 
+    def test_manifest_schema_version_boolean_is_not_integer_one(self):
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["schema_version"] = True
+        self.manifest.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            source_ingestion._load_units(self.task, self.manifest)
+
     def test_manifest_size_and_role_invariants_are_enforced(self):
         data = json.loads(self.manifest.read_text(encoding="utf-8"))
         data["files"][0]["size_bytes"] += 1
@@ -336,6 +346,7 @@ class SourceIngestionTests(unittest.TestCase):
             {"byte_identical": False}, {"source_unmodified": False},
             {"status": "PASS"}, {"size_bytes": True},
             {"archived_relative_path": "00_原稿/../材料.txt"},
+            {"archived_relative_path": "00_原稿//原稿_正文_材料.txt"},
         ]
         for mutation in mutations:
             with self.subTest(mutation=mutation):

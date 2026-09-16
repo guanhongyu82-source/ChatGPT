@@ -27,6 +27,7 @@
     "state": "NOT_APPLICABLE",
     "task_archive_relative_path": null,
     "manifest_relative_path": null,
+    "manifest_sha256": null,
     "verified_count": 0,
     "gate_code": null
   },

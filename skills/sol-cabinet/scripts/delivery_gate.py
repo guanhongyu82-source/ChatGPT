@@ -81,7 +81,8 @@ def review_evidence_baseline(card):
 
     The digest is SHA-256 over canonical JSON containing the Task Card's
     source_archive and evidence_pack objects. When either object exists, every
-    review scope is bound to this baseline so stale factual conclusions fail closed.
+    review scope is bound to this baseline. Delivery separately revalidates the
+    manifest and archived bytes against these locked declarations.
     """
     if not isinstance(card, dict):
         return None
@@ -102,6 +103,82 @@ def review_evidence_baseline(card):
 
 # Compatibility for callers/tests created with the first v1.5.4 remediation.
 _review_evidence_baseline = review_evidence_baseline
+
+
+def _validate_live_evidence(card, contract, require):
+    """Re-prove locked source declarations against canonical on-disk bytes.
+
+    Archive paths are relative to the locked Task Card directory. A review of
+    declarations is current only while the manifest bytes and every source still
+    match them. Reuse ingestion validation for canonical archive invariants.
+    """
+    if not isinstance(card, dict):
+        return
+    archive = card.get('source_archive')
+    pack = card.get('evidence_pack')
+    if archive is None and pack is None:
+        return
+    empty_pack = (isinstance(pack, dict)
+                  and set(pack) == {'sources', 'coverage', 'facts', 'conflicts', 'unread'}
+                  and all(value == [] for value in pack.values()))
+    if (isinstance(archive, dict) and archive.get('source_files_present') is False
+            and archive.get('state') == 'NOT_APPLICABLE'
+            and not archive.get('required') and not archive.get('source_asset_count')
+            and (pack is None or empty_pack)):
+        return
+    try:
+        from source_ingestion import _load_units, ARCHIVE_DIR_NAME, MANIFEST_NAME
+        if not isinstance(archive, dict) or not isinstance(pack, dict):
+            raise ValueError('source_archive and evidence_pack required together')
+        relative = str(Path(ARCHIVE_DIR_NAME) / MANIFEST_NAME)
+        if archive.get('manifest_relative_path') != relative:
+            raise ValueError('canonical manifest_relative_path required')
+        if archive.get('source_files_present') is not True or archive.get('state') != 'PASS':
+            raise ValueError('source archive must declare preserved sources')
+        task_root = Path(contract['task_card']['path']).parent
+        manifest = task_root / relative
+        before = manifest.read_bytes()
+        units = _load_units(task_root, manifest)
+        after = manifest.read_bytes()
+        if before != after or hashlib.sha256(after).hexdigest() != archive.get('manifest_sha256'):
+            raise ValueError('manifest bytes changed after evidence lock')
+        for field in ('source_asset_count', 'verified_count'):
+            if field in archive and (type(archive[field]) is not int or archive[field] != len(units)):
+                raise ValueError('source archive count mismatch')
+        sources = pack.get('sources')
+        fields = ('source_id', 'source_sha256', 'source_type', 'archived_relative_path')
+        if (not isinstance(sources, list) or len(sources) != len(units)
+                or any(not isinstance(item, dict) for item in sources)):
+            raise ValueError('evidence sources do not cover the live archive')
+        if [{key: item.get(key) for key in fields} for item in sources] != [
+                {key: unit[key] for key in fields} for unit in units]:
+            raise ValueError('evidence sources differ from the live archive')
+        if pack.get('unread') != []:
+            raise ValueError('evidence has unread source semantics')
+        coverage = pack.get('coverage')
+        if (not isinstance(coverage, list) or len(coverage) != len(units)
+                or any(not isinstance(item, dict) for item in coverage)):
+            raise ValueError('evidence coverage must cover every live source')
+        for unit, item in zip(units, coverage):
+            if item.get('source_id') != unit['source_id'] or item.get('state') != 'EXTRACTED':
+                raise ValueError('source semantic coverage is incomplete')
+            if unit['source_type'] in ('.docx', '.xlsx'):
+                from inspect_office import SEMANTIC_SURFACE
+                inspection = item.get('inspection_coverage')
+                if not isinstance(inspection, dict):
+                    raise ValueError('Office semantic coverage contract required')
+                parts = inspection.get('parts_read')
+                complete = inspection.get('parts_complete')
+                if (inspection.get('semantic_surface') != SEMANTIC_SURFACE
+                        or inspection.get('semantic_gaps') != []
+                        or not isinstance(parts, list) or not parts
+                        or not all(isinstance(part, str) and part for part in parts)
+                        or len(parts) != len(set(parts))
+                        or not isinstance(complete, list) or complete != parts):
+                    raise ValueError('Office semantic coverage is incomplete or unsupported')
+
+    except (OSError, ValueError, TypeError, KeyError, UnicodeError) as exc:
+        require(False, 'live evidence validation failed: ' + str(exc))
 
 
 def _normalize_review_scope(review, actual_by_id, hashes):
@@ -214,6 +291,7 @@ def check(c, contract_path=None):
 
     card = _load_locked_task_card(c, require)
     expected = _expected_artifacts(c, root, require, card)
+    _validate_live_evidence(card, c, require)
     evidence_baseline_sha256 = review_evidence_baseline(card)
     require(bool(expected), 'file delivery requires at least one expected artifact; use analysis-only for no-file tasks')
     artifacts = c.get('artifacts')

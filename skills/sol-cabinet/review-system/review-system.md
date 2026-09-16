@@ -40,6 +40,12 @@ Review 核对用户要求与真实结果，不核对执行者是否“看起来�
 
 `evidence_baseline_sha256` 的唯一派生方式由 `scripts/delivery_gate.py` 的公开函数 `review_evidence_baseline(card)` 定义：取锁定 Task Card 中存在的 `source_archive`、`evidence_pack` 组成对象，以 UTF-8 编码的 canonical JSON（`ensure_ascii=false`、key 排序、紧凑分隔符）计算 SHA-256。Reviewer／宿主应直接调用该 helper 或实现完全相同的算法，不自行设计第二种 fingerprint。两字段都不存在的历史 Task Card 才不要求该值。
 
+Delivery Gate 在最终 check 中还必须重新证明该 baseline 对应当前磁盘证据。有来源任务的 Task Card 文件置于任务根目录；`source_archive.manifest_relative_path` 必须为 `00_原稿/原稿清单.json`，`manifest_sha256` 锁定 manifest 的原始字节。门禁重读 manifest，调用生产 ingestion 的 canonical archive 校验，核 exact schema、路径／角色／身份、重复拒绝、当前 source size/SHA-256 与 preservation 标记，再核 manifest 前后字节稳定、hash 与锁定值相同。evidence pack 的全部 source 身份、路径与 hash 必须与 live archive 一致；只重算 Task Card JSON 不构成证据 freshness 验证。
+
+`evidence_pack.unread` 必须为空，coverage 与当前 sources 一一对应且全部 EXTRACTED；Office coverage 还必须满足当前 [有限语义合同](../domain-skills/common-components.md#v154-有限-office-语义覆盖合同)，内部缺口为空、parts_complete 与 parts_read 一致。旧 Office pack 缺该合同必须重建，不能靠刷新 review 延续旧的 false-PASS。源字节、manifest、pack 或 baseline 变化会使旧 review 失效；新 baseline 必须重新审核。无来源任务可省略两对象，或明确声明 NOT_APPLICABLE 并使用空证据包，不得把有 unread 的包伪装成无来源。
+
+此校验为当前文件的只读时点验证，不提供交付后文件锁或身份认证；验证后再修改证据必须重新运行门禁。
+
 - 兼容旧证据：未声明 scope 的 review 视为 `review_scope=full`，`candidate_sha256` 必须等于 Delivery Gate 重新计算的整套当前成品 hash map；若 Task Card 存在 evidence baseline，旧 full review 也必须有匹配的 `evidence_baseline_sha256`，不能因“兼容旧 scope 写法”保留过期事实结论。
 - `review_scope=artifact`：必须列非空且不重复的 `artifact_ids`，`candidate_sha256` 只能且必须绑定这些 artifact 当前 path→hash；审核证据只对这些对象有效，并同时绑定当前 evidence baseline。
 - `review_scope=cross_artifact`：用于多成品一致性 join，`artifact_ids` 必须覆盖全部当前 Actual，`candidate_sha256` 必须绑定整套当前成品 hash map；它不能替代每个 artifact 自身达到最低独立审核覆盖，也必须绑定当前 evidence baseline。

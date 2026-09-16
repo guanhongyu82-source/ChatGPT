@@ -101,7 +101,7 @@ def _load_units(task_dir: Path, manifest_path: Path) -> list[dict]:
     manifest = json.loads(canonical_manifest.read_text(encoding="utf-8"))
     if not isinstance(manifest, dict) or set(manifest) != {"schema_version", "archive_state", "files"}:
         raise ValueError("archive manifest schema is invalid")
-    if manifest["schema_version"] != 1 or manifest["archive_state"] != "PASS":
+    if type(manifest["schema_version"]) is not int or manifest["schema_version"] != 1 or manifest["archive_state"] != "PASS":
         raise ValueError("archive manifest state is invalid")
     files = manifest.get("files")
     if not isinstance(files, list) or not files:
@@ -130,6 +130,8 @@ def _load_units(task_dir: Path, manifest_path: Path) -> list[dict]:
         identity = (role, source_name, item["source_sha256"])
         if relative in seen_relative_paths or identity in seen_identities:
             raise ValueError("duplicate archive manifest record")
+        if relative != expected_relative.as_posix():
+            raise ValueError("archived source path spelling is not canonical")
         seen_relative_paths.add(relative)
         seen_identities.add(identity)
 
@@ -187,9 +189,14 @@ def _content_type_index(package: zipfile.ZipFile) -> tuple[dict[str, str], dict[
     root = _xml_root(package, "[Content_Types].xml")
     if root.tag != CONTENT_TYPES_NS + "Types":
         raise ValueError("Office package content-types manifest is malformed")
+    if root.attrib or (root.text and root.text.strip()):
+        raise ValueError("Office content-types metadata has unsupported semantics")
     defaults: dict[str, str] = {}
     overrides: dict[str, str] = {}
     for item in root:
+        attrs = {"Extension", "ContentType"} if item.tag == CONTENT_TYPES_NS + "Default" else {"PartName", "ContentType"}
+        if set(item.attrib) != attrs or len(item) or (item.text and item.text.strip()) or (item.tail and item.tail.strip()):
+            raise ValueError("Office content-types entry has unsupported semantics")
         if item.tag == CONTENT_TYPES_NS + "Default":
             extension = (item.get("Extension") or "").lower()
             content_type = item.get("ContentType") or ""
@@ -295,6 +302,47 @@ def _verified_format_part(
     return False, set()
 
 
+def _parsed_part_relationship_kinds(name: str, suffix: str) -> set[str]:
+    exact = {
+        "word/document.xml": "officeDocument", "xl/workbook.xml": "officeDocument",
+        "xl/sharedStrings.xml": "sharedStrings", "word/footnotes.xml": "footnotes",
+        "word/endnotes.xml": "endnotes", "word/comments.xml": "comments",
+        "docProps/core.xml": "core-properties", "docProps/app.xml": "extended-properties",
+    }
+    if name in exact:
+        return {exact[name]}
+    if re.fullmatch(r"word/header[0-9]+\.xml", name):
+        return {"header"}
+    if re.fullmatch(r"word/footer[0-9]+\.xml", name):
+        return {"footer"}
+    if re.fullmatch(r"xl/worksheets/sheet[0-9]+\.xml", name):
+        return {"worksheet"}
+    _, kinds = _verified_format_part(name, suffix, None)
+    return kinds
+
+
+def _parsed_part_content_type_supported(name: str, suffix: str, content_type: str | None) -> bool:
+    exact = {
+        "word/document.xml": "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+        "xl/workbook.xml": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+        "xl/sharedStrings.xml": "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml",
+        "docProps/core.xml": "application/vnd.openxmlformats-package.core-properties+xml",
+        "docProps/app.xml": "application/vnd.openxmlformats-officedocument.extended-properties+xml",
+    }
+    if name in exact:
+        return content_type == exact[name]
+    if _relationship_part(name):
+        return content_type == "application/vnd.openxmlformats-package.relationships+xml"
+    if re.fullmatch(r"xl/worksheets/sheet[0-9]+\.xml", name):
+        return content_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+    match = re.fullmatch(r"word/(header[0-9]+|footer[0-9]+|footnotes|endnotes|comments)\.xml", name)
+    if match:
+        kind = re.sub(r"[0-9]+$", "", match.group(1))
+        return content_type == f"application/vnd.openxmlformats-officedocument.wordprocessingml.{kind}+xml"
+    verified, _ = _verified_format_part(name, suffix, content_type)
+    return verified
+
+
 def _relationship_unread(
     package: zipfile.ZipFile,
     rel_name: str,
@@ -310,17 +358,27 @@ def _relationship_unread(
         raise ValueError("Office relationship part is malformed")
     unread: list[str] = []
     semantic_targets: set[str] = set()
+    if root.attrib or (root.text and root.text.strip()):
+        raise ValueError("Office relationship metadata has unsupported semantics")
+    rel_ids: set[str] = set()
     for rel in root:
         if rel.tag != RELATIONSHIPS_NS + "Relationship":
             raise ValueError("Office relationship part has an unknown element")
-        rel_id = rel.get("Id") or "unknown"
+        rel_id = rel.get("Id") or ""
+        if not rel_id or rel_id in rel_ids:
+            raise ValueError("Office relationship identity is missing or duplicated")
+        rel_ids.add(rel_id)
+        if (set(rel.attrib) - {"Id", "Type", "Target", "TargetMode"}
+                or rel.get("TargetMode", "Internal") not in {"Internal", "External"}
+                or len(rel) or (rel.text and rel.text.strip()) or (rel.tail and rel.tail.strip())):
+            unread.append(f"{source_id}:{label}-unsupported-relationship-metadata:{rel_name}:{rel_id}")
         type_uri = rel.get("Type") or ""
         target = rel.get("Target") or ""
         if not type_uri or not target:
             raise ValueError("Office relationship entry is malformed")
         kind = _relationship_kind(type_uri)
         if kind is None:
-            unread.append(f"{source_id}:{label}-uninspected-relationship-type:{rel_name}:{rel_id}:{type_uri}")
+            unread.append(f"{source_id}:{label}-uninspected-relationship-type:{rel_name}:{rel_id}:{type_uri}:{target}")
         if rel.get("TargetMode") == "External":
             unread.append(f"{source_id}:{label}-uninspected-external-relationship:{rel_name}:{rel_id}:{kind}")
             continue
@@ -329,7 +387,10 @@ def _relationship_unread(
             unread.append(f"{source_id}:{label}-unverified-relationship-target:{rel_name}:{rel_id}:{kind}")
             continue
         if kind is not None and resolved in parts_read:
-            continue
+            expected_kinds = _parsed_part_relationship_kinds(resolved, suffix)
+            if kind in expected_kinds:
+                continue
+            unread.append(f"{source_id}:{label}-relationship-part-type-mismatch:{rel_name}:{rel_id}:{type_uri}")
         content_type = _content_type_for(resolved, defaults, overrides)
         is_format, expected_kinds = _verified_format_part(resolved, suffix, content_type)
         if is_format and kind in expected_kinds:
@@ -347,8 +408,7 @@ def _is_verified_noncontent_office_part(
         return True
     if name in PACKAGE_CONTROL_PARTS:
         return True
-    verified, _ = _verified_format_part(name, suffix, content_type)
-    return verified
+    return False
 
 
 def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
@@ -364,7 +424,22 @@ def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
     if len(parts_read) != len(set(parts_read)):
         raise ValueError("Office inspector parts_read contains duplicates")
 
-    unread: list[str] = []
+    if coverage.get("semantic_surface") != inspect_office.SEMANTIC_SURFACE:
+        raise ValueError("Office inspector supported semantic surface is missing or unsupported")
+    gaps = coverage.get("semantic_gaps")
+    complete = coverage.get("parts_complete")
+    if not isinstance(gaps, list) or not all(
+        isinstance(gap, dict) and set(gap) == {"part", "locator", "reason"}
+        and gap["part"] in parts_read
+        and all(isinstance(gap[key], str) and gap[key] for key in ("part", "locator", "reason"))
+        for gap in gaps
+    ):
+        raise ValueError("Office inspector semantic gaps are malformed")
+    incomplete = {gap["part"] for gap in gaps}
+    if not isinstance(complete, list) or complete != [part for part in parts_read if part not in incomplete]:
+        raise ValueError("Office inspector semantic completeness is inconsistent")
+
+    unread = [f'{source_id}:office-semantic-gap:{gap["locator"]}:{gap["reason"]}' for gap in gaps]
     suffix = path.suffix.lower()
     if suffix == ".docx" and coverage.get("tracked_deletion_groups", 0):
         unread.append(f"{source_id}:docx-tracked-deletions-not-extracted")
@@ -388,6 +463,9 @@ def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
             if missing:
                 raise ValueError("Office inspector reported package parts that do not exist")
             defaults, overrides = _content_type_index(package)
+            for name in parts_read:
+                if not _parsed_part_content_type_supported(name, suffix, _content_type_for(name, defaults, overrides)):
+                    unread.append(f"{source_id}:office-unsupported-part-content-type:{name}")
             if suffix == ".docx":
                 for name in parts_read:
                     if not name.endswith(".xml"):
@@ -489,7 +567,7 @@ def join_evidence(extractions: list[dict]) -> dict:
     for source in ordered:
         unread.extend(source["unread"])
         for record in source["records"]:
-            text = str(record["text"]).strip()
+            text = str(record["text"])
             identity = (
                 source["source_id"],
                 source["source_sha256"],

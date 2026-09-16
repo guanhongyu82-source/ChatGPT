@@ -119,7 +119,8 @@ class OfficeSemanticCoverageTests(unittest.TestCase):
             '<cp:keywords>关键词</cp:keywords><e:other e:meaning="属性事实">扩展文本</e:other>尾部文本'
             '</cp:coreProperties>', CT_CORE)})
         result = self.ingest()
-        self.assertEqual(result["state"], "PASS")
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("semantic-gap" in u for u in result["evidence_pack"]["unread"]))
         self.assertEqual({f["text"] for f in result["evidence_pack"]["facts"]},
                          {"标题", "主题", "作者", "关键词", "属性事实", "扩展文本", "尾部文本"})
 
@@ -159,6 +160,7 @@ class OfficeSemanticCoverageTests(unittest.TestCase):
         inspected = self.package({"docProps/core.xml": (
             f'<coreProperties xmlns={quoteattr(CORE)}><keywords>事实</keywords></coreProperties>', CT_CORE)})
         inspected["coverage"]["parts_read"].remove("docProps/core.xml")
+        inspected["coverage"]["parts_complete"].remove("docProps/core.xml")
         self.assertTrue(any("docProps/core.xml" in item for item in
                             source_ingestion._office_unread(self.path, inspected, "source")))
 
@@ -173,19 +175,20 @@ class OfficeSemanticCoverageTests(unittest.TestCase):
         ):
             with self.subTest(kind=kind):
                 uri = "https://example.test/application-semantic/" + kind
-                self.package({target: ("<format/>", content_type)}, [(uri, target)])
+                namespace = inspect_office.DRAWING if kind == "theme" else inspect_office.W
+                self.package({target: (f'<{kind} xmlns={quoteattr(namespace[1:-1])}/>', content_type)}, [(uri, target)])
                 self.assertIsNone(source_ingestion._relationship_kind(uri))
                 result = self.ingest()
                 self.assertEqual(result["state"], "PARTIAL")
                 self.assertEqual(result["evidence_pack"]["coverage"][0]["state"], "UNREAD")
                 unread = result["evidence_pack"]["unread"]
-                self.assertTrue(any("uninspected-package-part:" + target in u for u in unread))
+                self.assertTrue(any(target in u for u in unread))
                 self.assertTrue(any(uri in u for u in unread))
 
     def test_official_theme_and_styles_relationships_remain_pass(self):
         self.package({
-            "word/theme/theme1.xml": ("<theme/>", source_ingestion.THEME_CONTENT_TYPE),
-            "word/styles.xml": ("<styles/>", "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"),
+            "word/theme/theme1.xml": (f'<a:theme xmlns:a={quoteattr(inspect_office.DRAWING[1:-1])}/>', source_ingestion.THEME_CONTENT_TYPE),
+            "word/styles.xml": (f'<w:styles xmlns:w={quoteattr(inspect_office.W[1:-1])}/>', "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"),
         }, [(OFFICE + "theme", "word/theme/theme1.xml"), (OFFICE + "styles", "word/styles.xml")])
         self.assertEqual(self.ingest()["state"], "PASS")
 
@@ -199,9 +202,146 @@ class OfficeSemanticCoverageTests(unittest.TestCase):
         for uri in (OFFICE + "theme/", OFFICE + "theme?x=1", OFFICE.replace("http:", "https:") + "theme",
                     "theme", " theme", OFFICE + "Theme", "http://purl.oclc.org/ooxml/officeDocument/relationships/theme"):
             with self.subTest(uri=uri):
-                self.package({"word/theme/theme1.xml": ("<theme/>", source_ingestion.THEME_CONTENT_TYPE)},
+                self.package({"word/theme/theme1.xml": (f'<a:theme xmlns:a={quoteattr(inspect_office.DRAWING[1:-1])}/>', source_ingestion.THEME_CONTENT_TYPE)},
                              [(uri, "word/theme/theme1.xml")])
                 self.assertEqual(self.ingest()["state"], "PARTIAL")
+
+
+    def test_unsupported_word_elements_and_attributes_leave_internal_gaps(self):
+        for fragment in ('<w:noBreakHyphen/>', '<w:sym w:font="Wingdings" w:char="F041"/>',
+                         '<w:cr/>', '<w:futureVisible/>', '<w:rPr><w:vanish/></w:rPr>',
+                         '<w:t w:unknown="semantic">value</w:t>'):
+            with self.subTest(fragment=fragment):
+                inspected = self.package({"word/document.xml": (
+                    f'<w:document xmlns:w={quoteattr(inspect_office.W[1:-1])}>'
+                    f'<w:body><w:p><w:r><w:t>普通文本</w:t>{fragment}</w:r></w:p></w:body></w:document>',
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")})
+                self.assertIn("word/document.xml", inspected["coverage"]["parts_read"])
+                self.assertNotIn("word/document.xml", inspected["coverage"]["parts_complete"])
+                self.assertTrue(inspected["coverage"]["semantic_gaps"])
+                result = self.ingest()
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertTrue(any("semantic-gap" in u for u in result["evidence_pack"]["unread"]))
+                self.assertTrue(any("普通文本" in f["text"] for f in result["evidence_pack"]["facts"]))
+
+    def test_worksheet_header_footer_and_unknown_children_are_not_covered(self):
+        for fragment in ('<headerFooter><oddHeader>唯一页眉事实</oddHeader></headerFooter>',
+                         '<headerFooter><evenFooter>页脚事实</evenFooter></headerFooter>',
+                         '<futureSemantic>未知事实</futureSemantic>'):
+            with self.subTest(fragment=fragment):
+                inspected = self.package({"xl/worksheets/sheet1.xml": (
+                    f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}>'
+                    '<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>正文</t></is></c></row></sheetData>'
+                    + fragment + '</worksheet>',
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")}, suffix=".xlsx")
+                self.assertIn("xl/worksheets/sheet1.xml", inspected["coverage"]["parts_read"])
+                self.assertNotIn("xl/worksheets/sheet1.xml", inspected["coverage"]["parts_complete"])
+                result = self.ingest()
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertTrue(any("semantic-gap" in u for u in result["evidence_pack"]["unread"]))
+
+    def test_date_style_serial_and_implicit_default_style_are_partial(self):
+        for style_attribute in (' s="1"', ''):
+            with self.subTest(style_attribute=style_attribute):
+                self.package({
+                    "xl/worksheets/sheet1.xml": (
+                        f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}>'
+                        f'<sheetData><row r="1"><c r="A1"{style_attribute}><v>45292</v></c></row></sheetData></worksheet>',
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"),
+                    "xl/styles.xml": (
+                        f'<styleSheet xmlns={quoteattr(inspect_office.X[1:-1])}>'
+                        '<cellXfs count="2"><xf numFmtId="14"/><xf numFmtId="14" applyNumberFormat="1"/></cellXfs></styleSheet>',
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"),
+                }, [(OFFICE + "styles", "xl/styles.xml")], suffix=".xlsx")
+                result = self.ingest()
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertIn("45292", {f["text"] for f in result["evidence_pack"]["facts"]})
+                self.assertTrue(any("unsupported-format-or-default-interpretation" in u
+                                    for u in result["evidence_pack"]["unread"]))
+
+    def test_rich_string_formatting_and_row_attributes_are_unsupported(self):
+        cases = [
+            '<row r="1" hidden="1"><c r="A1"><v>12</v></c></row>',
+            '<row r="1"><c r="A1" t="inlineStr"><is><r><rPr><vertAlign val="superscript"/></rPr>'
+            '<t>2</t></r></is></c></row>',
+            '<row r="1"><c r="A1" t="b"><v>1</v></c></row>',
+        ]
+        for cells in cases:
+            with self.subTest(cells=cells):
+                self.package({"xl/worksheets/sheet1.xml": (
+                    f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}><sheetData>{cells}</sheetData></worksheet>',
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")}, suffix=".xlsx")
+                self.assertEqual(self.ingest()["state"], "PARTIAL")
+
+    def test_supported_word_text_tabs_and_breaks_still_pass(self):
+        inspected = self.package({"word/document.xml": (
+            f'<w:document xmlns:w={quoteattr(inspect_office.W[1:-1])}>'
+            '<w:body><w:p><w:r><w:t>甲</w:t><w:tab/><w:t>乙</w:t><w:br/>'
+            '<w:t xml:space="preserve"> 丙 </w:t></w:r></w:p></w:body></w:document>',
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")})
+        self.assertEqual(inspected["records"][0]["text"], "甲\t乙\n 丙 ")
+        self.assertEqual(inspected["coverage"]["semantic_gaps"], [])
+        self.assertEqual(inspected["coverage"]["parts_complete"], inspected["coverage"]["parts_read"])
+        result = self.ingest()
+        self.assertEqual(result["state"], "PASS")
+        self.assertEqual(result["evidence_pack"]["facts"][0]["text"], inspected["records"][0]["text"])
+
+    def test_supported_inline_shared_strings_and_plain_numbers_still_pass(self):
+        inspected = self.package({
+            "xl/worksheets/sheet1.xml": (
+                f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}>'
+                '<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>内联</t></is></c>'
+                '<c r="B1" t="s"><v>0</v></c><c r="C1"><v>12.5</v></c></row></sheetData></worksheet>',
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"),
+            "xl/sharedStrings.xml": (
+                f'<sst xmlns={quoteattr(inspect_office.X[1:-1])} count="1" uniqueCount="1"><si><t>共享</t></si></sst>',
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"),
+        }, [(OFFICE + "sharedStrings", "xl/sharedStrings.xml")], suffix=".xlsx")
+        self.assertEqual(inspected["coverage"]["semantic_gaps"], [])
+        result = self.ingest()
+        self.assertEqual(result["state"], "PASS")
+        self.assertEqual({f["text"] for f in result["evidence_pack"]["facts"]}, {"内联", "共享", "12.5"})
+
+    def test_parts_read_without_semantic_contract_cannot_claim_complete(self):
+        for key in ("semantic_surface", "semantic_gaps", "parts_complete"):
+            with self.subTest(key=key):
+                inspected = self.package()
+                inspected["coverage"].pop(key)
+                with self.assertRaises(ValueError):
+                    source_ingestion._office_unread(self.path, inspected, "source")
+
+    def test_semantic_completeness_cannot_contradict_internal_gaps(self):
+        inspected = self.package()
+        inspected["coverage"]["semantic_gaps"] = [{"part": "word/document.xml", "locator": "word/document.xml:p[1]",
+                                                   "reason": "unhandled"}]
+        with self.assertRaises(ValueError):
+            source_ingestion._office_unread(self.path, inspected, "source")
+
+    def test_official_relationship_type_must_match_the_parsed_target(self):
+        self.package(relationships=[(OFFICE + "comments", "word/document.xml")])
+        result = self.ingest()
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("relationship-part-type-mismatch" in u for u in result["evidence_pack"]["unread"]))
+
+
+
+    def test_parsed_part_custom_content_type_cannot_claim_supported_semantics(self):
+        self.package({"word/document.xml": (
+            f'<w:document xmlns:w={quoteattr(inspect_office.W[1:-1])}><w:body/></w:document>',
+            "application/x-custom-semantics+xml")})
+        result = self.ingest()
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("unsupported-part-content-type" in u for u in result["evidence_pack"]["unread"]))
+
+    def test_duplicate_cell_identity_cannot_hide_interpretation_ambiguity(self):
+        self.package({"xl/worksheets/sheet1.xml": (
+            f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}>'
+            '<sheetData><row r="1"><c r="A1"><v>12</v></c><c r="A1"><v>13</v></c></row></sheetData></worksheet>',
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")}, suffix=".xlsx")
+        result = self.ingest()
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("ambiguous-cell-reference" in u for u in result["evidence_pack"]["unread"]))
+
 
 
 if __name__ == "__main__":
