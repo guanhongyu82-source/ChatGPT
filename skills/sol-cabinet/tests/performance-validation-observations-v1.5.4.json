@@ -145,6 +145,7 @@
       "proven": ["legacy full review compatibility", "per-required-artifact minimum reviewer coverage", "cross-artifact consistency requirement", "targeted unrelated-review reuse after one-artifact rework", "same-wave reviewer dispatch policy", "direct structured completion feedback contract"],
       "not_proven": "Real target-work review dispatch/tail/join wall-clock reduction is not yet measured."
     },
+    "temporary_ci_cleanup_commit": "ed1a934b57ab51d5656d44e7d13db2903133917a",
     "quality_regression_found": false,
     "unsafe_parallelism_found": false
   },
@@ -160,7 +161,7 @@
     "candidate_deployed": false,
     "live_runtime_modified": false,
     "version_bumped": false,
-    "temporary_candidate_ci_present": true,
+    "temporary_candidate_ci_present": false,
     "internal_optimization_scope_frozen": true,
     "ready_for_finalization": false,
     "user_finalization_received": false
