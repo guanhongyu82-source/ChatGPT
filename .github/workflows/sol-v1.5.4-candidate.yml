@@ -33,12 +33,49 @@ jobs:
       - name: Parallel planning regression
         working-directory: /Users/macbook/ChatGPT/skills/sol-cabinet
         run: python3 -m unittest discover -s tests -p 'test_parallel_planning.py' -v
+      - name: Hot-path policy regression
+        working-directory: /Users/macbook/ChatGPT/skills/sol-cabinet
+        run: python3 -m unittest discover -s tests -p 'test_hot_path_policy.py' -v
       - name: Parallel Office batch regression
         working-directory: /Users/macbook/ChatGPT/skills/sol-cabinet
         run: python3 -m unittest discover -s tests -p 'test_office_batch_inspection.py' -v
       - name: Frozen quality validation regression
         working-directory: /Users/macbook/ChatGPT/skills/sol-cabinet
         run: python3 -m unittest discover -s tests -p 'test_quality_validation.py' -v
+      - name: Observe fixed control-plane load reduction
+        run: |
+          git fetch --depth=1 origin 6c2576266a2b6dd31f72281dcb40bbd5b447b243
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          base = '6c2576266a2b6dd31f72281dcb40bbd5b447b243'
+          root = Path('/Users/macbook/ChatGPT/skills/sol-cabinet')
+          baseline_paths = [
+              'skills/sol-cabinet/core/core.md',
+              'skills/sol-cabinet/t0-executive-router/router.md',
+              'skills/sol-cabinet/task-classification/t1-t10.md',
+              'skills/sol-cabinet/domain-skills/routing-map.md',
+          ]
+          baseline_bytes = 0
+          for path in baseline_paths:
+              baseline_bytes += len(subprocess.check_output(['git', 'show', f'{base}:{path}']))
+          candidate_bytes = len((root / 't0-executive-router' / 'router.md').read_bytes())
+          ratio = candidate_bytes / baseline_bytes
+          payload = {
+              'benchmark': 'fixed-control-plane-material-bytes',
+              'baseline_fixed_modules': 4,
+              'candidate_fixed_modules': 1,
+              'baseline_bytes': baseline_bytes,
+              'candidate_bytes': candidate_bytes,
+              'byte_ratio': ratio,
+              'interpretation': 'structural context/load proxy only; not an end-to-end speed claim',
+          }
+          print(json.dumps(payload, ensure_ascii=False))
+          if not candidate_bytes < baseline_bytes:
+              raise SystemExit('candidate fixed control load did not decrease')
+          PY
       - name: Observe Office batch serial versus parallel wall clock
         working-directory: /Users/macbook/ChatGPT
         run: |
