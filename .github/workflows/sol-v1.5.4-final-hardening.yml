@@ -1,5 +1,6 @@
 name: Sol v1.5.4 final hardening
 
+# Temporary candidate-only validation; remove before external release validation.
 on:
   push:
     branches:
