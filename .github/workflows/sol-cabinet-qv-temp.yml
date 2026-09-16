@@ -1,0 +1,21 @@
+name: Sol Cabinet v1.5.3 temporary validation
+
+on:
+  push:
+    branches:
+      - cabinet/sol-v1.5.3-quality-validation
+  workflow_dispatch:
+
+jobs:
+  quality-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+      - name: Confirm frozen version
+        run: test "$(cat skills/sol-cabinet/VERSION)" = "1.5.2"
+      - name: Run QV module
+        run: python3 -m unittest -v skills/sol-cabinet/tests/test_quality_validation.py
+      - name: Run repo-native full suite
+        run: python3 -m unittest discover -v -s skills/sol-cabinet/tests -p 'test*.py'
