@@ -78,6 +78,7 @@ def _xlsx(z):
     rels = _xml(z, 'xl/_rels/workbook.xml.rels')
     if wb.tag != X+'workbook' or rels.tag != P+'Relationships':
         raise ValueError('unrecognized workbook or relationships namespace; Strict OOXML is not supported')
+    parts_read = ['xl/workbook.xml', 'xl/_rels/workbook.xml.rels']
     targets = {}
     for rel in rels:
         if rel.tag != P+'Relationship':raise ValueError('unrecognized relationship element')
@@ -93,6 +94,7 @@ def _xlsx(z):
         strings = _xml(z, 'xl/sharedStrings.xml')
         if strings.tag != X+'sst':raise ValueError('unrecognized shared strings part')
         shared = [''.join(t.text or '' for t in si.iter(X+'t')) for si in strings.iter(X+'si')]
+        parts_read.append('xl/sharedStrings.xml')
     records, sheets = [], []
     for sheet in wb.iter(X+'sheet'):
         target = targets.get(sheet.get(R+'id'))
@@ -100,6 +102,7 @@ def _xlsx(z):
             raise ValueError('worksheet relationship unavailable')
         tree = _xml(z, target)
         if tree.tag != X+'worksheet':raise ValueError('unrecognized worksheet part or namespace')
+        parts_read.append(target)
         info = {'name': sheet.get('name'), 'state': sheet.get('state', 'visible'), 'part': target,
                 'merged_ranges': [e.get('ref') for e in tree.iter(X+'mergeCell')], 'formula_count': 0}
         for cell in tree.iter(X+'c'):
@@ -120,8 +123,9 @@ def _xlsx(z):
                           'state': status_value(value)}
                 records.append(record)
         sheets.append(info)
-    return records, {'sheets': sheets, 'limitations': ['公式只读未重算，缓存可能过期', '日期为原始存储值，需结合格式解释',
-                                                     '图片与图表未视觉核验', '未完成视觉渲染核验']}
+    return records, {'parts_read': list(dict.fromkeys(parts_read)), 'sheets': sheets,
+                     'limitations': ['公式只读未重算，缓存可能过期', '日期为原始存储值，需结合格式解释',
+                                     '图片与图表未视觉核验', '未完成视觉渲染核验']}
 
 
 def inspect(path, stale=(), max_uncompressed_bytes=128*1024*1024):
