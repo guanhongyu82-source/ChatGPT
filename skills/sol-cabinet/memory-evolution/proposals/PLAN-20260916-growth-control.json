@@ -1,0 +1,30 @@
+{
+  "plan_id": "PLAN-20260916-growth-control",
+  "source": "user_direct",
+  "request_ref": "project-chat:2026-09-16:cabinet-growth-control",
+  "intent": "Prevent Sol Cabinet from becoming progressively heavier or uncontrollable as new work types and user requests accumulate.",
+  "canonical_owner": "core/system-architecture.md",
+  "scope": [
+    "admission rules for new capabilities",
+    "hot-path growth control",
+    "module reuse before expansion",
+    "default rejection of new persistent structure when an existing owner can absorb the need"
+  ],
+  "non_goals": [
+    "no new domain",
+    "no new agent layer",
+    "no new state machine",
+    "no main-branch modification",
+    "no full architecture refactor"
+  ],
+  "base_ref": "cabinet/sol-v1.5.4-finegrain",
+  "base_sha256": "383aa68d629f5c6060bf0ea9819800675b107efc",
+  "validation": [
+    "confirm compatibility with existing L0/L1/L2 model",
+    "confirm no increase to routine L0 load",
+    "confirm new-work handling prefers reuse/downshift/merge before persistent expansion",
+    "confirm direct user requests do not automatically become new modules"
+  ],
+  "status": "PLANNED",
+  "candidate_sha256": null
+}
