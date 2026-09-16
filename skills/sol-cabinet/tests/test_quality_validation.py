@@ -197,6 +197,7 @@ class QualityValidationTests(unittest.TestCase):
             contract = {
                 "task_id": "qv06-task",
                 "t_level": 6,
+                "formal_normative_additions": False,
                 "opening_notice": True,
                 "summary_present": True,
                 "incident_present": False,
