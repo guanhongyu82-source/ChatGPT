@@ -5,14 +5,17 @@
 | 能力 | 当前实现 | 边界 |
 |---|---|---|
 | 原稿归档 | scripts/archive_originals.py | 任务目录先存在；逐字节副本、清单及哈希；本轮不改实现 |
-| DOCX／XLSX只读定位与候选检查 | scripts/inspect_office.py | 表格、页眉页脚等带定位；全部数字出现位置；旧值逐次命中；状态精确识别 |
+| DOCX／XLSX只读定位与候选检查 | scripts/inspect_office.py | 单文件结构定位、数字出现位置、旧值逐次命中、状态精确识别 |
+| 多文件独立Office机械检查 | scripts/inspect_office_batch.py | 复用单文件检查语义并发执行；保持输入顺序、逐文件结果和 fail-closed；不替代事实、视觉或 Delivery Gate |
 | 文档／表格／演示／PDF生成与编辑 | 当前原生Office／PDF技能及依赖 | 不迁移旧Grok生成器、版式套餐或禁用渲染链 |
 | 候选测试与审核记录一致性 | scripts/verify_evidence.py | 实际文件、候选摘要、日志hash、结果、独立性声明；由维护提案校验器调用 |
 | 调度、引用、错误与恢复 | 既有编排、研究接口、Review和阶段状态 | 不新建第二调度器或重复公共框架 |
 
 `inspect_office.py <文件> [--stale 旧值]` 只输出JSON，不修改输入，不联网、不启动Office、宏或渲染程序。先按任务规则归档输入；输出保存于当前任务，不能写长期记忆。
 
-它不是完整事实或视觉验收器。`parse_status=PASS` 仅表示安全解析完成，`overall_verdict=NOT_ASSESSED` 表示内容质量未裁决；解析失败为BLOCKED，不读取ZIP二进制假装正文。它不重算公式、不解释完整样式继承、不OCR图片、不认证文档可在所有Office应用打开。字段／公式缓存与未核项必须继续披露。当前只支持识别的Transitional OOXML部件；Strict或不识别的命名空间返回BLOCKED，由原生文件工具按实际支持处理，不能当空文档。
+同一阶段存在两个及以上互不依赖的 DOCX／XLSX 机械检查时，优先一次调用 `inspect_office_batch.py <文件...>`，而不是由宿主逐文件串行重复调用 `inspect_office.py`。批量器只负责并发调度，实际解析仍逐文件调用同一 `inspect()`；任一文件 BLOCKED 时整体为 BLOCKED，不用其他文件的 PASS 覆盖失败。需要建立串行基线或当前环境不宜并发时可显式 `--max-workers 1`。批量器输出的 wall-clock 仅作性能观测，不是质量门槛。
+
+它们都不是完整事实或视觉验收器。`parse_status=PASS` 仅表示安全解析完成，`overall_verdict=NOT_ASSESSED` 表示内容质量未裁决；解析失败为BLOCKED，不读取ZIP二进制假装正文。检查器不重算公式、不解释完整样式继承、不OCR图片、不认证文档可在所有Office应用打开。字段／公式缓存与未核项必须继续披露。当前只支持识别的Transitional OOXML部件；Strict或不识别的命名空间返回BLOCKED，由原生文件工具按实际支持处理，不能当空文档。
 
 旧脚本的“未完成”子串误判、DOCX失败后猜读、只报告首次旧值、固定序号硬判，不迁移到本实现。状态映射只认明确完整值，未知状态不自行改成完成；候选问题由主代理结合上下文裁决。
 
