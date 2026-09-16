@@ -16,7 +16,7 @@
 
 生产 Agent 仅执行办公、解决当前返工、发现并提供证据，不改 Skill。使用现有交付/总审时顺带观察：用户纠正、漏文件/对象/步骤、假完成、质量失败、误路由、多文件遗漏、角色未执行、不必要串行、重复读取检查、规则未生效、兼容与质量退化。普通审美、措辞偏好、正常润色不当事故。
 
-无真实问题：停止，不写账本，不读维护全文，不跑回归，不生成 EVO。普通单次只记录；同类两个独立任务或高影响首次才允许分析，仍不自动改规则。重复 hits 由独立 evidence ID 去重计算，不能把一次任务拆成多个 hits。
+无真实问题：停止，不写账本，不读维护全文，不跑回归，不生成 EVO。生产事故按现有独立 task/evidence 去重口径分级触发：普通首次问题只记录，不启动 Skill 优化；同类问题达到两个独立任务时，触发维护分析并建立最小维护计划；高影响问题首次出现即可触发维护分析并建立计划。达到触发条件只表示开始研究和准备最小候选，不授权修改 Stable。用户直接提出的持久规则、流程或行为修改不受事故次数阈值约束，按 Direct Policy Change 立即进入维护计划记录。重复 hits 不能把一次任务拆成多个事件凑数。
 
 能安全抽象时使用 `scripts/evolve.py record <incident.json> <evidence-dir>`；数据写入现有 observations 目录的 incident 文件（INC/EV 为事故待办唯一真源；旧 improvements 仅保留历史，不声称新事故自动归并），文件 0600、目录 0700。敏感原文、姓名、单位、业务正文、附件名与业务路径禁止输入。字段仅 incident_id、time、failure_type、cause、impact、evidence、capabilities、repeated、hits、permission；全部分类代码/不透明证据 ID，不接收自由正文。证据 ID 指向本任务脱敏机械证据，原文仍留本任务，不复制长期账本。
 
@@ -52,7 +52,10 @@ EVO 仅为真实成功版本，格式 EVO-YYYYMMDD-HHMMSS（UTC），记录事�
 
 ## Direct Policy Change 与历史事项
 
-用户直接指定的持久规则施工走 Direct Policy Change，仅免重复观察等待，不免候选测试、独立审核、用户定稿授权或回滚；本次闭环初装属于该路径。中央 improvements 仅作历史参考，新事故的记录、处理和关闭统一以 INC/EV、RES 和 EVO 为依据；`pending-*` 不得进入 VERIFIED 或 CLOSED，未经实战 A/B 不标为已验证收益。
+用户直接指定的持久规则施工走 Direct Policy Change，仅免重复观察等待，不免候选测试、独立审核、用户定稿授权或回滚；本次闭环初装属于该路径。凡用户直接提出需要长期保留的规则新增、修改、删除、修复或优化意见，无论当轮是否立即施工，都必须先形成维护计划记录，不得只停留在聊天中。计划复用现有 `memory-evolution/proposals/`，不新建第二套台账；至少记录 `plan_id`、`source=user_direct|incident_threshold`、真实 `request_ref` 或关联 incident、`intent`、`canonical_owner`、`scope`、`non_goals`、当前 `base_ref/base_sha256`、预期 `validation` 与 `status`。尚未形成候选时 `candidate_sha256` 可为空；形成候选后补绑定当前 candidate。计划记录不得复制用户业务正文、姓名、单位、业务文件名或路径。
+
+维护计划只是“已进入优化准备”的可追溯记录：不计入 incident hits，不冒充 INC/EV，不等于用户批准施工，不产生 Stable 写入权，也不替代最终发布授权。用户直接修改意见没有次数阈值；只要意图明确且属于持久规则，就应当场建立计划。事故型优化仍遵循“普通首次只记录、同类两个独立任务或高影响首次触发计划”的阈值。中央 improvements 仅作历史参考，新事故的记录、处理和关闭统一以 INC/EV、RES 和 EVO 为依据；`pending-*` 不得进入 VERIFIED 或 CLOSED，未经实战 A/B 不标为已验证收益。
+
 复用事项字段 blocker、root_cause、solution、prevention、verification 与 status，不复制用户正文。
 
 新 Case 可单调追加，配套新增测试可随低风险修复进入同一候选；已有 Case 和已有测试不能被自我进化覆盖或删减。发布批准记录必须关联当前候选、当前基线、当前差异哈希、用途、`release_intent=finalize-stable` 和真实消息采集记录。事故 capture 按独立 task ID 去重。审核还须确认 sanitized_metadata=true；summary/quality/speed 采用脚本固定代码。
