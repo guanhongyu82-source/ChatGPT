@@ -15,6 +15,7 @@ class HotPathPolicyTests(unittest.TestCase):
         cls.router = (ROOT / "t0-executive-router" / "router.md").read_text(encoding="utf-8")
         cls.orchestrator = (ROOT / "agent-orchestrator" / "orchestration.md").read_text(encoding="utf-8")
         cls.review = (ROOT / "review-system" / "review-system.md").read_text(encoding="utf-8")
+        cls.formal_writing = (ROOT / "domain-skills" / "formal-writing.md").read_text(encoding="utf-8")
         cls.task_card = json.loads((ROOT / "templates" / "task-card.json").read_text(encoding="utf-8"))
         cls.performance = json.loads(
             (ROOT / "tests" / "performance-validation-v1.5.4.json").read_text(encoding="utf-8")
@@ -46,6 +47,20 @@ class HotPathPolicyTests(unittest.TestCase):
         self.assertIn("不默认让 Final Lead 重新全文读取", self.orchestrator)
         self.assertIn("duplicate_read", self.orchestrator)
         self.assertIn("来源 fingerprint", self.orchestrator)
+
+    def test_independent_final_artifacts_are_not_forced_through_one_global_writer(self):
+        self.assertIn("one writer per artifact/path", self.orchestrator)
+        self.assertIn("不同且输出路径隔离的最终成品", self.orchestrator)
+        self.assertIn("可以各有一个授权写者同波生成", self.orchestrator)
+        qv06 = next(item for item in self.performance["scenarios"] if item["id"] == "QV-06")
+        self.assertIn("one writer per final artifact", qv06["single_writer_scope"])
+
+    def test_formal_writing_reuses_shared_evidence_pack_instead_of_second_material_pack(self):
+        self.assertIn("Task Card `evidence_pack`", self.formal_writing)
+        self.assertIn("不再另建第二份来源画像", self.formal_writing)
+        self.assertIn("INTERPRET_PACK", self.formal_writing)
+        self.assertIn("不重新读取来源", self.formal_writing)
+        self.assertIn("evidence-pack slice", self.formal_writing)
 
     def test_review_reuses_extraction_but_resourses_critical_claims(self):
         self.assertIn("不要求把未变化的大材料机械地全文重新解析一遍", self.review)
