@@ -12,7 +12,7 @@ import json
 import os
 import time
 import zipfile
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -30,6 +30,27 @@ EXPECTED_ERRORS = (
 )
 
 
+def _run_one(payload):
+    index, path_text, stale = payload
+    path = Path(path_text)
+    started = time.perf_counter()
+    try:
+        result = inspect(path, stale)
+    except EXPECTED_ERRORS:
+        result = {
+            "parse_status": "BLOCKED",
+            "overall_verdict": "NOT_ASSESSED",
+            "read_only": True,
+            "reason": "输入不可读、损坏、不支持或超限；未退回二进制猜读",
+        }
+    return {
+        "index": index,
+        "path": str(path),
+        "elapsed_seconds": time.perf_counter() - started,
+        "result": result,
+    }
+
+
 def inspect_many(paths, stale=(), max_workers=None):
     items = [Path(path) for path in paths]
     if not items:
@@ -39,33 +60,18 @@ def inspect_many(paths, stale=(), max_workers=None):
 
     runtime_width = max(1, os.cpu_count() or 1)
     workers = min(len(items), max_workers if max_workers is not None else runtime_width)
+    stale_tuple = tuple(stale)
+    payloads = [(index, str(path), stale_tuple) for index, path in enumerate(items)]
     results = [None] * len(items)
-
-    def run_one(index, path):
-        started = time.perf_counter()
-        try:
-            result = inspect(path, stale)
-        except EXPECTED_ERRORS:
-            result = {
-                "parse_status": "BLOCKED",
-                "overall_verdict": "NOT_ASSESSED",
-                "read_only": True,
-                "reason": "输入不可读、损坏、不支持或超限；未退回二进制猜读",
-            }
-        return {
-            "index": index,
-            "path": str(path),
-            "elapsed_seconds": time.perf_counter() - started,
-            "result": result,
-        }
 
     batch_started = time.perf_counter()
     if workers == 1:
-        for index, path in enumerate(items):
-            results[index] = run_one(index, path)
+        for payload in payloads:
+            item = _run_one(payload)
+            results[item["index"]] = item
     else:
-        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="sol-office-inspect") as executor:
-            futures = {executor.submit(run_one, index, path): index for index, path in enumerate(items)}
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            futures = {executor.submit(_run_one, payload): payload[0] for payload in payloads}
             for future in as_completed(futures):
                 item = future.result()
                 results[item["index"]] = item
@@ -81,7 +87,7 @@ def inspect_many(paths, stale=(), max_workers=None):
         "maximum_parallel_width": workers,
         "wall_clock_seconds": wall,
         "serial_work_seconds": serial_sum,
-        "timing_basis": "single-process perf_counter; observational only, not a quality gate",
+        "timing_basis": "parent/worker perf_counter; observational only, not a quality gate",
         "items": results,
         "limitation": "批量并行只缩短独立机械检查路径，不替代事实、内容、视觉验收或最终 Delivery Gate",
     }
