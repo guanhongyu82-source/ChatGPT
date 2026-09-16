@@ -1,0 +1,122 @@
+{
+  "validation_state": "in_progress",
+  "cabinet_under_test": "1.5.2",
+  "candidate_branch": "cabinet/sol-v1.5.3-quality-validation",
+  "principle": "Evidence only. No Cabinet behavior change without a reproducible real failure.",
+  "privacy": {
+    "real_work_used": true,
+    "persisted_real_names": false,
+    "persisted_organization_names": false,
+    "persisted_real_business_figures": false,
+    "method": "Use real work to select task shape, then persist only anonymized excerpts or minimal demos."
+  },
+  "observations": [
+    {
+      "observation_id": "QV-01-SEM-001",
+      "scenario": "QV-01",
+      "scope": "semantic output plus static route check",
+      "source_kind": "real-work-derived-anonymized",
+      "input": "检查相关会议是否及时跟进上级重要要求，是否结合职责提出贯彻措施和跟踪落实安排，防止只学习不部署、只传达不落实。",
+      "request": "润色得更简洁，不新增事实。",
+      "output": "检查相关会议是否及时跟进上级重要要求，结合职责提出贯彻措施并跟踪落实，防止只学习不部署、只传达不落实。",
+      "checks": {
+        "understanding": "PASS",
+        "routing": "PASS",
+        "quality": "PASS",
+        "delivery": "PASS",
+        "false_completion": "PASS",
+        "control_weight": "PASS"
+      },
+      "verdict": "PASS",
+      "failure_category": null,
+      "notes": "T2, no review, no Office/research/data route, no task-level tool call required."
+    },
+    {
+      "observation_id": "QV-02-SEM-001",
+      "scenario": "QV-02",
+      "scope": "semantic output plus static route check",
+      "source_kind": "real-work-derived-anonymized",
+      "input": "调阅相关会议纪要、学习材料等14份；参加相关会议8次；建立督办台账并持续跟踪。",
+      "request": "整理为正式监督检查表述，不补充事实。",
+      "output": "累计调阅相关会议纪要、学习材料等资料14份，参加相关会议8次，建立督办台账并持续跟踪事项推进情况。",
+      "checks": {
+        "understanding": "PASS",
+        "routing": "PASS",
+        "quality": "PASS",
+        "delivery": "PASS",
+        "false_completion": "PASS",
+        "control_weight": "PASS"
+      },
+      "verdict": "PASS",
+      "failure_category": null,
+      "notes": "Static route is T4 and requires independent review. This observation validates the wording and routing decision only; it is not evidence that a live independent reviewer was executed in the current chat surface."
+    },
+    {
+      "observation_id": "QV-03-SEM-001",
+      "scenario": "QV-03",
+      "scope": "multi-source conflict handling demo plus static route check",
+      "source_kind": "minimal-demo-derived-from-real-work-pattern",
+      "input": [
+        "材料A：事项甲已完成，并于4月完成验收。",
+        "材料B：截至5月，事项甲仍在整改，尚未销号。",
+        "材料C：台账状态为进行中。"
+      ],
+      "request": "综合判断事项甲当前状态，不要猜测。",
+      "output": "事项甲状态存在冲突：材料A称已完成并于4月验收，材料B称截至5月仍在整改、尚未销号，材料C标记为进行中。现有材料不足以确认最终状态，应核验最新有效的权威记录后再定性。",
+      "checks": {
+        "understanding": "PASS",
+        "routing": "PASS",
+        "quality": "PASS",
+        "delivery": "PASS",
+        "false_completion": "PASS",
+        "control_weight": "PASS"
+      },
+      "verdict": "PASS",
+      "failure_category": null,
+      "notes": "Conflict is surfaced rather than silently reconciled. Static route is T5 with review."
+    },
+    {
+      "observation_id": "QV-07-SEM-001",
+      "scenario": "QV-07",
+      "scope": "analysis-only demo plus static route check",
+      "source_kind": "minimal-demo",
+      "input": [
+        "材料A：任务按计划推进。",
+        "材料B：当前存在资源不足。",
+        "材料C：未提供最新完成时间。"
+      ],
+      "request": "分析主要风险和不确定性，不生成文件。",
+      "output": "主要风险是资源不足可能影响后续进度；主要不确定性是缺少最新完成时间，现有材料不足以判断是否会延期。当前只能确认存在资源约束和时点信息缺口，不能据此断定任务已延期。",
+      "checks": {
+        "understanding": "PASS",
+        "routing": "PASS",
+        "quality": "PASS",
+        "delivery": "PASS",
+        "false_completion": "PASS",
+        "control_weight": "PASS"
+      },
+      "verdict": "PASS",
+      "failure_category": null,
+      "notes": "T3, no review, no Office route, no Expected artifact or file contract."
+    }
+  ],
+  "test_harness_events": [
+    {
+      "event_id": "QV-HARNESS-001",
+      "scenario": "QV-06",
+      "symptom": "Synthetic Delivery Contract fixture initially omitted the existing formal_normative_additions boolean required by delivery_gate.py.",
+      "reproduced": true,
+      "existing_rule_present": true,
+      "failure_category": "noise",
+      "action": "Corrected the test fixture only; no Cabinet rule or runtime logic changed.",
+      "regression_needed": false
+    }
+  ],
+  "not_yet_closed": [
+    "Execute the new quality-validation test module in a repository checkout.",
+    "Run the repo-native full suite after QV tests are executable in the target runtime.",
+    "Run QV-02/QV-03/QV-04/QV-05/QV-06 with the target runtime review/tool chain where independent review or Office delivery is required.",
+    "Capture current Mac deployment-state/SYNCED evidence from the target runtime; the repository runtime snapshot is historical only."
+  ],
+  "cabinet_changes_from_failures": []
+}
