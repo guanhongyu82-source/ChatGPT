@@ -22,7 +22,7 @@ class HotPathPolicyTests(unittest.TestCase):
 
     def test_routine_nonlight_path_does_not_unconditionally_load_core(self):
         self.assertIn("普通办公执行不固定加载", self.skill)
-        self.assertIn("Router 作为热核", self.skill.replace("[Router]", "Router"))
+        self.assertIn("先读 [Router]", self.skill)
         self.assertIn("L0 热核最小", self.skill)
         self.assertEqual(
             self.performance["control_plane_targets"]["routine_nonlight_fixed_load"],
@@ -39,8 +39,8 @@ class HotPathPolicyTests(unittest.TestCase):
     def test_router_requires_single_extraction_and_reasoned_reread(self):
         self.assertIn("一次提取，多处复用", self.router)
         self.assertIn("已有可信提取时不重新全文读取", self.router)
-        self.assertIn("source fingerprint", self.router)
-        self.assertIn("duplicate", self.router)
+        self.assertIn("来源指纹", self.router)
+        self.assertIn("重复全文读取", self.router)
 
     def test_final_lead_cannot_default_to_full_source_reread(self):
         self.assertIn("不默认让 Final Lead 重新全文读取", self.orchestrator)
