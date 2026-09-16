@@ -73,14 +73,49 @@ class SourceIngestionTests(unittest.TestCase):
         data["files"][index]["archived_sha256"] = digest
         self.manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
-    def _write_xlsx_package(self, extra_parts: dict[str, str | bytes] | None = None) -> None:
+    def _write_xlsx_package(
+        self,
+        extra_parts: dict[str, str | bytes] | None = None,
+        content_types: dict[str, str] | None = None,
+        relationship_parts: dict[str, str] | None = None,
+    ) -> None:
         path = self.paths[2]
+        overrides = {
+            "xl/workbook.xml": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+            "xl/worksheets/sheet1.xml": "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+        }
+        overrides.update(content_types or {})
+        types_xml = [
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+            '<Default Extension="xml" ContentType="application/xml"/>',
+            '<Default Extension="bin" ContentType="application/octet-stream"/>',
+        ]
+        for name, content_type in sorted(overrides.items()):
+            types_xml.append(f'<Override PartName="/{name}" ContentType="{content_type}"/>')
+        types_xml.append("</Types>")
+
+        rel_ns = "http://schemas.openxmlformats.org/package/2006/relationships"
+        root_rels = f'<Relationships xmlns="{rel_ns}"/>'
+        workbook_rels = (
+            f'<Relationships xmlns="{rel_ns}">'
+            '<Relationship Id="rId1" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+            'Target="worksheets/sheet1.xml"/>'
+            '</Relationships>'
+        )
+        rels = {
+            "_rels/.rels": root_rels,
+            "xl/_rels/workbook.xml.rels": workbook_rels,
+        }
+        rels.update(relationship_parts or {})
+
         with zipfile.ZipFile(path, "w") as package:
-            package.writestr("[Content_Types].xml", "<Types/>")
-            package.writestr("_rels/.rels", "<Relationships/>")
+            package.writestr("[Content_Types].xml", "".join(types_xml))
             package.writestr("xl/workbook.xml", "<workbook/>")
-            package.writestr("xl/_rels/workbook.xml.rels", "<Relationships/>")
             package.writestr("xl/worksheets/sheet1.xml", "<worksheet/>")
+            for name, payload in rels.items():
+                package.writestr(name, payload)
             for name, payload in (extra_parts or {}).items():
                 package.writestr(name, payload)
         self._refresh_manifest_entry(2)
@@ -186,12 +221,64 @@ class SourceIngestionTests(unittest.TestCase):
                 "xl/printerSettings/printerSettings1.bin": b"print-settings",
                 "docProps/core.xml": "<coreProperties/>",
                 "docProps/app.xml": "<Properties/>",
-            }
+            },
+            content_types={
+                "xl/styles.xml": "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml",
+                "xl/theme/theme1.xml": "application/vnd.openxmlformats-officedocument.theme+xml",
+                "xl/printerSettings/printerSettings1.bin": "application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings",
+                "docProps/core.xml": "application/vnd.openxmlformats-package.core-properties+xml",
+                "docProps/app.xml": "application/vnd.openxmlformats-officedocument.extended-properties+xml",
+            },
         )
         with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=self.fake_office_inspect):
             result = source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
         self.assertEqual(result["state"], "PASS")
         self.assertFalse(result["evidence_pack"]["unread"])
+
+    def test_semantic_relationship_cannot_hide_inside_verified_format_path(self):
+        rel_ns = "http://schemas.openxmlformats.org/package/2006/relationships"
+        sheet_rels = (
+            f'<Relationships xmlns="{rel_ns}">'
+            '<Relationship Id="rIdComments" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" '
+            'Target="../theme/theme1.xml"/>'
+            '</Relationships>'
+        )
+        self._write_xlsx_package(
+            {"xl/theme/theme1.xml": "<comments/>"},
+            content_types={
+                "xl/theme/theme1.xml": "application/vnd.openxmlformats-officedocument.theme+xml",
+            },
+            relationship_parts={
+                "xl/worksheets/_rels/sheet1.xml.rels": sheet_rels,
+            },
+        )
+        with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=self.fake_office_inspect):
+            result = source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("xl/theme/theme1.xml" in item for item in result["evidence_pack"]["unread"]))
+
+    def test_external_hyperlink_relationship_is_unread(self):
+        rel_ns = "http://schemas.openxmlformats.org/package/2006/relationships"
+        sheet_rels = (
+            f'<Relationships xmlns="{rel_ns}">'
+            '<Relationship Id="rIdLink" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" '
+            'Target="https://example.test/reference" TargetMode="External"/>'
+            '</Relationships>'
+        )
+        self._write_xlsx_package(
+            relationship_parts={
+                "xl/worksheets/_rels/sheet1.xml.rels": sheet_rels,
+            }
+        )
+        with mock.patch.object(source_ingestion.inspect_office, "inspect", side_effect=self.fake_office_inspect):
+            result = source_ingestion.ingest_archive(self.task, self.manifest, max_workers=4)
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(
+            any("uninspected-external-relationship" in item for item in result["evidence_pack"]["unread"]),
+            result["evidence_pack"]["unread"],
+        )
 
     def test_inspector_must_report_concrete_parts_read(self):
         def malformed_inspect(path: Path):
