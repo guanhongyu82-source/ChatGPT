@@ -60,6 +60,16 @@ class DeliveryRules(unittest.TestCase):
         review=self.c['reviews'][0]
         self.evidence.write_text(json.dumps({k:review[k] for k in ('reviewer_id','author_id','verdict','must_fix','candidate_sha256','source_ref')}))
         review['evidence_sha256']=hashlib.sha256(self.evidence.read_bytes()).hexdigest()
+    def write_review_file(self, review, path):
+        fields=('reviewer_id','author_id','verdict','must_fix','candidate_sha256','source_ref')
+        payload={k:review[k] for k in fields}
+        for key in ('review_scope','artifact_ids'):
+            if key in review:
+                payload[key]=review[key]
+        path.write_text(json.dumps(payload,ensure_ascii=False))
+        review['evidence_path']=str(path)
+        review['evidence_sha256']=hashlib.sha256(path.read_bytes()).hexdigest()
+        self.c['retention']['retained_reason'][str(path)]='required review evidence'
     def refresh_artifact_review(self):
         digest=hashlib.sha256(self.artifact.read_bytes()).hexdigest()
         self.c['artifacts'][0]['path']=str(self.artifact)
@@ -154,6 +164,59 @@ class DeliveryRules(unittest.TestCase):
         self.c['reviews'][0]['source_ref']=''
         self.write_evidence()
         self.assertEqual(gate.check(self.c)['state'],'FAIL')
+    def test_scoped_reviews_cover_each_artifact_and_survive_unrelated_rework(self):
+        ledger=self.root/'2026-09-13_台账_协作清单_v1.xlsx'
+        ledger.write_bytes(b'ledger-candidate')
+        ledger_digest=hashlib.sha256(ledger.read_bytes()).hexdigest()
+        doc_digest=hashlib.sha256(self.artifact.read_bytes()).hexdigest()
+        self.card['deliverables'].append({
+            'artifact_id':'ledger','required':True,'format':'.xlsx','target_role':'final',
+            'target_directory':str(self.root),'filename_override':None,
+        })
+        self.relock_task_card()
+        self.c['artifacts'].append({'artifact_id':'ledger','role':'final','path':str(ledger),'sha256':ledger_digest})
+        full_hashes={str(self.artifact):doc_digest,str(ledger):ledger_digest}
+        doc_review={
+            'reviewer_id':'reviewer-doc','author_id':'lead','verdict':'PASS','must_fix':[],
+            'review_scope':'artifact','artifact_ids':['main-doc'],
+            'candidate_sha256':{str(self.artifact):doc_digest},
+            'source_ref':'tool:reviewer-doc/message:result-1',
+        }
+        ledger_review={
+            'reviewer_id':'reviewer-ledger','author_id':'lead','verdict':'PASS','must_fix':[],
+            'review_scope':'artifact','artifact_ids':['ledger'],
+            'candidate_sha256':{str(ledger):ledger_digest},
+            'source_ref':'tool:reviewer-ledger/message:result-1',
+        }
+        cross_review={
+            'reviewer_id':'reviewer-doc','author_id':'lead','verdict':'PASS','must_fix':[],
+            'review_scope':'cross_artifact','artifact_ids':['main-doc','ledger'],
+            'candidate_sha256':full_hashes,
+            'source_ref':'tool:reviewer-doc/message:cross-1',
+        }
+        doc_evidence=self.root/'review-doc.json'
+        ledger_evidence=self.root/'review-ledger.json'
+        cross_evidence=self.root/'review-cross.json'
+        self.write_review_file(doc_review,doc_evidence)
+        self.write_review_file(ledger_review,ledger_evidence)
+        self.write_review_file(cross_review,cross_evidence)
+        self.c['reviews']=[doc_review,ledger_review,cross_review]
+        self.assertEqual(gate.check(self.c)['state'],'PASS')
+
+        missing_ledger=copy.deepcopy(self.c)
+        missing_ledger['reviews']=[copy.deepcopy(doc_review),copy.deepcopy(cross_review)]
+        self.assertEqual(gate.check(missing_ledger)['state'],'FAIL')
+
+        unchanged_ledger_evidence_sha=ledger_review['evidence_sha256']
+        self.artifact.write_bytes(b'candidate-reworked')
+        new_doc_digest=hashlib.sha256(self.artifact.read_bytes()).hexdigest()
+        self.c['artifacts'][0]['sha256']=new_doc_digest
+        doc_review['candidate_sha256']={str(self.artifact):new_doc_digest}
+        cross_review['candidate_sha256']={str(self.artifact):new_doc_digest,str(ledger):ledger_digest}
+        self.write_review_file(doc_review,doc_evidence)
+        self.write_review_file(cross_review,cross_evidence)
+        self.assertEqual(ledger_review['evidence_sha256'],unchanged_ledger_evidence_sha)
+        self.assertEqual(gate.check(self.c)['state'],'PASS')
     def test_cli_fails_closed_on_invalid_contract(self):
         contract=self.root/'contract.json'
         contract.write_text(json.dumps({'storage':{'output_root':17}}))

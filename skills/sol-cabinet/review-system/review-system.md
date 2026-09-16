@@ -7,25 +7,53 @@ Review 核对用户要求与真实结果，不核对执行者是否“看起来�
 - T1-T3 按风险自检；显式要求独立审阅时按要求执行。
 - 正式完整稿件，或向正式材料新增制度、审批、职责与协作规范，至少按 T4 审核；不能仅凭执行者填写 T3 豁免。范围明确、无新增依据或风险的局部微改除外。
 - T4-T6 至少一名未承担最终写入的独立审核者；T7+ 至少两条不同维度的独立判断路径。
+- 多个最终成品已经 immutable、共用事实基线稳定、审核对象彼此可分且并行净收益明确为正时，可把同一审核职责按 artifact/object 切成多个独立只读实例同波执行；这只用于缩短审核 Critical Path，不降低最低独立审核强度，也不把同一成品拆成互相不知道上下文的碎片审。每个实例只核自己的对象与必要 evidence-pack slice，随后做一次跨成品一致性 join，核术语、数字、责任口径、附件关系和互相引用，不再把全部成品完整重审一遍。
+- review 采用双重版本绑定：`candidate_sha256` 绑定其 scope 的当前成品 bytes；只要锁定 Task Card 含 `source_archive` 或 `evidence_pack`，`artifact`、`full`、`cross_artifact` 三种 scope 均必须同时绑定 `evidence_baseline_sha256`。多成品 scoped 模式仍必须另有 `review_scope=cross_artifact` 或 full review 绑定整套当前 candidate hash map。Delivery Gate 按每个必交 artifact 分别核最低 reviewer 覆盖强度，不能因为切 scope 少审对象。
+- 单个 artifact 返工后，只使覆盖该 artifact 的 scoped review 与 full/cross-artifact consistency review 失效；其他 artifact 的 bytes/hash 与所依赖事实均未变化时，其 scoped review 可保留。共享事实基线、结构依赖或跨成品关系变化时，相关 scope 必须失效重审，不能只看文件 hash。当前门禁对共享 `source_archive + evidence_pack` baseline 采用保守绑定：baseline 任一变化都会使依赖该 Task Card 的 review 失效，宁可多复验，不保留可能过期的事实判断。
 - T9-T10 在阶段内先审候选，再验实际落地；复验只覆盖变化与未决项，不重读未变化全库。完成后停止，不自动进入下一阶段。
+
+## 派工与完工回流
+
+审核是一级 Critical Path。候选接近冻结时可提前准备 reviewer ready-set：对象范围、必要 evidence-pack slice、独立性要求、验收字段和返工定位可以先确定，但不得对未冻结候选提前给 verdict，也不为形式预占并发槽。
+
+当前 candidate manifest/hash 可用后，应在同一次调度决策中启动所有已就绪且互不依赖的 reviewer；不得形成“reviewer A 完成后才创建 reviewer B”的无依赖串行链。Reviewer 完成后直接返回结构化 PASS／FAIL／BLOCKED、`issue_id × object_id`、must-fix、evidence locator 与 unverified，Final Lead 收到一份就处理一份；只有最终裁决和确有跨对象依赖时才等待 required review join。不得额外增加“已完成，请再次查询结果”的二次反馈链。
+
+有可靠计时时优先观察 `review_dispatch_delay`、`review_tail`、`review_join_delay`、复用的 unaffected review 数量和被失效的 review scope；无可靠时间源不编造精确秒数。
 
 ## 取证顺序
 
 1. **需求与边界**：对照用户原话、材料、目标文件、授权动作与排除项；既有源文件须核 `00_原稿/`、归档数量及清单。
    同时检验业务理解：是否抓住材料实际用途和领导需要判断的事项，是否把往年评价写成未来计划、把空白误判为未完成、遗漏用户已确认的口径，或混淆总部与下属职责；既查机械停笔和过度追问，也查无依据地认定完成、补造业绩。只修正影响当前交付的误判，不另建流程。
-2. **真实候选**：读取当前成果，核内容、路径与哈希；需要查事实时使用来源定位，关键疑点定向回源。先独立判断，再看执行者解释或其他评审意见。
-3. **内容**：事实、数据、日期、主体、引用、逻辑、结构、语气、前后一致性、样本映射与附件关系。未读到不猜；“多做”的无关章节或动作也列为问题。
+2. **真实候选**：读取当前成果，核内容、路径与哈希；同时读取当前任务的 `evidence_pack` 或等价证据包，核来源 fingerprint/hash、coverage、事实 locator、conflicts 与 unverified。Reviewer 必须先独立判断候选是否满足要求，再决定需要直接回源的事实；独立性要求的是独立判断和真实候选，不要求把未变化的大材料机械地全文重新解析一遍。
+3. **内容与定向回源**：事实、数据、日期、主体、引用、逻辑、结构、语气、前后一致性、样本映射与附件关系。对候选中的关键事实至少依据 locator 核对来源定位；高风险／争议事实、证据冲突、coverage 缺口、未核项或 source fingerprint 变化必须直接读取对应原始片段。其余已被可信证据包覆盖且来源未变化的内容可复用提取结果，不重复整份来源全文。未读到不猜；“多做”的无关章节或动作也列为问题。
    交付前通读实际成稿及拟发送回复，横向比较相邻、同类段落和表格行，检查重复起句、同构句式、机械收尾及不增加信息的总结套话；发现后删去冗余或按具体事项重写，再核事实和覆盖是否保留。必要的统一术语、固定字段及指定格式不作机械去重；检查纳入现有自检或独立审核，不另增审核轮次。
 4. **文件与原件**：验证实际文件、源与副本一致性、原件未覆盖、格式与可打开性，区分结构检查和逐页视觉核验。不得用禁用工具补门禁。
 5. **成品与目录**：文件型任务只读取开工锁定的 Task Card `deliverables` 作为 Expected，Delivery Contract `artifacts` 只作为 Actual，不另接受第二份预期清单。逐项按 `artifact_id` 对账并核 `required`、`format`、`target_role`、`target_directory`、`filename_override`；必交项缺失、未授权 Actual、错格式、错角色、错目录、错指定文件名或 Task Card 哈希已变化均直接 FAIL。再枚举最终交付目录，核对“该进的已进、不该进的未进”：最终目录只留正式成品和用户明确要求的附件，原稿、过程件、审核 JSON、日志、测试件、缓存、锁和临时转换件不得混入。
 6. **完工回复**：核拟发送给用户的完工小结，至少有真实完成内容、成品及路径、目录／归档状态、关键核验、未完成或限制、实际耗时或无法核实原因。有实质失误时必须说明处置；无实质失误不制造反思。
 7. **裁决**：给 PASS／FAIL／BLOCKED、发现、证据及未核项。主代理裁决冲突，修复后只定向复验。
 
+审核阶段的证据复用遵循：**reuse extraction, re-decide independently, re-source only where risk or uncertainty requires it**。证据包只是读取加速器，不是审核结论；Reviewer 不得照抄执行者 verdict，也不得因证据包存在而跳过实际候选、关键事实定位或必要的直接回源。
+
 ## 真实证据门禁
 
-使用 [Review Gate](../templates/review-gate.json) 时，候选清单须绑定实际文件及 SHA-256；每个审核者须有真实运行标识、判断维度和可读取的结果证据。交付门禁的 `reviews` 每项须提供 `evidence_path`、`evidence_sha256` 和非空 `source_ref`（工具／消息定位）；证据必须为 JSON，内含与声明一致的 `reviewer_id`、`author_id`、`verdict`、`must_fix`、`candidate_sha256`、`source_ref`。脚本读取真实证据字节核哈希，再比对结论与当前成果；定位仅为溯源声明，不冒充身份认证。运行 ID、时间戳、固定等待、字数或预登记 PASS 单独均不能证明完成。
+使用 [Review Gate](../templates/review-gate.json) 时，候选清单须绑定实际文件及 SHA-256；每个审核者须有真实运行标识、判断维度和可读取的结果证据。交付门禁的 `reviews` 每项须提供 `evidence_path`、`evidence_sha256` 和非空 `source_ref`（工具／消息定位）；证据必须为 JSON，内含与声明一致的 `reviewer_id`、`author_id`、`verdict`、`must_fix`、`candidate_sha256`、`source_ref`。锁定 Task Card 只要含 `source_archive` 或 `evidence_pack`，声明与证据还必须同时含相同的 `evidence_baseline_sha256`。
 
-`must_fix` 必须是数组；类型错误不得当空数组。当前候选发生实质变化时使对应审核失效并复验。不能只比对双方自填的同一个 hash，必须读实际候选重新计算。没有可读取的审核证据时，明确未核验，不伪造独立性。
+`evidence_baseline_sha256` 的唯一派生方式由 `scripts/delivery_gate.py` 的公开函数 `review_evidence_baseline(card)` 定义：取锁定 Task Card 中存在的 `source_archive`、`evidence_pack` 组成对象，以 UTF-8 编码的 canonical JSON（`ensure_ascii=false`、key 排序、紧凑分隔符）计算 SHA-256。Reviewer／宿主应直接调用该 helper 或实现完全相同的算法，不自行设计第二种 fingerprint。两字段都不存在的历史 Task Card 才不要求该值。
+
+Delivery Gate 在最终 check 中还必须重新证明该 baseline 对应当前磁盘证据。有来源任务的 Task Card 文件置于任务根目录；`source_archive.manifest_relative_path` 必须为 `00_原稿/原稿清单.json`，`manifest_sha256` 锁定 manifest 的原始字节。门禁重读 manifest，调用生产 ingestion 的 canonical archive 校验，核 exact schema、路径／角色／身份、重复拒绝、当前 source size/SHA-256 与 preservation 标记，再核 manifest 前后字节稳定、hash 与锁定值相同。evidence pack 的全部 source 身份、路径与 hash 必须与 live archive 一致；只重算 Task Card JSON 不构成证据 freshness 验证。
+
+`evidence_pack.unread` 必须为空，coverage 与当前 sources 一一对应且全部 EXTRACTED；Office coverage 还必须满足当前 [有限语义合同](../domain-skills/common-components.md#v154-有限-office-语义覆盖合同)，内部缺口为空、parts_complete 与 parts_read 一致。旧 Office pack 缺该合同必须重建，不能靠刷新 review 延续旧的 false-PASS。源字节、manifest、pack 或 baseline 变化会使旧 review 失效；新 baseline 必须重新审核。baseline 从存在变为不存在也会使旧 review 失效；门禁始终比较 review 声明与记录中的可选 baseline（缺失视为 null），不得靠删除 Task Card 或 review 引用字段降级绕过。无来源任务可省略两对象，或明确声明 NOT_APPLICABLE 并使用空证据包，不得把有 unread 的包伪装成无来源。
+
+此校验为当前文件的只读时点验证，不提供交付后文件锁或身份认证；验证后再修改证据必须重新运行门禁。
+
+- 兼容旧证据：未声明 scope 的 review 视为 `review_scope=full`，`candidate_sha256` 必须等于 Delivery Gate 重新计算的整套当前成品 hash map；若 Task Card 存在 evidence baseline，旧 full review 也必须有匹配的 `evidence_baseline_sha256`，不能因“兼容旧 scope 写法”保留过期事实结论。
+- `review_scope=artifact`：必须列非空且不重复的 `artifact_ids`，`candidate_sha256` 只能且必须绑定这些 artifact 当前 path→hash；审核证据只对这些对象有效，并同时绑定当前 evidence baseline。
+- `review_scope=cross_artifact`：用于多成品一致性 join，`artifact_ids` 必须覆盖全部当前 Actual，`candidate_sha256` 必须绑定整套当前成品 hash map；它不能替代每个 artifact 自身达到最低独立审核覆盖，也必须绑定当前 evidence baseline。
+- Delivery Gate 会按必交 artifact 分别统计有效 reviewer 覆盖；T4-T6 每个必交 artifact 至少 1 名独立 reviewer，T7+ 每个必交 artifact 至少 2 个不同 reviewer 身份。多成品还必须存在有效 full 或 cross-artifact consistency review。
+
+脚本读取真实证据字节核哈希，再比对结论与当前成果；定位仅为溯源声明，不冒充身份认证。运行 ID、时间戳、固定等待、字数或预登记 PASS 单独均不能证明完成。
+
+`must_fix` 必须是数组；类型错误不得当空数组。当前候选发生实质变化时，仅保留其 scope 所覆盖对象、依赖事实和 candidate hash 仍完全有效的审核；受影响 scope 必须复验。不能只比对双方自填的同一个 hash，必须读实际候选重新计算。没有可读取的审核证据时，明确未核验，不伪造独立性。
 
 `source_archive_gate.required=true` 且状态不是 PASS、源或副本未核、待修项非空、问题解决但尚未复验时，均不得 PASS。原稿不得是转换稿、接受修订稿或元数据清理稿。
 

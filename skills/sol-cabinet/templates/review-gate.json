@@ -25,6 +25,22 @@
   "unverified": [],
   "candidate_manifest": [],
   "review_evidence": [],
+  "review_evidence_schema": {
+    "required_fields": [
+      "reviewer_id",
+      "author_id",
+      "verdict",
+      "must_fix",
+      "candidate_sha256",
+      "source_ref"
+    ],
+    "conditional_required_field": "evidence_baseline_sha256",
+    "conditional_when_task_card_contains_any": [
+      "source_archive",
+      "evidence_pack"
+    ],
+    "baseline_helper": "scripts/delivery_gate.py:review_evidence_baseline"
+  },
   "scope_check": {
     "missing_requirements": [],
     "out_of_scope_actions": []

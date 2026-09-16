@@ -1,0 +1,163 @@
+{
+  "validation_state": "laboratory_ready_independent_review_pending",
+  "candidate_branch": "cabinet/sol-v1.5.4-quality-parallelism",
+  "base_main": "6c2576266a2b6dd31f72281dcb40bbd5b447b243",
+  "version_during_validation": "1.5.3",
+  "release_model": {
+    "laboratory_purpose": "prove complete-chain integrity, fail-closed delivery and evolution boundaries before production",
+    "production_purpose": "validate real mixed-format extraction accuracy, review latency, end-to-end speed and sanitized self-evolution observations",
+    "rule": "Laboratory validates chain integrity; production validates real effectiveness. Production observations do not self-promote Skill changes.",
+    "real_performance_is_pre_finalization_gate": false,
+    "independent_candidate_review_is_pre_finalization_gate": true
+  },
+  "performance_direction": {
+    "reference_before_minutes": 10,
+    "directional_after_minutes": 7,
+    "directional_wall_clock_ratio": 0.7,
+    "hard_gate": false,
+    "priority": "quality > dependency correctness > parallelism > speed",
+    "validation_phase": "production"
+  },
+  "primary_critical_paths": [
+    {
+      "area": "source_ingestion_and_extraction",
+      "priority": "highest",
+      "critical_path": "source_archive_pass -> source_manifest -> extraction_dispatch -> extraction_tail -> evidence_coverage_join",
+      "candidate_action": "Build one manifest after archive PASS, dispatch independent sources in the same ready wave, consume results on arrival, join coverage/conflicts once, reuse evidence_pack downstream, and split one large source only after a structural index permits locator-bounded reads without duplicate full-source decode.",
+      "accuracy_boundary": "No speedup may reduce source coverage, formula/table structure, locator fidelity, conflict preservation, source fingerprint binding, or explicit unread/unverified reporting. PDF content extraction is not mechanically claimed by the repository laboratory fixture."
+    },
+    {
+      "area": "final_review",
+      "priority": "highest",
+      "critical_path": "candidate_immutable -> reviewer_dispatch -> review_tail -> review_join",
+      "candidate_action": "Prepare reviewer ready-set before freeze, launch ready independent reviewers in the same scheduling decision after immutable hashes exist, consume structured results on arrival, use artifact-scoped evidence plus one full/cross-artifact consistency review, and invalidate only changed/dependent scopes.",
+      "quality_boundary": "T4-T6 requires at least one independent reviewer per required artifact; T7+ requires at least two distinct reviewers per required artifact. Multi-artifact delivery additionally requires a valid full/cross-artifact consistency review."
+    }
+  ],
+  "implemented_changes": [
+    "T0 builds a minimal dependency DAG and same-wave ready-set for independent positive-benefit work.",
+    "Source archive PASS leads to one source manifest with stable identity/fingerprint/locator and expected coverage.",
+    "Independent source extraction dispatches in the same wave and completed results can release downstream dependencies on arrival.",
+    "Large single files are not blindly fanned out; intra-file parallelism requires structural indexing and locator-bounded reads.",
+    "Source extraction is reused through evidence_pack and unreasoned duplicate full-source rereads are disallowed.",
+    "Agent Result carries source fingerprints and optional dispatch timing fields.",
+    "Reviewer ready-set can be prepared before candidate freeze but verdict work starts only on immutable candidate hashes.",
+    "Ready reviewers launch in the same scheduling decision and return structured completion feedback directly.",
+    "Delivery Gate supports legacy full review plus artifact-scoped and cross-artifact review evidence.",
+    "Every required artifact independently meets the original review-strength requirement; scoped review cannot weaken coverage.",
+    "One-artifact rework can preserve unrelated unchanged artifact review evidence while refreshing the changed scope and cross-artifact consistency review.",
+    "Routine non-light fixed control loading is reduced from four modules to Router-only with conditional loading for the rest.",
+    "Independent final artifacts use one writer per artifact/path after a stable shared fact baseline.",
+    "Independent nontrivial DOCX/XLSX mechanical inspections can use process-parallel checks only when expected net benefit is positive; infrastructure failure falls back to identical serial checks.",
+    "Simple tasks remain single-executor and quality/delivery/evolution gates remain fail-closed.",
+    "A T10 laboratory integration test now chains classification, source protection, evidence contract, Office outputs, T10 review strength, Delivery Gate, production observation recording without self-promotion, and stage-stop behavior."
+  ],
+  "laboratory_t10_validation": {
+    "status": "PASS",
+    "last_validated_commit": "2d2af2f771453878585a45e8a2a69cbf04fb1dc5",
+    "workflow_run_id": 35057780270,
+    "environment": "GitHub-hosted macOS 14 ARM64 with canonical /Users/macbook/ChatGPT validation paths",
+    "chain": [
+      "T10 classification",
+      "four-source byte-identical archive gate for TXT/DOCX/XLSX/PDF",
+      "source manifest and evidence-pack contract",
+      "DOCX and XLSX final artifact creation",
+      "read-only Office structure inspection",
+      "two independent-review slots per required artifact at T10",
+      "cross-artifact consistency review",
+      "Delivery Gate PASS",
+      "sanitized serial-wait production observation recorded with EVO=null",
+      "no automatic production self-promotion",
+      "stage_complete stops current execution and requires reclassification for next stage"
+    ],
+    "limitations": [
+      "The PDF fixture proves source preservation and explicit unread coverage only; repository laboratory tooling does not claim PDF text-extraction accuracy.",
+      "Review identities in the T10 fixture are mechanical test identities; they validate gate semantics and do not satisfy the two real independent candidate reviews required for stable promotion."
+    ]
+  },
+  "performance_iterations": [
+    {
+      "iteration": "office-batch-thread",
+      "environment": "GitHub-hosted macOS 14 ARM64",
+      "serial_median_seconds": 0.5038049790000017,
+      "parallel_median_seconds": 0.5164896875000018,
+      "wall_clock_ratio": 1.0251778148861845,
+      "result": "REJECTED"
+    },
+    {
+      "iteration": "office-batch-process-reproduced",
+      "environment": "GitHub-hosted macOS 14 ARM64",
+      "workload": "6 separate runs of 8 independent synthetic DOCX inspections with 24000 paragraphs each",
+      "wall_clock_ratios": [0.44740980332227565, 0.4820989766286518, 0.45398612831371443, 0.45902406562133735, 0.44002405980758497, 0.42099578562448675],
+      "median_wall_clock_ratio": 0.45069796581799504,
+      "median_relative_wall_clock_reduction": 0.549302034182005,
+      "result": "REPRODUCED_KEEP_FOR_TARGETED_USE",
+      "interpretation": "Component-level synthetic evidence only; production validates real end-to-end effect."
+    },
+    {
+      "iteration": "fixed-control-plane-load",
+      "baseline_fixed_modules": 4,
+      "candidate_fixed_modules": 1,
+      "baseline_bytes": 12152,
+      "candidate_bytes": 4858,
+      "byte_ratio": 0.39976958525345624,
+      "result": "KEEP",
+      "interpretation": "Structural context/load proxy only."
+    },
+    {
+      "iteration": "review-scope-targeted-revalidation",
+      "measurement": "mechanical regression, not wall-clock benchmark",
+      "result": "PASS",
+      "interpretation": "Unchanged artifact review evidence can survive unrelated artifact rework while changed and cross-artifact scopes are refreshed; production validates real review-time savings."
+    }
+  ],
+  "quality_and_regression_evidence": {
+    "last_final_laboratory_validated_commit": "2d2af2f771453878585a45e8a2a69cbf04fb1dc5",
+    "last_final_laboratory_run_id": 35057780270,
+    "final_laboratory": {
+      "t10_end_to_end": "PASS 1/1",
+      "structure_validation": "PASS required_files=50",
+      "delivery_scoped_review": "PASS 24/24",
+      "hot_path_policy": "PASS 11/11",
+      "parallel_planning": "PASS 7/7",
+      "office_batch": "PASS 4/4",
+      "frozen_quality_validation": "PASS 10/10",
+      "fresh_process_evolution_lifecycle": "PASS",
+      "test_inventory": 195
+    },
+    "last_full_module_diagnostic_commit": "0a94bc7b7847bf105aee9f56dd72efb365d4e729",
+    "hosted_macos_module_diagnostic": {
+      "candidate_test_inventory": 195,
+      "aggregate_pass_witnesses": 194,
+      "aggregate_runtime_issue_witnesses": 1,
+      "isolated_test_case_pass_witnesses": "195/195",
+      "known_runtime_issue": "The lifecycle transaction case can fail inside the full test_evolution_loop module on GitHub-hosted macOS because maintenance sandbox initialization is denied in that accumulated process state; the identical lifecycle case passes in a fresh process in the same validation run.",
+      "cabinet_regression_established": false
+    },
+    "temporary_final_lab_workflow_cleanup_commit": "d0bbcfea067df2e48cef3795b8abc21dacf23512",
+    "quality_regression_found": false,
+    "unsafe_parallelism_found": false
+  },
+  "production_validation_targets": [
+    "Real mixed-format TXT/Word/Excel/PDF source-ingestion accuracy, coverage and wall-clock.",
+    "Real review dispatch delay, slowest required-reviewer tail, join delay and completion-feedback delay.",
+    "Real QV-03/QV-06-shaped end-to-end wall-clock and the directional 10-to-7-minute objective.",
+    "Sanitized production incidents for serial-wait, duplicate-read, duplicate-check, false-completion, quality regression and other registered failure types.",
+    "No new version is justified solely by time passage; v1.5.4 remains the production baseline unless material production evidence supports another candidate."
+  ],
+  "pre_finalization_remaining": [
+    "Two real independent candidate reviews on the final immutable candidate, as required by the existing evolution policy.",
+    "Fresh current-candidate user finalization approval after the final immutable SHA is reported."
+  ],
+  "release_boundaries": {
+    "candidate_deployed": false,
+    "live_runtime_modified": false,
+    "version_bumped": false,
+    "temporary_candidate_ci_present": false,
+    "internal_optimization_scope_frozen": true,
+    "laboratory_chain_ready": true,
+    "production_performance_validation_pending": true,
+    "ready_for_finalization": false,
+    "user_finalization_received": false
+  }
+}

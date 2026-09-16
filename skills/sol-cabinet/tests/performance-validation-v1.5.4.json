@@ -1,0 +1,190 @@
+{
+  "version_line": "v1.5.4-quality-parallelism",
+  "principle": "Quality first. Parallelize independent work. Serialize dependencies. Join before commitment.",
+  "performance_goal": {
+    "reference_before_minutes": 10,
+    "directional_after_minutes": 7,
+    "directional_wall_clock_ratio": 0.7,
+    "hard_gate": false,
+    "interpretation": "Aim for roughly 30% lower end-to-end wall clock on comparable complex work when safe parallelism exists; do not trade quality, dependency correctness, independent review, source protection, delivery reliability, or fail-closed behavior for the target. Real-work attainment is a production-validation objective, not a laboratory release gate."
+  },
+  "laboratory_release_model": {
+    "purpose": "prove the complete v1.5.4 chain is internally coherent and fail-closed before production validation",
+    "required_before_finalization": [
+      "T10 end-to-end laboratory chain passes",
+      "structure validation passes",
+      "affected quality and delivery regressions pass",
+      "fresh-process evolution promote/rollback lifecycle witness passes",
+      "required independent candidate review evidence is complete"
+    ],
+    "production_validation_after_release": [
+      "real mixed-format source extraction accuracy and wall clock",
+      "real reviewer dispatch, tail, join and completion-feedback latency",
+      "real QV-03/QV-06-shaped end-to-end wall clock",
+      "directional 10-to-7-minute outcome",
+      "sanitized production incidents and self-evolution observations"
+    ],
+    "rule": "Laboratory validates chain integrity; production validates real effectiveness. Production observations do not self-promote Skill changes."
+  },
+  "metrics": [
+    "wall_clock_time",
+    "critical_path_time",
+    "source_dispatch_delay",
+    "source_extraction_tail",
+    "evidence_join_delay",
+    "review_dispatch_delay",
+    "review_tail",
+    "review_join_delay",
+    "completion_feedback_delay",
+    "reused_unaffected_reviews",
+    "invalidated_review_scopes",
+    "activated_rules",
+    "loaded_modules",
+    "decision_nodes",
+    "serial_gates",
+    "tool_calls",
+    "parallelizable_units",
+    "actually_parallelized_units",
+    "maximum_parallel_width",
+    "duplicate_tool_calls",
+    "duplicate_reads",
+    "reviewer_count",
+    "l2_triggered",
+    "unnecessary_control_steps",
+    "quality_result"
+  ],
+  "critical_path_focus": {
+    "source_ingestion": {
+      "start": "source_archive_pass",
+      "end": "evidence_coverage_ready",
+      "default_parallel_grain": "independent_source",
+      "intra_source_split_rule": "split only after one structural index permits stable locator-bounded reads without duplicate full-source decode",
+      "must_preserve": ["source_fingerprint", "coverage", "locator", "table_formula_structure", "conflicts", "unverified"]
+    },
+    "review": {
+      "start": "candidate_immutable",
+      "end": "required_review_join_complete",
+      "dispatch_rule": "prepare reviewer ready-set before freeze; launch all ready independent reviewers in the same scheduling decision after immutable hashes exist",
+      "feedback_rule": "consume each structured reviewer result on arrival; wait only for dependencies that require the missing review",
+      "revalidation_rule": "invalidate changed artifact scopes plus full/cross-artifact consistency scope; preserve unchanged artifact-scoped reviews when bytes, hashes, and dependent facts are unchanged"
+    }
+  },
+  "control_plane_targets": {
+    "routine_nonlight_fixed_load": ["router"],
+    "conditional_only": ["classification-detail", "domain-routing-map", "core", "system-architecture", "orchestrator", "review"],
+    "duplicate_full_source_reads_without_invalidation": 0,
+    "final_lead_default_full_reread_after_trusted_extraction": false,
+    "review_default_full_source_reparse": false,
+    "review_targeted_direct_source_checks_required_for": ["critical_fact", "high_risk", "conflict", "coverage_gap", "unverified", "source_fingerprint_change"]
+  },
+  "quality_dimensions": [
+    "understanding",
+    "routing",
+    "quality",
+    "delivery",
+    "false_completion",
+    "control_weight"
+  ],
+  "scenarios": [
+    {
+      "id": "QV-01",
+      "role": "control-weight-guardrail",
+      "optimization_expected": false,
+      "profile_overrides": {
+        "independent_work_units": 0,
+        "parallel_benefit": "unknown"
+      },
+      "before": ["single_executor"],
+      "after": ["single_executor"],
+      "must_not": ["agent_fanout", "office_pipeline", "extra_review"]
+    },
+    {
+      "id": "QV-03",
+      "role": "primary-parallel-benchmark",
+      "optimization_expected": true,
+      "profile_overrides": {
+        "independent_work_units": 3,
+        "parallel_benefit": "positive",
+        "additional_execution_agent_budget": 3
+      },
+      "before": ["source_a_read_verify", "source_b_read_verify", "source_c_read_verify", "merge_conflicts", "independent_review"],
+      "after_waves": [
+        ["source_manifest"],
+        ["source_a_read_verify", "source_b_read_verify", "source_c_read_verify"],
+        ["evidence_coverage_join", "merge_conflicts"],
+        ["candidate_synthesis", "review_ready_set_prepare"],
+        ["independent_review"],
+        ["review_join"]
+      ],
+      "source_dispatch_contract": "archive pass to same-wave independent source extraction; no serial source-by-source discovery",
+      "review_dispatch_contract": "review job envelope prepared before candidate freeze and launched immediately after immutable candidate exists",
+      "join_requirements": ["source_attribution", "conflict_preservation", "missing_evidence", "coverage_complete"],
+      "must_not": ["source_mix_up", "silent_conflict_resolution", "review_before_candidate", "duplicate_full_source_reread_without_reason", "wait_for_unrelated_slow_unit"]
+    },
+    {
+      "id": "QV-04",
+      "role": "office-mechanical-parallelism",
+      "optimization_expected": true,
+      "after_waves": [
+        ["source_archive"],
+        ["candidate_production", "review_ready_set_prepare"],
+        ["package_structure_inspection", "artifact_hash_check", "independent_review"],
+        ["delivery_gate"]
+      ],
+      "must_not": ["source_mutation", "review_version_mismatch", "delivery_before_join"]
+    },
+    {
+      "id": "QV-05",
+      "role": "ledger-mechanical-parallelism",
+      "optimization_expected": true,
+      "after_waves": [
+        ["source_archive"],
+        ["candidate_production", "review_ready_set_prepare"],
+        ["workbook_structure_formula_state_check", "artifact_hash_check", "independent_review"],
+        ["delivery_gate"]
+      ],
+      "must_not": ["formula_loss", "sheet_state_mismatch", "source_mutation"]
+    },
+    {
+      "id": "QV-06",
+      "role": "primary-integrated-benchmark",
+      "optimization_expected": true,
+      "profile_overrides": {
+        "independent_work_units": 4,
+        "parallel_benefit": "positive",
+        "additional_execution_agent_budget": 3
+      },
+      "after_waves": [
+        ["source_manifest"],
+        ["independent_source_reads_and_extracts"],
+        ["evidence_coverage_join", "fact_join_and_conflict_resolution"],
+        ["docx_production", "xlsx_production", "review_ready_set_prepare"],
+        ["docx_inspection", "xlsx_inspection", "docx_artifact_review", "xlsx_artifact_review"],
+        ["cross_artifact_consistency_review", "expected_actual_join", "review_evidence_join"],
+        ["delivery_gate"]
+      ],
+      "single_writer_scope": "one writer per final artifact; no concurrent writers to the same artifact",
+      "review_parallelism_scope": "artifact-scoped read-only review may run in parallel after immutable candidate hashes exist; each required artifact retains minimum reviewer coverage and a full/cross-artifact consistency review binds the complete candidate",
+      "targeted_revalidation": "rework one artifact invalidates only that artifact scope plus full/cross-artifact consistency review when other artifact hashes and dependent facts are unchanged",
+      "must_not": ["artifact_collision", "review_version_mismatch", "review_before_candidate", "missing_required_artifact_review_coverage", "missing_cross_artifact_review", "missing_required_artifact_pass", "false_completion", "duplicate_full_source_reread_without_reason"]
+    },
+    {
+      "id": "QV-07",
+      "role": "analysis-only-guardrail",
+      "optimization_expected": false,
+      "must_not": ["office_delivery_pipeline", "invented_expected_artifact", "unnecessary_agent_fanout"]
+    }
+  ],
+  "acceptance": {
+    "quality_regression": "blocker",
+    "unsafe_parallelism": "blocker",
+    "speed_claim_requires_measured_ab": true,
+    "directional_goal_is_not_release_gate": true,
+    "t10_laboratory_chain_required_before_finalization": true,
+    "affected_regression_suite_required_before_finalization": true,
+    "fresh_process_evolution_lifecycle_required_before_finalization": true,
+    "independent_candidate_reviews_required_before_finalization": 2,
+    "target_mac_real_work_performance_required_before_finalization": false,
+    "real_work_performance_validation_phase": "production"
+  }
+}
