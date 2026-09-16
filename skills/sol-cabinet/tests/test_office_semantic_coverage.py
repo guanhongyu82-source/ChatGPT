@@ -134,6 +134,27 @@ class OfficeSemanticCoverageTests(unittest.TestCase):
         self.assertEqual(result["evidence_pack"]["facts"], [])
         self.assertEqual(result["evidence_pack"]["unread"], [])
 
+    def test_property_field_names_are_text_not_unevaluated_word_fields(self):
+        self.package({"docProps/core.xml": (
+            f'<cp:coreProperties xmlns:cp={quoteattr(CORE)} xmlns:dc={quoteattr(DC)}>'
+            '<dc:description>Documentation of fldSimple instrText fldChar XML elements</dc:description>'
+            '</cp:coreProperties>', CT_CORE)})
+        result = self.ingest()
+        self.assertEqual(result["state"], "PASS")
+        self.assertEqual(len(result["evidence_pack"]["facts"]), 1)
+        self.assertEqual(result["evidence_pack"]["unread"], [])
+
+    def test_actual_word_field_elements_remain_unread(self):
+        for tag in ("fldSimple", "instrText", "fldChar"):
+            with self.subTest(tag=tag):
+                self.package({"word/document.xml": (
+                    f'<w:document xmlns:w={quoteattr(inspect_office.W[1:-1])}>'
+                    f'<w:body><w:p><w:{tag}/></w:p></w:body></w:document>',
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")})
+                result = self.ingest()
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertTrue(any("docx-fields-not-evaluated" in u for u in result["evidence_pack"]["unread"]))
+
     def test_unread_properties_cannot_get_format_exemption(self):
         inspected = self.package({"docProps/core.xml": (
             f'<coreProperties xmlns={quoteattr(CORE)}><keywords>事实</keywords></coreProperties>', CT_CORE)})

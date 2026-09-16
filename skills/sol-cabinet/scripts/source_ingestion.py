@@ -392,8 +392,9 @@ def _office_unread(path: Path, inspected: dict, source_id: str) -> list[str]:
                 for name in parts_read:
                     if not name.endswith(".xml"):
                         continue
-                    raw = package.read(name)
-                    if any(token in raw for token in (b"fldSimple", b"instrText", b"fldChar")):
+                    tree = _xml_root(package, name)
+                    field_tags = {inspect_office.W + tag for tag in ("fldSimple", "instrText", "fldChar")}
+                    if any(node.tag in field_tags for node in tree.iter()):
                         unread.append(f"{source_id}:docx-fields-not-evaluated")
                         break
 
