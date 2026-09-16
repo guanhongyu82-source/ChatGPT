@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -14,18 +13,9 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+import inspect_office as office
+import inspect_office_batch as batch
 
-def load_module(name: str, relative_path: str):
-    spec = importlib.util.spec_from_file_location(name, ROOT / relative_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load {relative_path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-batch = load_module("sol_office_batch_tests", "scripts/inspect_office_batch.py")
-office = load_module("sol_office_batch_base", "scripts/inspect_office.py")
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
 
