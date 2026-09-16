@@ -76,8 +76,13 @@ def _expected_artifacts(c, root, require, card):
     return expected
 
 
-def _review_evidence_baseline(card):
-    """Fingerprint the locked source/evidence baseline used by scoped reviews."""
+def review_evidence_baseline(card):
+    """Fingerprint the locked source/evidence baseline used by independent reviews.
+
+    The digest is SHA-256 over canonical JSON containing the Task Card's
+    source_archive and evidence_pack objects. When either object exists, every
+    review scope is bound to this baseline so stale factual conclusions fail closed.
+    """
     if not isinstance(card, dict):
         return None
     baseline = {}
@@ -95,13 +100,17 @@ def _review_evidence_baseline(card):
     return hashlib.sha256(raw).hexdigest()
 
 
+# Compatibility for callers/tests created with the first v1.5.4 remediation.
+_review_evidence_baseline = review_evidence_baseline
+
+
 def _normalize_review_scope(review, actual_by_id, hashes):
     """Return (scope, artifact_ids, expected_hashes) or None for an invalid scope.
 
     Backward-compatible review evidence without scope fields remains a full-candidate
-    review. Artifact-scoped review binds the declared artifact hashes and, when the
-    locked Task Card has source/evidence state, its evidence baseline fingerprint.
-    A cross-artifact review binds the complete current candidate hash map.
+    review. Artifact scope binds declared artifact hashes; full and cross-artifact
+    scopes bind the complete current candidate hash map. Evidence-baseline binding
+    is enforced separately and uniformly for every scope when a baseline exists.
     """
     if not isinstance(review, dict):
         return None
@@ -205,7 +214,7 @@ def check(c, contract_path=None):
 
     card = _load_locked_task_card(c, require)
     expected = _expected_artifacts(c, root, require, card)
-    evidence_baseline_sha256 = _review_evidence_baseline(card)
+    evidence_baseline_sha256 = review_evidence_baseline(card)
     require(bool(expected), 'file delivery requires at least one expected artifact; use analysis-only for no-file tasks')
     artifacts = c.get('artifacts')
     require(isinstance(artifacts, list), 'artifact manifest must be an array')
@@ -262,9 +271,7 @@ def check(c, contract_path=None):
         reviewer, author = review.get('reviewer_id'), review.get('author_id')
         evidence = Path(review.get('evidence_path') or '.')
         scope_info = _normalize_review_scope(review, actual_by_id, hashes)
-        baseline_bound = (scope_info is not None
-                          and scope_info[0] == 'artifact'
-                          and evidence_baseline_sha256 is not None)
+        baseline_bound = scope_info is not None and evidence_baseline_sha256 is not None
         valid = (scope_info is not None
                  and isinstance(reviewer, str) and bool(reviewer.strip()) and isinstance(author, str)
                  and bool(author.strip()) and reviewer != author and evidence.is_absolute()

@@ -8,8 +8,8 @@ Review 核对用户要求与真实结果，不核对执行者是否“看起来�
 - 正式完整稿件，或向正式材料新增制度、审批、职责与协作规范，至少按 T4 审核；不能仅凭执行者填写 T3 豁免。范围明确、无新增依据或风险的局部微改除外。
 - T4-T6 至少一名未承担最终写入的独立审核者；T7+ 至少两条不同维度的独立判断路径。
 - 多个最终成品已经 immutable、共用事实基线稳定、审核对象彼此可分且并行净收益明确为正时，可把同一审核职责按 artifact/object 切成多个独立只读实例同波执行；这只用于缩短审核 Critical Path，不降低最低独立审核强度，也不把同一成品拆成互相不知道上下文的碎片审。每个实例只核自己的对象与必要 evidence-pack slice，随后做一次跨成品一致性 join，核术语、数字、责任口径、附件关系和互相引用，不再把全部成品完整重审一遍。
-- scoped review 采用显式版本绑定：`review_scope=artifact` 时必须列 `artifact_ids`，并绑定这些 artifact 当前 hash；多成品 scoped 模式必须另有 `review_scope=cross_artifact` 或 full review 绑定整套当前 candidate hash map。Delivery Gate 按每个必交 artifact 分别核最低 reviewer 覆盖强度，不能因为切 scope 少审对象。
-- 单个 artifact 返工后，只使覆盖该 artifact 的 scoped review 与 full/cross-artifact consistency review 失效；其他 artifact 的 bytes/hash 与所依赖事实均未变化时，其 scoped review 可保留。共享事实基线、结构依赖或跨成品关系变化时，相关 scope 必须失效重审，不能只看文件 hash。
+- review 采用双重版本绑定：`candidate_sha256` 绑定其 scope 的当前成品 bytes；只要锁定 Task Card 含 `source_archive` 或 `evidence_pack`，`artifact`、`full`、`cross_artifact` 三种 scope 均必须同时绑定 `evidence_baseline_sha256`。多成品 scoped 模式仍必须另有 `review_scope=cross_artifact` 或 full review 绑定整套当前 candidate hash map。Delivery Gate 按每个必交 artifact 分别核最低 reviewer 覆盖强度，不能因为切 scope 少审对象。
+- 单个 artifact 返工后，只使覆盖该 artifact 的 scoped review 与 full/cross-artifact consistency review 失效；其他 artifact 的 bytes/hash 与所依赖事实均未变化时，其 scoped review 可保留。共享事实基线、结构依赖或跨成品关系变化时，相关 scope 必须失效重审，不能只看文件 hash。当前门禁对共享 `source_archive + evidence_pack` baseline 采用保守绑定：baseline 任一变化都会使依赖该 Task Card 的 review 失效，宁可多复验，不保留可能过期的事实判断。
 - T9-T10 在阶段内先审候选，再验实际落地；复验只覆盖变化与未决项，不重读未变化全库。完成后停止，不自动进入下一阶段。
 
 ## 派工与完工回流
@@ -36,11 +36,13 @@ Review 核对用户要求与真实结果，不核对执行者是否“看起来�
 
 ## 真实证据门禁
 
-使用 [Review Gate](../templates/review-gate.json) 时，候选清单须绑定实际文件及 SHA-256；每个审核者须有真实运行标识、判断维度和可读取的结果证据。交付门禁的 `reviews` 每项须提供 `evidence_path`、`evidence_sha256` 和非空 `source_ref`（工具／消息定位）；证据必须为 JSON，内含与声明一致的 `reviewer_id`、`author_id`、`verdict`、`must_fix`、`candidate_sha256`、`source_ref`。
+使用 [Review Gate](../templates/review-gate.json) 时，候选清单须绑定实际文件及 SHA-256；每个审核者须有真实运行标识、判断维度和可读取的结果证据。交付门禁的 `reviews` 每项须提供 `evidence_path`、`evidence_sha256` 和非空 `source_ref`（工具／消息定位）；证据必须为 JSON，内含与声明一致的 `reviewer_id`、`author_id`、`verdict`、`must_fix`、`candidate_sha256`、`source_ref`。锁定 Task Card 只要含 `source_archive` 或 `evidence_pack`，声明与证据还必须同时含相同的 `evidence_baseline_sha256`。
 
-- 兼容旧证据：未声明 scope 的 review 视为 `review_scope=full`，`candidate_sha256` 必须等于 Delivery Gate 重新计算的整套当前成品 hash map。
-- `review_scope=artifact`：必须列非空且不重复的 `artifact_ids`，`candidate_sha256` 只能且必须绑定这些 artifact 当前 path→hash；审核证据只对这些对象有效。
-- `review_scope=cross_artifact`：用于多成品一致性 join，`artifact_ids` 必须覆盖全部当前 Actual，`candidate_sha256` 必须绑定整套当前成品 hash map；它不能替代每个 artifact 自身达到最低独立审核覆盖。
+`evidence_baseline_sha256` 的唯一派生方式由 `scripts/delivery_gate.py` 的公开函数 `review_evidence_baseline(card)` 定义：取锁定 Task Card 中存在的 `source_archive`、`evidence_pack` 组成对象，以 UTF-8 编码的 canonical JSON（`ensure_ascii=false`、key 排序、紧凑分隔符）计算 SHA-256。Reviewer／宿主应直接调用该 helper 或实现完全相同的算法，不自行设计第二种 fingerprint。两字段都不存在的历史 Task Card 才不要求该值。
+
+- 兼容旧证据：未声明 scope 的 review 视为 `review_scope=full`，`candidate_sha256` 必须等于 Delivery Gate 重新计算的整套当前成品 hash map；若 Task Card 存在 evidence baseline，旧 full review 也必须有匹配的 `evidence_baseline_sha256`，不能因“兼容旧 scope 写法”保留过期事实结论。
+- `review_scope=artifact`：必须列非空且不重复的 `artifact_ids`，`candidate_sha256` 只能且必须绑定这些 artifact 当前 path→hash；审核证据只对这些对象有效，并同时绑定当前 evidence baseline。
+- `review_scope=cross_artifact`：用于多成品一致性 join，`artifact_ids` 必须覆盖全部当前 Actual，`candidate_sha256` 必须绑定整套当前成品 hash map；它不能替代每个 artifact 自身达到最低独立审核覆盖，也必须绑定当前 evidence baseline。
 - Delivery Gate 会按必交 artifact 分别统计有效 reviewer 覆盖；T4-T6 每个必交 artifact 至少 1 名独立 reviewer，T7+ 每个必交 artifact 至少 2 个不同 reviewer 身份。多成品还必须存在有效 full 或 cross-artifact consistency review。
 
 脚本读取真实证据字节核哈希，再比对结论与当前成果；定位仅为溯源声明，不冒充身份认证。运行 ID、时间戳、固定等待、字数或预登记 PASS 单独均不能证明完成。

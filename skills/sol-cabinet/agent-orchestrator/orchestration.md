@@ -26,6 +26,8 @@
 
 材料提取是事实底座，优化目标是缩短 **archive PASS → first extraction dispatch → evidence coverage ready**，不以少读、猜读或牺牲定位精度换速度。
 
+仓库运行时对已归档的本地 `.txt/.md/.docx/.xlsx` 提供一个可执行的机械基线：`scripts/source_ingestion.py`。它读取 `00_原稿/原稿清单.json`，复核 archived hash 与原稿保护标记，将独立来源同波提交到 extraction ready-set，DOCX/XLSX 复用 `inspect_office.py`，最后由同一生产函数 join 为带 source fingerprint、locator、coverage、conflicts 与 unread 的 `evidence_pack`。T10 与回归测试必须调用这个生产入口，不得在测试文件里复制一套平行 extractor/joiner。脚本不支持的格式保持 `unread`，再由当前平台真正支持的原生读取路径补齐；不得猜读或把 archive-only 当内容 coverage。
+
 1. **先建 manifest，再派工**：归档门禁通过后立即建立 source manifest；每个 source 必须有 `source_id + fingerprint/hash + source_type + locator_scheme + expected_coverage`。派工前就确定 coverage 边界，避免多个 Agent 重复读同一块、又遗漏另一块。
 2. **默认按来源并发，不盲拆单文件**：多文件任务优先“一来源一 extraction unit”或按真实独立对象分配。单个超大文件只有在一次低成本结构索引后能够按稳定 locator 做随机／分段读取时，才继续拆页段、工作表、表块或章节；如果每个子任务仍会把整份文件重新解码一遍，就保持单次解析，禁止用重复全文读取伪造并行收益。
 3. **格式感知但共用证据合同**：纯文本／Word 记录段落、表格、页眉页脚、文本框等实际 coverage；Excel 先识别 workbook/sheet 结构，再按独立 sheet/range 分工，公式、合并区、状态与未核项不能在 join 时丢失；PDF 先确认页数／页索引与可读类型，平台支持稳定分页读取时才按 page range 并行，扫描／图像页只能走当前平台支持的视觉读取并明确 coverage，无法可靠读取的页必须进入 `unverified/unread`，不得根据邻页猜正文。
@@ -39,9 +41,9 @@
 
 1. **候选冻结前准备 reviewer ready-set**：在最终成品接近稳定时，主代理可以提前确定审核对象、review scope、必要 evidence-pack slice、独立性要求、验收字段和返工定位，但不得提前给未冻结候选 verdict，也不为“预热”无收益地占用并发槽。
 2. **冻结即同波派工**：一旦当前候选 hash/manifest 可用，在同一次调度决策里启动所有已就绪且可独立执行的 reviewer；不得采用“创建 reviewer A → 等 A 完成 → 再创建 reviewer B”的无依赖串行链。单成品或强耦合审核仍按原路径。
-3. **审核按 scope 绑定版本**：full review 绑定整套当前 candidate hash map；artifact-scoped review 只绑定自己声明的 `artifact_ids` 与对应当前 hash；多成品 scoped 模式还必须有一次 full／cross-artifact consistency review 绑定整套当前 candidate。Delivery Gate 按每个必交 artifact 分别核最低 reviewer 覆盖强度，不能因为切 scope 少审对象。
+3. **审核按 scope 绑定版本**：full review 绑定整套当前 candidate hash map；artifact-scoped review 只绑定自己声明的 `artifact_ids` 与对应当前 hash；多成品 scoped 模式还必须有一次 full／cross-artifact consistency review 绑定整套当前 candidate。三种 scope 在 Task Card 存在 `source_archive`／`evidence_pack` 时还统一绑定 `evidence_baseline_sha256`，共享事实 baseline 变化即失效。Delivery Gate 按每个必交 artifact 分别核最低 reviewer 覆盖强度，不能因为切 scope 少审对象。
 4. **完工反馈事件化**：Reviewer 一完成就立即返回结构化 PASS／FAIL／BLOCKED、`issue_id × object_id`、证据 locator、must-fix 和未核项；Final Lead 不等待无关 reviewer 才读取已完成结果。只有最终裁决或确有跨对象依赖时才等待 required review join。
-5. **定向失效，不全套重审**：某个 artifact 发生实质变更时，只使覆盖该 artifact 的 scoped review 与 full／cross-artifact consistency review 失效；其他 artifact 字节、hash 与依赖事实均未变化时，其已通过 scoped review 可以保留。共享事实基线改变时，依赖该事实的全部 scope 仍须失效重审，不能以文件 hash 未变掩盖事实依赖变化。
+5. **定向失效，不全套重审**：某个 artifact 发生实质变更时，只使覆盖该 artifact 的 scoped review 与 full／cross-artifact consistency review 失效；其他 artifact 字节、hash 与依赖事实均未变化时，其已通过 scoped review 可以保留。共享事实基线改变时，依赖该事实的全部 scope 仍须失效重审，不能以文件 hash 未变掩盖事实依赖变化。当前 gate 采用共享 baseline 的保守失效策略，后续只有在显式、可验证的 dependency slice 合同存在时才允许更细粒度复用。
 6. **观测审核尾延迟**：有可靠计时时记录 `review_dispatch_delay`、`review_tail`、`review_join_delay`、`reused_unaffected_reviews` 和 `invalidated_review_scopes`。最慢 required reviewer 是重点；不把“创建更多 reviewer”本身当性能改善。
 
 ## 交接与返工

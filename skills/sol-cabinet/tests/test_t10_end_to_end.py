@@ -9,7 +9,6 @@ import zipfile
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
@@ -21,6 +20,7 @@ import delivery_gate
 import evolve
 import inspect_office
 import inspect_office_batch
+import source_ingestion
 
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
@@ -66,94 +66,6 @@ def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def extract_source(path: Path, source_id: str) -> dict:
-    suffix = path.suffix.lower()
-    digest = sha(path)
-    if suffix == ".txt":
-        records = [
-            {"locator": f"text:line[{index}]", "text": line.strip()}
-            for index, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
-            if line.strip()
-        ]
-        unread = []
-        locator_scheme = "line"
-    elif suffix in {".docx", ".xlsx"}:
-        result = inspect_office.inspect(path)
-        records = [
-            {"locator": item["locator"], "text": item["text"]}
-            for item in result["records"]
-            if item.get("text")
-        ]
-        unread = []
-        locator_scheme = "format-native"
-    elif suffix == ".pdf":
-        records = []
-        unread = [f"{source_id}:pdf-content-extraction-not-mechanically-supported-by-repository-fixture"]
-        locator_scheme = "archive-only"
-    else:
-        raise ValueError(f"unsupported laboratory source: {suffix}")
-    return {
-        "source_id": source_id,
-        "source_sha256": digest,
-        "locator_scheme": locator_scheme,
-        "records": records,
-        "unread": unread,
-    }
-
-
-def join_evidence(extractions: list[dict]) -> dict:
-    facts = []
-    values_by_key: dict[str, list[dict]] = {}
-    unread = []
-    for source in extractions:
-        unread.extend(source["unread"])
-        for record in source["records"]:
-            text = record["text"].strip()
-            if "=" not in text:
-                continue
-            key, value = (part.strip() for part in text.split("=", 1))
-            fact = {
-                "source_id": source["source_id"],
-                "source_sha256": source["source_sha256"],
-                "locator": record["locator"],
-                "key": key,
-                "value": value,
-            }
-            facts.append(fact)
-            values_by_key.setdefault(key, []).append(fact)
-    conflicts = []
-    for key, items in values_by_key.items():
-        values = sorted({item["value"] for item in items})
-        if len(values) > 1:
-            conflicts.append(
-                {
-                    "key": key,
-                    "values": values,
-                    "evidence": [
-                        {"source_id": item["source_id"], "locator": item["locator"]}
-                        for item in items
-                    ],
-                }
-            )
-    return {
-        "sources": [
-            {
-                "source_id": source["source_id"],
-                "source_sha256": source["source_sha256"],
-                "locator_scheme": source["locator_scheme"],
-            }
-            for source in extractions
-        ],
-        "coverage": [
-            f'{source["source_id"]}:{len(source["records"])}-records'
-            for source in extractions
-        ],
-        "facts": facts,
-        "conflicts": conflicts,
-        "unread": unread,
-    }
-
-
 def write_review(
     work: Path,
     reviewer: str,
@@ -172,7 +84,7 @@ def write_review(
         "candidate_sha256": hashes,
         "source_ref": f"tool:{reviewer}/message:lab-result",
     }
-    if scope == "artifact" and evidence_baseline_sha256 is not None:
+    if evidence_baseline_sha256 is not None:
         review["evidence_baseline_sha256"] = evidence_baseline_sha256
     path = work / f"{reviewer}.json"
     path.write_text(json.dumps(review, ensure_ascii=False), encoding="utf-8")
@@ -230,17 +142,17 @@ class T10EndToEndLaboratoryTests(unittest.TestCase):
             source_text = sources / "材料.txt"
             source_docx = sources / "材料.docx"
             source_xlsx = sources / "材料.xlsx"
-            source_pdf = sources / "材料.pdf"
+            source_note = sources / "补充.txt"
             source_text.write_text("项目=青山工程\n预算=100\n", encoding="utf-8")
             make_docx(source_docx, "责任部门=综合部")
             make_xlsx(source_xlsx, [["预算=120"], ["阶段=完成"]])
-            source_pdf.write_bytes(b"%PDF-1.4\n% laboratory-source-only\n%%EOF\n")
-            input_paths = [source_text, source_docx, source_xlsx, source_pdf]
+            source_note.write_text("期限=2026-12-31\n", encoding="utf-8")
+            input_paths = [source_text, source_docx, source_xlsx, source_note]
             input_hashes = {str(path): sha(path) for path in input_paths}
 
             archived = archive_originals.archive_originals(
                 task,
-                [("正文", source_text), ("Word", source_docx), ("Excel", source_xlsx), ("PDF", source_pdf)],
+                [("正文", source_text), ("Word", source_docx), ("Excel", source_xlsx), ("补充", source_note)],
                 allow_test_output=True,
             )
             self.assertEqual(archived["state"], "PASS")
@@ -253,26 +165,29 @@ class T10EndToEndLaboratoryTests(unittest.TestCase):
             self.assertTrue(all(item["byte_identical"] and item["source_unmodified"] for item in manifest["files"]))
             self.assertEqual(len({item["source_sha256"] for item in manifest["files"]}), 4)
 
-            extractions = []
-            for index, item in enumerate(manifest["files"], 1):
-                archived_path = task / item["archived_relative_path"]
-                self.assertTrue(archived_path.is_file())
-                self.assertEqual(sha(archived_path), item["source_sha256"])
-                extractions.append(extract_source(archived_path, f"source-{index}"))
-            evidence_pack = join_evidence(extractions)
+            ingestion = source_ingestion.ingest_archive(task, manifest_path, max_workers=4)
+            self.assertEqual(ingestion["state"], "PASS")
+            self.assertEqual(ingestion["execution_mode"], "parallel")
+            self.assertEqual(ingestion["maximum_parallel_width"], 4)
+            self.assertEqual(ingestion["source_count"], 4)
+            evidence_pack = ingestion["evidence_pack"]
             self.assertEqual(len(evidence_pack["sources"]), 4)
-            self.assertGreaterEqual(len(evidence_pack["facts"]), 4)
+            self.assertFalse(evidence_pack["unread"])
+            self.assertTrue(all(item["state"] == "EXTRACTED" for item in evidence_pack["coverage"]))
+            self.assertGreaterEqual(len(evidence_pack["facts"]), 5)
             self.assertTrue(any(item["key"] == "预算" for item in evidence_pack["conflicts"]))
-            self.assertTrue(any("pdf-content-extraction" in item for item in evidence_pack["unread"]))
-            source_fact_text = {f'{item["key"]}={item["value"]}' for item in evidence_pack["facts"]}
+            source_fact_text = {item["text"] for item in evidence_pack["facts"]}
             self.assertIn("项目=青山工程", source_fact_text)
             self.assertIn("责任部门=综合部", source_fact_text)
             self.assertIn("预算=100", source_fact_text)
             self.assertIn("预算=120", source_fact_text)
+            self.assertIn("期限=2026-12-31", source_fact_text)
+            self.assertTrue(all(item["source_sha256"] and item["locator"] for item in evidence_pack["facts"]))
 
+            traceable_facts = [item for item in evidence_pack["facts"] if "key" in item and "value" in item]
             trace_lines = [
                 f'{item["key"]}={item["value"]} [{item["source_id"]} {item["locator"]}]'
-                for item in evidence_pack["facts"]
+                for item in traceable_facts
             ]
             trace_lines.extend(
                 f'冲突:{item["key"]}={"|".join(item["values"])}'
@@ -286,7 +201,7 @@ class T10EndToEndLaboratoryTests(unittest.TestCase):
                 [["来源", "定位", "事实"]]
                 + [
                     [item["source_id"], item["locator"], f'{item["key"]}={item["value"]}']
-                    for item in evidence_pack["facts"]
+                    for item in traceable_facts
                 ],
             )
             output_hashes_before = {str(doc): sha(doc), str(ledger): sha(ledger)}
@@ -304,6 +219,7 @@ class T10EndToEndLaboratoryTests(unittest.TestCase):
             self.assertIn("责任部门=综合部", inspected_text)
             self.assertIn("预算=100", inspected_text)
             self.assertIn("预算=120", inspected_text)
+            self.assertIn("期限=2026-12-31", inspected_text)
 
             task_card = task / "task-card.json"
             card = {
@@ -338,7 +254,7 @@ class T10EndToEndLaboratoryTests(unittest.TestCase):
                     "gate_code": "PASS",
                 },
                 "resource_plan": {
-                    "independent_units": ["txt", "docx", "xlsx", "pdf"],
+                    "independent_units": ["txt", "docx", "xlsx", "txt-supplement"],
                     "parallel_benefit": "positive",
                     "available_subagent_slots": 6,
                     "additional_execution_agent_budget": 3,
@@ -347,7 +263,7 @@ class T10EndToEndLaboratoryTests(unittest.TestCase):
                 "evidence_pack": evidence_pack,
             }
             task_card.write_text(json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8")
-            evidence_baseline_sha256 = delivery_gate._review_evidence_baseline(card)
+            evidence_baseline_sha256 = delivery_gate.review_evidence_baseline(card)
             self.assertIsNotNone(evidence_baseline_sha256)
 
             all_hashes = {str(doc): sha(doc), str(ledger): sha(ledger)}
@@ -358,7 +274,7 @@ class T10EndToEndLaboratoryTests(unittest.TestCase):
                 write_review(work, "reviewer-doc-2", "artifact", ["report"], doc_hash, evidence_baseline_sha256),
                 write_review(work, "reviewer-ledger-1", "artifact", ["ledger"], ledger_hash, evidence_baseline_sha256),
                 write_review(work, "reviewer-ledger-2", "artifact", ["ledger"], ledger_hash, evidence_baseline_sha256),
-                write_review(work, "reviewer-cross", "cross_artifact", ["report", "ledger"], all_hashes),
+                write_review(work, "reviewer-cross", "cross_artifact", ["report", "ledger"], all_hashes, evidence_baseline_sha256),
             ]
             retained = {review["evidence_path"]: "T10 required independent review evidence" for review in reviews}
             contract = {
