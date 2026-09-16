@@ -386,5 +386,46 @@ class OfficeSemanticCoverageTests(unittest.TestCase):
 
 
 
+    def test_row_collection_requires_unique_identity_even_with_distinct_cells(self):
+        self.package({"xl/worksheets/sheet1.xml": (
+            f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}><sheetData>'
+            '<row r="1"><c r="A1"><v>1</v></c></row>'
+            '<row r="1"><c r="B1"><v>2</v></c></row></sheetData></worksheet>',
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")}, suffix=".xlsx")
+        result = self.ingest()
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("ambiguous-collection-identity" in u for u in result["evidence_pack"]["unread"]))
+
+    def test_property_containers_require_unambiguous_cardinality(self):
+        for fragment in (
+            '<HeadingPairs><vt:vector size="1" baseType="variant"><vt:variant>'
+            '<vt:lpstr>A</vt:lpstr><vt:i4>2</vt:i4></vt:variant></vt:vector></HeadingPairs>',
+            '<HeadingPairs><vt:vector size="1" baseType="variant"><vt:variant/></vt:vector></HeadingPairs>',
+            '<TitlesOfParts><vt:vector size="0" baseType="lpstr"/><vt:vector size="0" baseType="lpstr"/></TitlesOfParts>',
+            '<TitlesOfParts/>', '<Company>A</Company><Company>B</Company>',
+        ):
+            with self.subTest(fragment=fragment):
+                self.package({"docProps/app.xml": (
+                    f'<Properties xmlns={quoteattr(APP)} xmlns:vt={quoteattr(inspect_office.VT[1:-1])}>'
+                    + fragment + '</Properties>', CT_APP)})
+                result = self.ingest()
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertTrue(any("semantic-gap" in u for u in result["evidence_pack"]["unread"]))
+
+    def test_supported_distinct_rows_and_scalar_variant_cardinality_pass(self):
+        self.package({
+            "xl/worksheets/sheet1.xml": (
+                f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}><sheetData>'
+                '<row r="1"><c r="A1"><v>1</v></c></row><row r="2"><c r="B2"><v>2</v></c></row>'
+                '</sheetData></worksheet>', "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"),
+            "docProps/app.xml": (
+                f'<Properties xmlns={quoteattr(APP)} xmlns:vt={quoteattr(inspect_office.VT[1:-1])}>'
+                '<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant>'
+                '<vt:variant><vt:i4>1</vt:i4></vt:variant></vt:vector></HeadingPairs></Properties>', CT_APP),
+        }, suffix=".xlsx")
+        self.assertEqual(self.ingest()["state"], "PASS")
+
+
+
 if __name__ == "__main__":
     unittest.main()

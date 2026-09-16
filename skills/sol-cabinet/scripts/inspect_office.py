@@ -66,6 +66,19 @@ SHEET_SURFACE = _grammar(X, [
 
 def _semantic_gaps(tree, part, grammar, text_tags):
     gaps = []
+    singles = {W + 'document': {W + 'body'}, X + 'workbook': {X + 'sheets'},
+               X + 'worksheet': {X + 'sheetData'}, X + 'c': {X + 'v', X + 'is'},
+               X + 'si': {X + 't'}, X + 'is': {X + 't'}, X + 'r': {X + 't'},
+               CORE_PROPS + 'coreProperties': CORE_FIELDS,
+               APP_PROPS + 'Properties': PROPERTY_SURFACE[APP_PROPS + 'Properties'][0]}
+    required_single = {W + 'document': {W + 'body'}, X + 'workbook': {X + 'sheets'},
+                       X + 'worksheet': {X + 'sheetData'},
+                       APP_PROPS + 'TitlesOfParts': {VT + 'vector'},
+                       APP_PROPS + 'HeadingPairs': {VT + 'vector'}}
+    # Identity belongs to the containing collection, not only to each element.
+    identities = {X + 'sheetData': (X + 'row', ('r',)),
+                  X + 'row': (X + 'c', ('r',)),
+                  X + 'sheets': (X + 'sheet', ('name', 'sheetId', R + 'id'))}
 
     def gap(locator, reason):
         gaps.append({'part': part, 'locator': f'{part}:{locator}', 'reason': reason})
@@ -101,12 +114,18 @@ def _semantic_gaps(tree, part, grammar, text_tags):
         for child in node:
             counts[child.tag] = counts.get(child.tag, 0) + 1
             walk(child, f'{locator}/{child.tag}[{counts[child.tag]}]')
-        # These containers are singular in the supported grammar.
-        singles = {W + 'document': {W + 'body'}, X + 'workbook': {X + 'sheets'},
-                   X + 'worksheet': {X + 'sheetData'}, X + 'c': {X + 'v', X + 'is'},
-                   X + 'si': {X + 't'}, X + 'is': {X + 't'}, X + 'r': {X + 't'}}
         if any(counts.get(tag, 0) > 1 for tag in singles.get(node.tag, ())):
             gap(locator, 'ambiguous-repeated-container')
+        if any(counts.get(tag, 0) != 1 for tag in required_single.get(node.tag, ())):
+            gap(locator, 'unsupported-container-cardinality')
+        if node.tag == VT + 'variant' and len(node) != 1:
+            gap(locator, 'unsupported-scalar-choice-cardinality')
+        if node.tag in identities:
+            child_tag, keys = identities[node.tag]
+            for key in keys:
+                values = [child.get(key) for child in node.findall(child_tag)]
+                if len(values) != len(set(values)):
+                    gap(locator + '/' + child_tag + '/@' + key, 'ambiguous-collection-identity')
         if node.tag in {X + 'si', X + 'is'} and counts.get(X + 't') and counts.get(X + 'r'):
             gap(locator, 'ambiguous-string-representation')
         if node.tag == X + 'sheet' and any(not node.get(key) for key in ('name', 'sheetId', R + 'id')):
