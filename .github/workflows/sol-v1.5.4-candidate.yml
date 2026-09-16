@@ -1,0 +1,29 @@
+name: Sol v1.5.4 candidate validation
+
+on:
+  push:
+    branches:
+      - cabinet/sol-v1.5.4-quality-parallelism
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Keep validation version frozen
+        run: test "$(cat skills/sol-cabinet/VERSION)" = "1.5.3"
+      - name: Parallel planning regression
+        working-directory: skills/sol-cabinet
+        run: python -m unittest discover -s tests -p 'test_parallel_planning.py' -v
+      - name: Parallel Office batch regression
+        working-directory: skills/sol-cabinet
+        run: PYTHONPATH="scripts:tests" python -m unittest discover -s tests -p 'test_office_batch_inspection.py' -v
+      - name: Frozen quality validation regression
+        working-directory: skills/sol-cabinet
+        run: PYTHONPATH="scripts:tests" python -m unittest discover -s tests -p 'test_quality_validation.py' -v
