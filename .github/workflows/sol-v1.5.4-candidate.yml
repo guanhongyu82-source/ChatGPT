@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - cabinet/sol-v1.5.4-quality-parallelism
+  workflow_dispatch:
 
 permissions:
   contents: read
