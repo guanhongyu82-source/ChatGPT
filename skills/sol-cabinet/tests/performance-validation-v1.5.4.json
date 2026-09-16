@@ -1,0 +1,119 @@
+{
+  "version_line": "v1.5.4-quality-parallelism",
+  "principle": "Quality first. Parallelize independent work. Serialize dependencies. Join before commitment.",
+  "performance_goal": {
+    "reference_before_minutes": 10,
+    "directional_after_minutes": 7,
+    "directional_wall_clock_ratio": 0.7,
+    "hard_gate": false,
+    "interpretation": "Aim for roughly 30% lower end-to-end wall clock on comparable complex work when safe parallelism exists; do not trade quality, dependency correctness, independent review, source protection, delivery reliability, or fail-closed behavior for the target."
+  },
+  "metrics": [
+    "wall_clock_time",
+    "critical_path_time",
+    "activated_rules",
+    "loaded_modules",
+    "decision_nodes",
+    "serial_gates",
+    "tool_calls",
+    "parallelizable_units",
+    "actually_parallelized_units",
+    "maximum_parallel_width",
+    "duplicate_tool_calls",
+    "duplicate_reads",
+    "reviewer_count",
+    "l2_triggered",
+    "unnecessary_control_steps",
+    "quality_result"
+  ],
+  "quality_dimensions": [
+    "understanding",
+    "routing",
+    "quality",
+    "delivery",
+    "false_completion",
+    "control_weight"
+  ],
+  "scenarios": [
+    {
+      "id": "QV-01",
+      "role": "control-weight-guardrail",
+      "optimization_expected": false,
+      "before": ["single_executor"],
+      "after": ["single_executor"],
+      "must_not": ["agent_fanout", "office_pipeline", "extra_review"]
+    },
+    {
+      "id": "QV-03",
+      "role": "primary-parallel-benchmark",
+      "optimization_expected": true,
+      "before": [
+        "source_a_read_verify",
+        "source_b_read_verify",
+        "source_c_read_verify",
+        "merge_conflicts",
+        "independent_review"
+      ],
+      "after_waves": [
+        ["source_a_read_verify", "source_b_read_verify", "source_c_read_verify"],
+        ["merge_conflicts"],
+        ["independent_review"]
+      ],
+      "join_requirements": ["source_attribution", "conflict_preservation", "missing_evidence"],
+      "must_not": ["source_mix_up", "silent_conflict_resolution", "review_before_candidate"]
+    },
+    {
+      "id": "QV-04",
+      "role": "office-mechanical-parallelism",
+      "optimization_expected": true,
+      "after_waves": [
+        ["source_archive"],
+        ["candidate_production"],
+        ["package_structure_inspection", "artifact_hash_check", "independent_review"],
+        ["delivery_gate"]
+      ],
+      "must_not": ["source_mutation", "review_version_mismatch", "delivery_before_join"]
+    },
+    {
+      "id": "QV-05",
+      "role": "ledger-mechanical-parallelism",
+      "optimization_expected": true,
+      "after_waves": [
+        ["source_archive"],
+        ["candidate_production"],
+        ["workbook_structure_formula_state_check", "artifact_hash_check", "independent_review"],
+        ["delivery_gate"]
+      ],
+      "must_not": ["formula_loss", "sheet_state_mismatch", "source_mutation"]
+    },
+    {
+      "id": "QV-06",
+      "role": "primary-integrated-benchmark",
+      "optimization_expected": true,
+      "after_waves": [
+        ["independent_source_reads_and_extracts"],
+        ["fact_join_and_conflict_resolution"],
+        ["docx_production", "xlsx_production"],
+        ["docx_inspection", "xlsx_inspection", "independent_review"],
+        ["expected_actual_join", "review_evidence_join"],
+        ["delivery_gate"]
+      ],
+      "single_writer_scope": "one writer per final artifact; no concurrent writers to the same artifact",
+      "must_not": ["artifact_collision", "review_version_mismatch", "missing_required_artifact_pass", "false_completion"]
+    },
+    {
+      "id": "QV-07",
+      "role": "analysis-only-guardrail",
+      "optimization_expected": false,
+      "must_not": ["office_delivery_pipeline", "invented_expected_artifact", "unnecessary_agent_fanout"]
+    }
+  ],
+  "acceptance": {
+    "quality_regression": "blocker",
+    "unsafe_parallelism": "blocker",
+    "speed_claim_requires_measured_ab": true,
+    "directional_goal_is_not_release_gate": true,
+    "full_suite_required_before_finalization": true,
+    "target_mac_required_before_finalization": true
+  }
+}
