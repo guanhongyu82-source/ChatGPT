@@ -68,6 +68,16 @@ class HotPathPolicyTests(unittest.TestCase):
         self.assertIn("必须直接读取对应原始片段", self.review)
         self.assertIn("reuse extraction, re-decide independently", self.review)
 
+    def test_multi_artifact_review_can_parallelize_without_weakening_cross_artifact_join(self):
+        self.assertIn("按 artifact/object 切成多个独立只读实例同波执行", self.review)
+        self.assertIn("跨成品一致性 join", self.review)
+        self.assertIn("不降低最低独立审核强度", self.review)
+        qv06 = next(item for item in self.performance["scenarios"] if item["id"] == "QV-06")
+        review_wave = qv06["after_waves"][3]
+        self.assertIn("docx_artifact_review", review_wave)
+        self.assertIn("xlsx_artifact_review", review_wave)
+        self.assertIn("cross_artifact_consistency_join", qv06["after_waves"][4])
+
     def test_performance_guard_rejects_unreasoned_duplicate_full_reads(self):
         targets = self.performance["control_plane_targets"]
         self.assertEqual(targets["duplicate_full_source_reads_without_invalidation"], 0)
