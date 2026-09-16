@@ -349,23 +349,22 @@ def check(c, contract_path=None):
         reviewer, author = review.get('reviewer_id'), review.get('author_id')
         evidence = Path(review.get('evidence_path') or '.')
         scope_info = _normalize_review_scope(review, actual_by_id, hashes)
-        baseline_bound = scope_info is not None and evidence_baseline_sha256 is not None
         valid = (scope_info is not None
                  and isinstance(reviewer, str) and bool(reviewer.strip()) and isinstance(author, str)
                  and bool(author.strip()) and reviewer != author and evidence.is_absolute()
                  and evidence.is_file() and evidence.stat().st_size > 0
                  and review.get('candidate_sha256') == scope_info[2] and bool(scope_info[2])
-                 and (not baseline_bound
-                      or review.get('evidence_baseline_sha256') == evidence_baseline_sha256)
+                 and review.get('evidence_baseline_sha256') == evidence_baseline_sha256
                  and review.get('verdict') == 'PASS' and review.get('must_fix') == [])
         if valid:
             try:
                 data = evidence.read_bytes()
                 recorded = json.loads(data)
                 recorded_scope = _normalize_review_scope(recorded, actual_by_id, hashes)
-                fields = ('reviewer_id', 'author_id', 'verdict', 'must_fix', 'candidate_sha256', 'source_ref')
-                if baseline_bound:
-                    fields += ('evidence_baseline_sha256',)
+                # Absence is a baseline state too: removing declarations must
+                # not revive a review still bound to previous source evidence.
+                fields = ('reviewer_id', 'author_id', 'verdict', 'must_fix', 'candidate_sha256',
+                          'source_ref', 'evidence_baseline_sha256')
                 valid = (hashlib.sha256(data).hexdigest() == review.get('evidence_sha256')
                          and isinstance(recorded, dict)
                          and all(recorded.get(key) == review.get(key) for key in fields)

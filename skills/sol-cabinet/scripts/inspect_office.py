@@ -82,6 +82,17 @@ def _semantic_gaps(tree, part, grammar, text_tags):
             for child in node:
                 if child.tag not in children:
                     gap(locator + '/' + child.tag, 'unsupported-child')
+        # ST_Xstring escape sequences require decoding not provided by this
+        # bounded raw-string inventory. Do not silently treat them as literals.
+        if node.tag.startswith(X) and any(re.search(r'_x[0-9A-Fa-f]{4}_', value or '')
+                                         for value in [node.text, *node.attrib.values()]):
+            gap(locator, 'unsupported-string-encoding')
+        if node.tag == VT + 'vector':
+            size, base_type = node.get('size', ''), node.get('baseType', '')
+            if not re.fullmatch(r'[0-9]+', size) or int(size) != len(node):
+                gap(locator, 'unsupported-vector-size')
+            if any(child.tag != VT + base_type for child in node):
+                gap(locator, 'unsupported-vector-type-shape')
         if node.tag not in text_tags and node.text and node.text.strip():
             gap(locator + '/text()', 'unsupported-text-position')
         if node.tail and node.tail.strip():
@@ -209,6 +220,7 @@ def _xlsx(z):
             raise ValueError('workbook part escapes package scope')
         targets[rel.get('Id')] = target
     shared = []
+    used_shared = set()
     if 'xl/sharedStrings.xml' in z.namelist():
         strings = _xml(z, 'xl/sharedStrings.xml')
         if strings.tag != X+'sst':raise ValueError('unrecognized shared strings part')
@@ -245,6 +257,7 @@ def _xlsx(z):
                 index = int(raw)
                 if not 0 <= index < len(shared):raise ValueError('invalid shared string index')
                 value = shared[index]
+                used_shared.add(index)
             elif t == 'inlineStr':value = ''.join(e.text or '' for e in cell.iter(X+'t'))
             else:value = raw
             if formula is not None:info['formula_count'] += 1
@@ -256,6 +269,11 @@ def _xlsx(z):
                           'state': status_value(value)}
                 records.append(record)
         sheets.append(info)
+    for index, value in enumerate(shared):
+        if value.strip() and index not in used_shared:
+            semantic_gaps.append({'part': 'xl/sharedStrings.xml',
+                                  'locator': f'xl/sharedStrings.xml:si[{index + 1}]',
+                                  'reason': 'unreferenced-shared-string-not-extracted'})
     return records, {'parts_read': list(dict.fromkeys(parts_read)), 'semantic_gaps': semantic_gaps, 'sheets': sheets,
                      'limitations': ['公式只读未重算，缓存可能过期', '日期为原始存储值，需结合格式解释',
                                      '图片与图表未视觉核验', '未完成视觉渲染核验']}
@@ -294,7 +312,8 @@ PROPERTY_SCALARS = {VT + name for name in
                     'lpstr lpwstr bstr i1 i2 i4 i8 int ui1 ui2 ui4 ui8 uint r4 r8 bool date filetime'.split()}
 for name in PROPERTY_SCALARS:
     PROPERTY_SURFACE[name] = (set(), {})
-PROPERTY_SURFACE[VT + 'vector'] = (PROPERTY_SCALARS | {VT + 'variant'}, {'size': None, 'baseType': None})
+PROPERTY_SURFACE[VT + 'vector'] = (PROPERTY_SCALARS | {VT + 'variant'},
+                                    {'size': None, 'baseType': {tag[len(VT):] for tag in PROPERTY_SCALARS} | {'variant'}})
 PROPERTY_SURFACE[VT + 'variant'] = (PROPERTY_SCALARS, {})
 
 

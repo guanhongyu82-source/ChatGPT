@@ -344,5 +344,47 @@ class OfficeSemanticCoverageTests(unittest.TestCase):
 
 
 
+    def test_unreferenced_shared_string_is_not_silently_covered(self):
+        inspected = self.package({"xl/sharedStrings.xml": (
+            f'<sst xmlns={quoteattr(inspect_office.X[1:-1])}><si><t>唯一未引用源事实</t></si></sst>',
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml")}, suffix=".xlsx")
+        self.assertNotIn("xl/sharedStrings.xml", inspected["coverage"]["parts_complete"])
+        result = self.ingest()
+        self.assertEqual(result["state"], "PARTIAL")
+        self.assertTrue(any("unreferenced-shared-string-not-extracted" in u
+                            and "si[1]" in u for u in result["evidence_pack"]["unread"]))
+
+    def test_property_vector_type_and_shape_have_finite_support(self):
+        for attrs in ('size="1" baseType="unknownSemanticType"', 'size="2" baseType="lpstr"',
+                      'size="1" baseType="i4"'):
+            with self.subTest(attrs=attrs):
+                self.package({"docProps/app.xml": (
+                    f'<Properties xmlns={quoteattr(APP)} xmlns:vt={quoteattr(inspect_office.VT[1:-1])}>'
+                    f'<TitlesOfParts><vt:vector {attrs}><vt:lpstr>value</vt:lpstr></vt:vector></TitlesOfParts></Properties>', CT_APP)})
+                result = self.ingest()
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertIn("value", {f["text"] for f in result["evidence_pack"]["facts"]})
+                self.assertTrue(any("semantic-gap" in u for u in result["evidence_pack"]["unread"]))
+
+    def test_spreadsheet_string_encodings_are_raw_with_gaps(self):
+        for shared in (False, True):
+            with self.subTest(shared=shared):
+                encoded = "before_x000D_after"
+                cell = '<c r="A1" t="s"><v>0</v></c>' if shared else f'<c r="A1" t="inlineStr"><is><t>{encoded}</t></is></c>'
+                parts = {"xl/worksheets/sheet1.xml": (
+                    f'<worksheet xmlns={quoteattr(inspect_office.X[1:-1])}><sheetData><row r="1">{cell}</row></sheetData></worksheet>',
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")}
+                if shared:
+                    parts["xl/sharedStrings.xml"] = (
+                        f'<sst xmlns={quoteattr(inspect_office.X[1:-1])}><si><t>{encoded}</t></si></sst>',
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml")
+                self.package(parts, suffix=".xlsx")
+                result = self.ingest()
+                self.assertEqual(result["state"], "PARTIAL")
+                self.assertIn(encoded, {f["text"] for f in result["evidence_pack"]["facts"]})
+                self.assertTrue(any("unsupported-string-encoding" in u for u in result["evidence_pack"]["unread"]))
+
+
+
 if __name__ == "__main__":
     unittest.main()

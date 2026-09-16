@@ -42,7 +42,7 @@ Review 核对用户要求与真实结果，不核对执行者是否“看起来�
 
 Delivery Gate 在最终 check 中还必须重新证明该 baseline 对应当前磁盘证据。有来源任务的 Task Card 文件置于任务根目录；`source_archive.manifest_relative_path` 必须为 `00_原稿/原稿清单.json`，`manifest_sha256` 锁定 manifest 的原始字节。门禁重读 manifest，调用生产 ingestion 的 canonical archive 校验，核 exact schema、路径／角色／身份、重复拒绝、当前 source size/SHA-256 与 preservation 标记，再核 manifest 前后字节稳定、hash 与锁定值相同。evidence pack 的全部 source 身份、路径与 hash 必须与 live archive 一致；只重算 Task Card JSON 不构成证据 freshness 验证。
 
-`evidence_pack.unread` 必须为空，coverage 与当前 sources 一一对应且全部 EXTRACTED；Office coverage 还必须满足当前 [有限语义合同](../domain-skills/common-components.md#v154-有限-office-语义覆盖合同)，内部缺口为空、parts_complete 与 parts_read 一致。旧 Office pack 缺该合同必须重建，不能靠刷新 review 延续旧的 false-PASS。源字节、manifest、pack 或 baseline 变化会使旧 review 失效；新 baseline 必须重新审核。无来源任务可省略两对象，或明确声明 NOT_APPLICABLE 并使用空证据包，不得把有 unread 的包伪装成无来源。
+`evidence_pack.unread` 必须为空，coverage 与当前 sources 一一对应且全部 EXTRACTED；Office coverage 还必须满足当前 [有限语义合同](../domain-skills/common-components.md#v154-有限-office-语义覆盖合同)，内部缺口为空、parts_complete 与 parts_read 一致。旧 Office pack 缺该合同必须重建，不能靠刷新 review 延续旧的 false-PASS。源字节、manifest、pack 或 baseline 变化会使旧 review 失效；新 baseline 必须重新审核。baseline 从存在变为不存在也会使旧 review 失效；门禁始终比较 review 声明与记录中的可选 baseline（缺失视为 null），不得靠删除 Task Card 或 review 引用字段降级绕过。无来源任务可省略两对象，或明确声明 NOT_APPLICABLE 并使用空证据包，不得把有 unread 的包伪装成无来源。
 
 此校验为当前文件的只读时点验证，不提供交付后文件锁或身份认证；验证后再修改证据必须重新运行门禁。
 

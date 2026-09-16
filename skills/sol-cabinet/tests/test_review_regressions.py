@@ -393,6 +393,24 @@ class ReviewEvidenceBaselineTests(unittest.TestCase):
         self._refresh(contract, baseline, only_scope="cross_artifact")
         self.assertEqual(delivery_gate.check(contract)["state"], "PASS")
 
+    def test_removing_baseline_declarations_cannot_reuse_old_reviews(self):
+        for scope in ("artifact", "full", "cross_artifact"):
+            with self.subTest(scope=scope):
+                card, task_card, contract = self._scenario(scope)
+                self.assertEqual(delivery_gate.check(contract)["state"], "PASS")
+                review_bytes = {r["evidence_path"]: Path(r["evidence_path"]).read_bytes()
+                                for r in contract["reviews"]}
+                del card["source_archive"]
+                del card["evidence_pack"]
+                task_card.write_text(json.dumps(card))
+                contract["task_card"]["sha256"] = sha(task_card)
+                self.assertIsNone(delivery_gate.review_evidence_baseline(card))
+                self.assertEqual(delivery_gate.check(contract)["state"], "FAIL")
+                for review in contract["reviews"]:
+                    review.pop("evidence_baseline_sha256")
+                self.assertEqual(delivery_gate.check(contract)["state"], "FAIL")
+                self.assertTrue(all(Path(path).read_bytes() == raw for path, raw in review_bytes.items()))
+
     def test_public_contract_documents_baseline_field_and_derivation(self):
         review_system = (ROOT / "review-system" / "review-system.md").read_text(encoding="utf-8")
         self.assertIn("evidence_baseline_sha256", review_system)

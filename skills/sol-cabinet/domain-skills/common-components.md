@@ -28,8 +28,8 @@
 | 表面 | 可完整覆盖的内容 | 超出边界的处理 |
 |---|---|---|
 | DOCX | 普通 document/body/p/r 的 Unicode 文本，`w:t` 的空格、`w:tab`、普通 textWrapping `w:br`；简单 header/footer part 内同样的段落文本 | 表格结构、修订、字段、符号、其他换行、样式与字符属性、编号、文本框、绘图、扩展节点等仍可保留已提取文字，但必须标记 gap；不推断最终可见性 |
-| XLSX | 唯一、明确引用的 sheet/row/cell；无样式解释依赖的普通数值、inline string、shared string 与不带格式的文本片段 | 日期／时间序列、cell/row style、非空默认样式、number format、公式／缓存、富文本格式、hidden 行列或 sheet、header/footer、合并等未支持节点或属性均为 gap；raw storage value 不能消除缺口 |
-| Document properties | 标准 core/app 的已列明字面字段，以及 TitlesOfParts/HeadingPairs 的普通向量和标量；保留非空文本、属性、展开 QName 与序号 locator | 扩展字段、未知类型／属性／结构仍记录可读原值，同时留下 gap；不执行属性中的指令或自行解释编码数据 |
+| XLSX | 唯一、明确引用的 sheet/row/cell；无样式解释依赖的普通数值、inline string、被引用的 shared string 与不带格式的文本片段 | 未引用非空 shared string、`_xHHHH_` 编码依赖、日期／时间序列、cell/row style、非空默认样式、number format、公式／缓存、富文本格式、hidden 行列或 sheet、header/footer、合并等未支持节点或属性均为 gap；raw storage value 不能消除缺口 |
+| Document properties | 标准 core/app 的已列明字面字段，以及 TitlesOfParts/HeadingPairs 的普通向量和标量；保留非空文本、属性、展开 QName 与序号 locator | 扩展字段、未知向量 baseType、size／子类型不一致及未知属性／结构仍记录可读原值，同时留下 gap；不执行属性中的指令或自行解释编码数据 |
 | 格式／控制部件 | 已解析、根 QName 正确且无属性／子节点／非空文本的空格式容器可证明没有未处理内容 | 非空 theme/styles/settings/font/numbering/calcChain 等统一 gap；图片、打印二进制、OLE、图表及其他未读取部件保持 unread，不因官方 relationship 或 Content-Type 豁免 |
 
 覆盖对象明确分离三种状态：
