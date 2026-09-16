@@ -39,8 +39,7 @@ def _load_locked_task_card(c, require):
         return None
 
 
-def _expected_artifacts(c, root, require):
-    card = _load_locked_task_card(c, require)
+def _expected_artifacts(c, root, require, card):
     if card is None:
         return {}
     require(card.get('task_instance_id') == c.get('task_id'), 'task_card task_instance_id does not match task_id')
@@ -77,12 +76,32 @@ def _expected_artifacts(c, root, require):
     return expected
 
 
+def _review_evidence_baseline(card):
+    """Fingerprint the locked source/evidence baseline used by scoped reviews."""
+    if not isinstance(card, dict):
+        return None
+    baseline = {}
+    for key in ('source_archive', 'evidence_pack'):
+        if key in card:
+            baseline[key] = card[key]
+    if not baseline:
+        return None
+    raw = json.dumps(
+        baseline,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(',', ':'),
+    ).encode('utf-8')
+    return hashlib.sha256(raw).hexdigest()
+
+
 def _normalize_review_scope(review, actual_by_id, hashes):
     """Return (scope, artifact_ids, expected_hashes) or None for an invalid scope.
 
     Backward-compatible review evidence without scope fields remains a full-candidate
-    review. Artifact-scoped review binds only the declared artifact hashes; a
-    cross-artifact review binds the complete current candidate hash map.
+    review. Artifact-scoped review binds the declared artifact hashes and, when the
+    locked Task Card has source/evidence state, its evidence baseline fingerprint.
+    A cross-artifact review binds the complete current candidate hash map.
     """
     if not isinstance(review, dict):
         return None
@@ -184,7 +203,9 @@ def check(c, contract_path=None):
         archive = Path(storage.get('archive_root') or '.')
         require(archive.is_absolute() and archive.is_dir() and root.resolve().is_relative_to(archive.resolve()), 'archive root does not contain output root')
 
-    expected = _expected_artifacts(c, root, require)
+    card = _load_locked_task_card(c, require)
+    expected = _expected_artifacts(c, root, require, card)
+    evidence_baseline_sha256 = _review_evidence_baseline(card)
     require(bool(expected), 'file delivery requires at least one expected artifact; use analysis-only for no-file tasks')
     artifacts = c.get('artifacts')
     require(isinstance(artifacts, list), 'artifact manifest must be an array')
@@ -241,11 +262,16 @@ def check(c, contract_path=None):
         reviewer, author = review.get('reviewer_id'), review.get('author_id')
         evidence = Path(review.get('evidence_path') or '.')
         scope_info = _normalize_review_scope(review, actual_by_id, hashes)
+        baseline_bound = (scope_info is not None
+                          and scope_info[0] == 'artifact'
+                          and evidence_baseline_sha256 is not None)
         valid = (scope_info is not None
                  and isinstance(reviewer, str) and bool(reviewer.strip()) and isinstance(author, str)
                  and bool(author.strip()) and reviewer != author and evidence.is_absolute()
                  and evidence.is_file() and evidence.stat().st_size > 0
                  and review.get('candidate_sha256') == scope_info[2] and bool(scope_info[2])
+                 and (not baseline_bound
+                      or review.get('evidence_baseline_sha256') == evidence_baseline_sha256)
                  and review.get('verdict') == 'PASS' and review.get('must_fix') == [])
         if valid:
             try:
@@ -253,6 +279,8 @@ def check(c, contract_path=None):
                 recorded = json.loads(data)
                 recorded_scope = _normalize_review_scope(recorded, actual_by_id, hashes)
                 fields = ('reviewer_id', 'author_id', 'verdict', 'must_fix', 'candidate_sha256', 'source_ref')
+                if baseline_bound:
+                    fields += ('evidence_baseline_sha256',)
                 valid = (hashlib.sha256(data).hexdigest() == review.get('evidence_sha256')
                          and isinstance(recorded, dict)
                          and all(recorded.get(key) == review.get(key) for key in fields)
