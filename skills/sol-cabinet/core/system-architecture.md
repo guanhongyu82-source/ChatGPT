@@ -52,6 +52,7 @@ sol-cabinet/
 | 进化、candidate→Stable 发布权限与 EVO/回滚 | `memory-evolution/evolution-policy.md` | `permission-cage.json` 是该域冻结机器边界；`scripts/evolve.py` 是执行门禁，不自行发明授权 |
 | GitHub→Mac 正式部署 | `platform-adapter/deployment-contract.md` | 部署不等于发布；本机运行树不产生反向正式版本权威 |
 | Chat/Work/Codex 宿主差异与 Hook 接法 | `platform-adapter/codex.md` | 只描述宿主适配；不得改写 Core、Office、Review、Evolution 或 Deployment 的通用政策 |
+| Hot Path Weight 与控制面分层 | `core/system-architecture.md` | 只定义常驻／按需／治理三层边界和后续不扩张基线；不在各业务模块复制第二套分层政策 |
 
 ### 冲突与重复裁决
 
@@ -61,6 +62,18 @@ sol-cabinet/
 4. `README.md`、`MANIFEST.md`、`source-index/` 和历史 smoke/runtime snapshot 属于导航、迁移或历史证据，不覆盖当前政策、版本或运行状态。`MANIFEST.md` 中哈希只表示原始导入基线，不是当前文件哈希注册表。
 5. 允许“摘要性重复”：非 owner 可用一句话说明并链接 owner；禁止“规范性重复”：不得在非 owner 重新列完整条件、阈值、权限或状态机，使其可独立解释同一规则域。
 6. 发现 owner 之间边界重叠时，先按职责切分后再修改；不得新增第二清单、第二状态机或兼容性镜像来回避裁决。
+
+## Hot Path Weight 与三层控制面
+
+Cabinet 的长期性能约束不是“总行数越少越好”，而是**普通任务真正激活的控制面不得随能力增长而线性增长**。`Hot Path Weight` 指一个具体任务实际加载或执行的规则、模块、判断节点、串行 Gate 与控制性工具调用总负担；后续性能判断优先看激活量，而不是仓库总代码量。
+
+- **L0 — Hot Core**：所有任务都必须经过的最小常驻层，只保留任务目标／边界、第一准则、绝对禁止项和最小路由。只有“所有任务都必须知道”的规则才允许进入 L0。
+- **L1 — Task Modules**：Office、写作、审阅、数据等场景规则按任务需要加载；未命中的模块不读、不判断、不执行。模块内部也优先按需，而不是因为文件存在就整段常驻。
+- **L2 — Governance Plane**：版本、GitHub、Runtime 部署、自我进化、回归、EVO、回滚、Hook 治理和系统维护。普通业务任务原则上不进入 L2；只有真实事故或用户明确维护 Cabinet 时才加载相应治理机制。
+
+从本维护基线起，新增能力默认不得扩大 L0 或普通任务 Hot Path。新增职责、Domain、Agent、常驻控制节点或治理链条，必须有真实缺口证据并由用户单独批准；能通过复用、下沉、合并、延后、并行或删除解决时，不以新增常驻规则替代。模型能力升级优先转化为更少空转、更高并行、更深颗粒度、更高精度与质量，不转化为更宽职责或更重常驻控制面。
+
+后续性能验证可观察 `Activated Rules`、`Loaded Modules`、`Decision Nodes`、`Serial Gates`、控制性工具调用和 `Control / Work Ratio`；本阶段只确立指标方向，不设阈值、不重构目录、不提前实施减重工程。
 
 ## 单一版本与部署原则
 
@@ -91,4 +104,10 @@ sol-cabinet/
 
 ## v1.5.x 维护方向
 
-1.5.x 不改变主结构和 T1-T10。该维护线只收口三类问题：GitHub→本机的单向部署可追溯性、旧进化入口的只读退役、当前 Chat／Work／Codex 宿主的交付与能力适配。任何后续优化仍以“任务不变、边界不扩”为前提。
+**v1.5.2 — Structure Governance / Non-expansion Baseline**：完成发布权、Expected↔Actual、Authority、GitHub／Runtime、Hook 状态治理，并把 Hot Path Weight、L0/L1/L2 与“不扩张”确立为后续维护基线。自此以后默认只做验证、修复、收敛、下沉、合并、减重和提速；没有真实缺口证据和用户单独批准，不新增职责、Domain、Agent、常驻控制节点或治理链条。
+
+**v1.5.3 — Quality Validation（框架）**：用真实办公任务验证当前结构是否影响质量，优先区分执行失败与规则缺口；没有真实 failure 不增加 Cabinet 重量。本阶段只预留方向，不在 v1.5.2 提前设计任务集、阈值或施工细则。
+
+**v1.5.4 — Control Plane Reduction（框架）**：基于 v1.5.3 的真实证据做减重、并行和提速，重点降低 Hot Path Weight，而不是追求总代码行数下降。本阶段只预留方向和观察指标，不在 v1.5.2 提前删规则、改路由、设性能阈值或实施重构。
+
+1.5.x 不改变主结构和 T1-T10。任何后续优化继续遵守“任务不变、边界不扩；能力升级不增加普通任务常驻控制面”的原则。
