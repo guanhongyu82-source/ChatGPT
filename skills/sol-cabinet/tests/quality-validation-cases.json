@@ -1,0 +1,239 @@
+[
+  {
+    "id": "QV-01",
+    "scenario": "simple-text-polish",
+    "sample_origin": "real-work-derived-anonymized",
+    "sample_note": "One short sentence derived from an existing office-writing task; all identifying details are removed before persistence.",
+    "profile": {
+      "steps": 2,
+      "complexity": 1,
+      "user_compact": true
+    },
+    "expected": {
+      "t_level": 2,
+      "review": false,
+      "required_skill_routes": [],
+      "forbidden_skill_routes": ["office-artifact-skill", "research", "data-analytics"],
+      "additional_execution_agents": 0
+    },
+    "acceptance": {
+      "understanding": "preserve meaning and scope; polish only",
+      "routing": "no office/research/data route and no review",
+      "quality": "clearer wording without new facts",
+      "delivery": "chat text only",
+      "false_completion": "not applicable",
+      "control_weight": "observe only; simple task must remain simple"
+    },
+    "hot_path": {
+      "observe": ["activated_rules", "loaded_modules", "decision_nodes", "serial_gates", "tool_calls", "l2_triggered", "duplicate_control_steps"],
+      "optimize": false
+    },
+    "persisted_sensitive_content": false
+  },
+  {
+    "id": "QV-02",
+    "scenario": "formal-office-writing",
+    "sample_origin": "real-work-derived-anonymized",
+    "sample_note": "Formal supervision/office material pattern with names and organizations removed.",
+    "profile": {
+      "steps": 4,
+      "complexity": 2,
+      "formal_publish": true,
+      "fact_risk": true
+    },
+    "expected": {
+      "t_level": 4,
+      "review": true,
+      "required_skill_routes": [],
+      "forbidden_skill_routes": ["office-artifact-skill", "research", "data-analytics"],
+      "additional_execution_agents": 0
+    },
+    "acceptance": {
+      "understanding": "formalize only the supplied facts and requested scope",
+      "routing": "formal gate with one independent review minimum",
+      "quality": "formal Chinese, stable structure, no invented subject/date/count/conclusion",
+      "delivery": "chat text unless a file is explicitly requested",
+      "false_completion": "review must not be claimed without review evidence",
+      "control_weight": "extra review is justified by formal-publish risk"
+    },
+    "hot_path": {
+      "observe": ["activated_rules", "loaded_modules", "decision_nodes", "serial_gates", "tool_calls", "l2_triggered", "duplicate_control_steps"],
+      "optimize": false
+    },
+    "persisted_sensitive_content": false
+  },
+  {
+    "id": "QV-03",
+    "scenario": "multi-source-synthesis",
+    "sample_origin": "minimal-demo-derived-from-real-work-pattern",
+    "sample_note": "Three anonymized source fragments include a deliberate status conflict to verify conflict detection instead of silent reconciliation.",
+    "profile": {
+      "file_count": 4,
+      "input_size_kb": 120,
+      "steps": 5,
+      "complexity": 2,
+      "multi_source": true,
+      "fact_risk": true,
+      "formal_publish": true
+    },
+    "expected": {
+      "t_level": 5,
+      "review": true,
+      "required_skill_routes": [],
+      "forbidden_skill_routes": ["office-artifact-skill", "data-analytics"],
+      "additional_execution_agents": 0
+    },
+    "acceptance": {
+      "understanding": "synthesize the requested issue only",
+      "routing": "multi-file factual synthesis gate",
+      "quality": "surface source conflicts and missing evidence; do not guess a winner",
+      "delivery": "analysis or draft according to request",
+      "false_completion": "unresolved conflict must remain disclosed",
+      "control_weight": "review cost should correspond to multi-source factual risk"
+    },
+    "hot_path": {
+      "observe": ["activated_rules", "loaded_modules", "decision_nodes", "serial_gates", "tool_calls", "l2_triggered", "duplicate_control_steps"],
+      "optimize": false
+    },
+    "persisted_sensitive_content": false
+  },
+  {
+    "id": "QV-04",
+    "scenario": "word-artifact-delivery",
+    "sample_origin": "real-work-pattern-plus-minimal-demo-artifact",
+    "sample_note": "Uses the structure of an existing Word office task but a synthetic artifact for repeatable repository tests.",
+    "profile": {
+      "file_count": 1,
+      "steps": 4,
+      "complexity": 2,
+      "office_artifact": true,
+      "formal_publish": true
+    },
+    "expected": {
+      "t_level": 4,
+      "review": true,
+      "required_skill_routes": ["office-artifact-skill"],
+      "forbidden_skill_routes": ["research", "data-analytics"],
+      "additional_execution_agents": 0
+    },
+    "acceptance": {
+      "understanding": "edit/create only the requested Word deliverable",
+      "routing": "office artifact plus formal review",
+      "quality": "preserve required structure and facts",
+      "delivery": "original preserved; Expected-to-Actual, format, role, directory, filename and hash checks close",
+      "false_completion": "no PASS before artifact and review evidence exist",
+      "control_weight": "file gates are justified by actual file delivery"
+    },
+    "hot_path": {
+      "observe": ["activated_rules", "loaded_modules", "decision_nodes", "serial_gates", "tool_calls", "l2_triggered", "duplicate_control_steps"],
+      "optimize": false
+    },
+    "persisted_sensitive_content": false
+  },
+  {
+    "id": "QV-05",
+    "scenario": "excel-ledger-task",
+    "sample_origin": "real-work-derived-anonymized",
+    "sample_note": "Based on an existing single-sheet work ledger; persisted fixture contains no real names, organizations or business figures.",
+    "profile": {
+      "file_count": 1,
+      "steps": 5,
+      "complexity": 2,
+      "office_artifact": true,
+      "data_task": true,
+      "fact_risk": true
+    },
+    "expected": {
+      "t_level": 4,
+      "review": true,
+      "required_skill_routes": ["office-artifact-skill", "data-analytics"],
+      "forbidden_skill_routes": ["research"],
+      "additional_execution_agents": 0
+    },
+    "acceptance": {
+      "understanding": "operate on the requested ledger fields only",
+      "routing": "office artifact plus data-analysis route",
+      "quality": "values/formulas/headers remain accurate and structure remains usable",
+      "delivery": "original preserved and final workbook reconciled against Expected",
+      "false_completion": "do not claim data validation without checking the relevant cells/formulas",
+      "control_weight": "tooling is justified by spreadsheet manipulation"
+    },
+    "hot_path": {
+      "observe": ["activated_rules", "loaded_modules", "decision_nodes", "serial_gates", "tool_calls", "l2_triggered", "duplicate_control_steps"],
+      "optimize": false
+    },
+    "persisted_sensitive_content": false
+  },
+  {
+    "id": "QV-06",
+    "scenario": "complex-integrated-office-task",
+    "sample_origin": "minimal-demo-derived-from-real-work-pattern",
+    "sample_note": "An anonymized multi-file, two-deliverable office scenario exercises routing, review and delivery closure without adding a new domain.",
+    "profile": {
+      "file_count": 8,
+      "input_size_kb": 180,
+      "deliverable_count": 2,
+      "steps": 8,
+      "complexity": 3,
+      "multi_source": true,
+      "fact_risk": true,
+      "formal_publish": true,
+      "office_artifact": true,
+      "multiple_deliverables": true,
+      "multi_stage": true
+    },
+    "expected": {
+      "t_level": 6,
+      "review": true,
+      "required_skill_routes": ["office-artifact-skill"],
+      "forbidden_skill_routes": [],
+      "additional_execution_agents": 0
+    },
+    "acceptance": {
+      "understanding": "keep the user's existing business scope and requested deliverables",
+      "routing": "complexity comes from the task; no new domain/agent hierarchy",
+      "quality": "multi-source facts mapped, conflicts disclosed, final outputs consistent",
+      "delivery": "all required deliverables close Expected-to-Actual with review evidence",
+      "false_completion": "no overall PASS while any required deliverable or review is missing",
+      "control_weight": "more gates are acceptable only where they buy reliability"
+    },
+    "hot_path": {
+      "observe": ["activated_rules", "loaded_modules", "decision_nodes", "serial_gates", "tool_calls", "l2_triggered", "duplicate_control_steps"],
+      "optimize": false
+    },
+    "persisted_sensitive_content": false
+  },
+  {
+    "id": "QV-07",
+    "scenario": "analysis-only-no-file",
+    "sample_origin": "minimal-demo",
+    "sample_note": "No file deliverable is requested; the case exists to catch accidental office-delivery gating.",
+    "profile": {
+      "steps": 4,
+      "complexity": 2,
+      "multi_angle": true,
+      "fact_risk": true,
+      "multi_source": true
+    },
+    "expected": {
+      "t_level": 3,
+      "review": false,
+      "required_skill_routes": [],
+      "forbidden_skill_routes": ["office-artifact-skill", "data-analytics"],
+      "additional_execution_agents": 0
+    },
+    "acceptance": {
+      "understanding": "answer the analytical question only",
+      "routing": "analysis-only path without file contract or office gate",
+      "quality": "structured reasoning with evidence boundaries",
+      "delivery": "chat analysis only; do not invent Expected artifacts",
+      "false_completion": "do not claim file checks that were not applicable",
+      "control_weight": "no file-only serial gates"
+    },
+    "hot_path": {
+      "observe": ["activated_rules", "loaded_modules", "decision_nodes", "serial_gates", "tool_calls", "l2_triggered", "duplicate_control_steps"],
+      "optimize": false
+    },
+    "persisted_sensitive_content": false
+  }
+]
