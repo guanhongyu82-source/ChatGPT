@@ -1,0 +1,29 @@
+name: Sol Cabinet v1.5.3 temporary validation
+
+on:
+  push:
+    branches:
+      - cabinet/sol-v1.5.3-quality-validation
+
+jobs:
+  quality-validation:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+      - name: Build canonical-path validation copy
+        run: |
+          sudo mkdir -p /Users/macbook/ChatGPT
+          sudo chown -R "$(id -un)":staff /Users/macbook
+          rsync -a --exclude '.git' ./ /Users/macbook/ChatGPT/
+          mkdir -p /Users/macbook/ChatGPT/.scratch
+      - name: Confirm frozen version
+        working-directory: /Users/macbook/ChatGPT
+        run: test "$(cat skills/sol-cabinet/VERSION)" = "1.5.2"
+      - name: Run QV module natively
+        working-directory: /Users/macbook/ChatGPT
+        run: python3 -m unittest -v skills/sol-cabinet/tests/test_quality_validation.py
+      - name: Run repo-native full suite natively
+        working-directory: /Users/macbook/ChatGPT
+        run: python3 -m unittest discover -v -s skills/sol-cabinet/tests -p 'test*.py'
