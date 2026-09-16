@@ -17,6 +17,7 @@ class HotPathPolicyTests(unittest.TestCase):
         cls.review = (ROOT / "review-system" / "review-system.md").read_text(encoding="utf-8")
         cls.formal_writing = (ROOT / "domain-skills" / "formal-writing.md").read_text(encoding="utf-8")
         cls.task_card = json.loads((ROOT / "templates" / "task-card.json").read_text(encoding="utf-8"))
+        cls.agent_result = json.loads((ROOT / "templates" / "agent-result.json").read_text(encoding="utf-8"))
         cls.performance = json.loads(
             (ROOT / "tests" / "performance-validation-v1.5.4.json").read_text(encoding="utf-8")
         )
@@ -36,6 +37,10 @@ class HotPathPolicyTests(unittest.TestCase):
         self.assertIn("evidence_pack", self.task_card)
         for key in ("sources", "coverage", "facts", "conflicts", "unread"):
             self.assertIn(key, self.task_card["evidence_pack"])
+        self.assertIn("source_fingerprints", self.agent_result)
+        evidence = self.agent_result["findings"][0]["evidence"][0]
+        for key in ("source_id", "path", "source_sha256", "locator"):
+            self.assertIn(key, evidence)
 
     def test_router_requires_single_extraction_and_reasoned_reread(self):
         self.assertIn("一次提取，多处复用", self.router)
@@ -72,6 +77,8 @@ class HotPathPolicyTests(unittest.TestCase):
         self.assertIn("按 artifact/object 切成多个独立只读实例同波执行", self.review)
         self.assertIn("跨成品一致性 join", self.review)
         self.assertIn("不降低最低独立审核强度", self.review)
+        self.assertIn("整套 immutable candidate manifest/hash map", self.review)
+        self.assertIn("整套当前成品 hash map", self.review)
         qv06 = next(item for item in self.performance["scenarios"] if item["id"] == "QV-06")
         review_wave = qv06["after_waves"][3]
         self.assertIn("docx_artifact_review", review_wave)
