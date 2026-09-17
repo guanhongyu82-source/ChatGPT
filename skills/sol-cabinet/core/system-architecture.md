@@ -44,6 +44,7 @@ sol-cabinet/
 |---|---|---|
 | 当前版本身份 | `VERSION` | 唯一当前版本号；README、SKILL、架构正文不得复制“当前版本=x.y.z” |
 | 长期不变量、阶段授权、保密、资产保护 | `core/core.md` | 其他模块只能增加本域具体规则，不得弱化 Core |
+| 上层任务编排与平台原子能力边界 | `core/core.md` | Cabinet 是唯一上层编排者；平台官方文件能力只作底层原子执行，不成为第二规划／审核 owner |
 | T0 目标理解与路由 | `t0-executive-router/router.md` | 负责路由，不定义 T 等级表、Office 交付细则或 Review verdict |
 | T1-T10 分级与核验强度 | `task-classification/t1-t10.md` | 不定义固定 Agent 套餐或具体文件交付政策 |
 | 文件、原稿、目录、预期成品与 Actual 对账政策 | `domain-skills/office-delivery.md` | `templates/task-card.json` 承载 Expected 数据；`scripts/delivery_gate.py` 只机械执行其可判定子集 |
@@ -62,6 +63,7 @@ sol-cabinet/
 4. `README.md`、`MANIFEST.md`、`source-index/` 和历史 smoke/runtime snapshot 属于导航、迁移或历史证据，不覆盖当前政策、版本或运行状态。`MANIFEST.md` 中哈希只表示原始导入基线，不是当前文件哈希注册表。
 5. 允许“摘要性重复”：非 owner 可用一句话说明并链接 owner；禁止“规范性重复”：不得在非 owner 重新列完整条件、阈值、权限或状态机，使其可独立解释同一规则域。
 6. 发现 owner 之间边界重叠时，先按职责切分后再修改；不得新增第二清单、第二状态机或兼容性镜像来回避裁决。
+7. 平台官方文件 Skill／工具与 Cabinet 规则重叠时，系统／开发者强制的技术与安全要求照常执行；其余通用规划、排版方法、技术检查与复核不得作为第二套上层流程叠加。能由平台成熟原子能力承担的通用实现，Cabinet 只声明输入、输出和验收，不复制内部步骤。
 
 ## Hot Path Weight 与三层控制面
 
@@ -71,9 +73,9 @@ Cabinet 的长期性能约束不是“总行数越少越好”，而是**普通�
 - **L1 — Task Modules**：Office、写作、审阅、数据等场景规则按任务需要加载；未命中的模块不读、不判断、不执行。模块内部也优先按需，而不是因为文件存在就整段常驻。
 - **L2 — Governance Plane**：版本、GitHub、Runtime 部署、自我进化、回归、EVO、回滚、Hook 治理和系统维护。普通业务任务原则上不进入 L2；只有真实事故或用户明确维护 Cabinet 时才加载相应治理机制。
 
-从本维护基线起，新增能力默认不得扩大 L0 或普通任务 Hot Path。新增职责、Domain、Agent、常驻控制节点或治理链条，必须有真实缺口证据并由用户单独批准；能通过复用、下沉、合并、延后、并行或删除解决时，不以新增常驻规则替代。模型能力升级优先转化为更少空转、更高并行、更深颗粒度、更高精度与质量，不转化为更宽职责或更重常驻控制面。
+从本维护基线起，新增能力默认不得扩大 L0 或普通任务 Hot Path。新增职责、Domain、Agent、常驻控制节点或治理链条，必须有真实缺口证据并由用户单独批准；能通过复用、下沉、合并、延后、并行或删除解决时，不以新增常驻规则替代。模型能力升级优先转化为更少空转、更高并行、更深颗粒度、更高精度与质量，不转化为更宽职责或更重常驻控制面。**同类官方 Skill 与 Cabinet 各自规划、各自执行、各自检查的双链路本身视为 Hot Path 缺陷，应通过单路由和结果复用消除。**
 
-后续性能验证可观察 `Activated Rules`、`Loaded Modules`、`Decision Nodes`、`Serial Gates`、控制性工具调用和 `Control / Work Ratio`；本阶段只确立指标方向，不设阈值、不重构目录、不提前实施减重工程。
+后续性能验证可观察 `Activated Rules`、`Loaded Modules`、`Decision Nodes`、`Serial Gates`、控制性工具调用和 `Control / Work Ratio`；本阶段不为指标另设常驻阈值或新增监控流程。
 
 ## 单一版本与部署原则
 
@@ -108,6 +110,6 @@ Cabinet 的长期性能约束不是“总行数越少越好”，而是**普通�
 
 **v1.5.3 — Quality Validation（框架）**：用真实办公任务验证当前结构是否影响质量，优先区分执行失败与规则缺口；没有真实 failure 不增加 Cabinet 重量。本阶段只预留方向，不在 v1.5.2 提前设计任务集、阈值或施工细则。
 
-**v1.5.4 — Control Plane Reduction（框架）**：基于 v1.5.3 的真实证据做减重、并行和提速，重点降低 Hot Path Weight，而不是追求总代码行数下降。本阶段只预留方向和观察指标，不在 v1.5.2 提前删规则、改路由、设性能阈值或实施重构。
+**v1.5.4 — Control Plane Reduction / Official Capability Boundary**：基于真实简单文件任务暴露出的重复链路，固化“Cabinet 为唯一上层编排者，官方能力仅作底层原子执行工具，禁止同类双技能叠加”。Office／PDF 路由改为单路由；平台成熟的读取、OCR／提取、渲染、创建、格式处理和技术校验直接复用；PDF 转 Word、简单转换与排版采用一次原生执行加必要抽检，只在失败、冲突或高风险时扩大复核。保留原稿保护、用户专属中文办公规则和最终验收，不新增 Domain、Agent、常驻 Gate 或第二工作流。
 
 1.5.x 不改变主结构和 T1-T10。任何后续优化继续遵守“任务不变、边界不扩；能力升级不增加普通任务常驻控制面”的原则。
