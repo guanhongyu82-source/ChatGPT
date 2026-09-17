@@ -1,16 +1,16 @@
 # T0 Executive Router
 
-T0 的分析在内部完成，完成后按 [SKILL 入口](../SKILL.md) 给简短开工小结；T0 只负责定级与路由，不另定义开工字段或耗时规则。不得编造未来耗时承诺。T0 不是给用户填写的问卷。完整字段见 [TASK_CARD](../templates/task-card.json)，输入见 [Task Profile](../templates/task-profile.json)；不要在本文复制整套 JSON。
+T0 的分析在内部完成。非轻量任务完成后按 [SKILL 入口](../SKILL.md) 给简短开工小结；满足轻量确定性快车道的任务可在内部完成定级后直接执行，不为展示规划单独增加一轮消息。T0 只负责定级与路由，不另定义开工字段或耗时规则。不得编造未来耗时承诺。T0 不是给用户填写的问卷。完整字段见 [TASK_CARD](../templates/task-card.json)，输入见 [Task Profile](../templates/task-profile.json)；不要在本文复制整套 JSON。
 
 ## 决策顺序
 
 1. **锁定范围**：物件、动作、约束、依据、交付形态与位置；当前授权是答案、审阅、修改还是建设？只审阅就不改文件。
 2. **确认阶段**：登记当前阶段、允许动作、排除项、验收与停止条件。总体项目目标不自动授权后续阶段。
 3. **材料与原稿**：先做最小元数据识别；有既有输入就归档到 `00_原稿/` 并核验。`state!=PASS` 时禁止读取正文、转换、修改或生成。无源文件则为 NOT_APPLICABLE。
-4. **判断轻重**：无新增事实或高风险的局部微改直接完成；其余按 [分类](../task-classification/t1-t10.md) 复核。不要仅因 DOCX、XLSX、PPTX 或 PDF 后缀抬级。
+4. **先判快车道**：单输入→单输出、目标格式明确、无新增事实、无正文改写、无复杂模板迁移、无批量耦合、无高风险或独立审核要求的确定性转换／局部排版，直接按 T1-T2 快车道处理；不要仅因 DOCX、XLSX、PPTX 或 PDF 后缀抬级。其他任务再按 [分类](../task-classification/t1-t10.md) 复核。
 5. **复用材料**：区分 SOURCE、TEMPLATE、METHOD、ANTI、INSTRUCTION、PRIOR_OUTPUT、IGNORE；已经提取的结构与事实共享给后续角色，来源冲突再定向读取。
 6. **选择协作**：列出已就绪的独立工作面、必要审核、可用槽位与净收益。不确定能否节约时间／重复劳动或提高质量时，不增加执行代理。用户无需当调度员。
-7. **预定验收**：锁定有限交付契约；续办沿用任务与计时起点，发生实质范围变化才更新定级。文件成品与目录规则由 [Office Delivery](../domain-skills/office-delivery.md) 定义，独立审核与 verdict 由 [Review](../review-system/review-system.md) 定义；T0 不复制其规则。只返工失败项及受影响对象。
+7. **预定验收**：快车道任务只在会话内锁定“源文件→目标成品→目标位置→必要抽检”的最小交付契约；若宿主 Hook 或强制门禁要求持久化契约，再使用 Task Card／Delivery Contract。非轻量文件任务按 [Office Delivery](../domain-skills/office-delivery.md) 使用正式契约；独立审核与 verdict 由 [Review](../review-system/review-system.md) 定义。只返工失败项及受影响对象，不因复验重启完整流程。
 
 ## 必要确认
 
