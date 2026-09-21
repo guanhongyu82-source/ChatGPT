@@ -41,7 +41,7 @@ Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、�
 3. **非轻量任务**：读 [Core](core/core.md)、[Router](t0-executive-router/router.md)、[分类](task-classification/t1-t10.md)，只加载命中的[领域规则](domain-skills/routing-map.md)。
 4. **材料与执行**：按 [中文写作](domain-skills/formal-writing.md) 复用材料角色、定位和画像；依赖已满足才起草。文件读写、转换、渲染、格式处理与技术校验按 [Domain Router](domain-skills/routing-map.md) 调用平台原生原子能力，一项操作只保留一个主执行器。多 Agent 按 [编排](agent-orchestrator/orchestration.md) 执行，主代理唯一总控，角色不另组办公团队。
 5. **验收一次化**：快车道由主代理做一轮联合自检／抽检，将内容忠实、版式、可打开性、目标位置和目录状态合并核验；平台已完成且可复用的技术校验不重复跑。只有发现系统性问题、高风险或用户明确要求时才扩大范围。非轻量任务按 [Review](review-system/review-system.md) 执行必要独立审核。
-6. **交付并停止**：确认预期成品与实际成品对应、应进入目标文件夹的文件已进入、过程文件和无关产物未混入，再发完工小结。只报告真实完成内容、成品路径、关键核验和未完成／限制；有实质失误时说明处置，无实质失误不制造反思。未经新授权不进入下一阶段、不创建后台续作。
+6. **进化检查、交付并停止**：确认预期成品与实际成品对应、应进入目标文件夹的文件已进入、过程文件和无关产物未混入后，在发完工小结前执行一次 **Evolution Checkpoint**。Checkpoint 只使用本任务已经发生且主 Agent 已知的事实，不重新读文件、不重跑校验、不扫描维护账本。检查本次是否出现用户纠正、漏文件／对象／步骤、假完成、质量失败、误路由、Agent 未履职、不必要串行、重复读取／检查、规则未生效、运行时兼容或质量退化等真实信号。无信号记 `CLEAN`，零记录、零回归、零 EVO；有信号才按 [Evolution](memory-evolution/evolution-policy.md) 记录或明确标记未完成记录。完工小结最后必须给出一行可见进化状态，格式见 [Delivery Summary](templates/delivery-summary.md)。然后只报告真实完成内容、成品路径、关键核验和未完成／限制；有实质失误时说明处置，无实质失误不制造额外反思。未经新授权不进入下一阶段、不创建后台续作。
 
 ### 三项硬完成条件
 
@@ -60,7 +60,7 @@ Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、�
 - [角色库](platform-adapter/codex-agents/roster.md)是能力模板，不是每项工作都启用的名单。
 - [长期状态](agent-orchestrator/durable-operations.md)只在用户授权长期运行时使用，高 T 本身不授权持续执行。
 - [模板](templates/template-index.md)只在需要结构化交接时使用；轻任务不填全套表。
-- 生产任务不改 Skill。收尾发现真实失败时，按 [Evolution](memory-evolution/evolution-policy.md) 做脱敏观察，由维护层在任务收尾或下一次维护处理；2026-09-12 施工令仅授权权限笼内的持续维护。无事故零记录、零回归、零 EVO；没有实际后台执行器不声称后台运行。旧 `improvements` 体系仅作历史只读参考，不与 INC/EV→RES/EVO 并行写入。
+- 生产任务不改 Skill。每次收尾先完成一次轻量 **Evolution Checkpoint**；仅在 Checkpoint 命中真实失败／执行异常信号时，才加载 [Evolution](memory-evolution/evolution-policy.md) 做脱敏记录并由维护层在任务收尾或下一次维护处理。`CLEAN` 路径不读维护全文、不读账本、不跑回归、不写 incident；2026-09-12 施工令仅授权权限笼内的持续维护。没有实际后台执行器不声称后台运行。旧 `improvements` 体系仅作历史只读参考，不与 INC/EV→RES/EVO 并行写入。
 
 完成须以真实产物、验收、目录状态和原件保护证据为准。未通过则明确 `PARTIAL` 或 `BLOCKED`，不以流程齐全宣告成功。
 
