@@ -46,5 +46,17 @@
     "no_regression": "原有权限、保密和必要质量门禁保留；合成回归不冒充生产事故。",
     "pass_condition": "登记方法实际唯一发现并执行成功，相关负向输入受到拒绝或待办正确可见。",
     "test": "test_evolution_intake.py:test_ordinary_incident_visible_before_candidate"
+  },
+  {
+    "case_id": "RC-EVOLUTION-TRIGGER-001",
+    "incident_id": "INC-44444444444444444444444444444444",
+    "failure_type": "incident_not_recorded",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "生产任务已出现真实执行失败，但收尾依赖模型自行想起 Evolution，导致未进入进化入口或用户无法确认是否执行。",
+    "correct_behavior": "每次完成前固定执行一次轻量 Evolution Checkpoint；CLEAN 零维护开销，命中真实问题必须 RECORDED 或 PENDING，并在完工小结显示一行状态。",
+    "no_regression": "不新增正常任务的账本读取、回归、incident 或后台任务；原有权限、保密、Stable 晋升授权和质量门禁不变。",
+    "pass_condition": "规则与模板共同强制 checkpoint、CLEAN 零维护、事故不可静默、RECORDED/PENDING 不冒充 EVO，且状态行不泄露业务细节。",
+    "test": "test_evolution_checkpoint.py:test_checkpoint_is_mandatory_and_visible"
   }
 ]
