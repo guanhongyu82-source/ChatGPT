@@ -13,7 +13,7 @@ class AuthorityContract(unittest.TestCase):
 
     def test_version_value_has_one_authority(self):
         version = self.read('VERSION').strip()
-        self.assertRegex(version, r'^\d+\.\d+\.\d+$')
+        self.assertRegex(version, r'^\d+\.\d+\.\d+(?:-lab\.\d+)?$')
         for relative in ('README.md', 'SKILL.md', 'core/system-architecture.md'):
             text = self.read(relative)
             self.assertIsNone(
@@ -70,7 +70,10 @@ class AuthorityContract(unittest.TestCase):
             self.assertIn(marker, architecture)
         self.assertIn('v1.5.2 — Structure Governance / Non-expansion Baseline', architecture)
         self.assertIn('v1.5.3 — Quality Validation（框架）', architecture)
-        self.assertIn('v1.5.4 — Control Plane Reduction（框架）', architecture)
+        self.assertRegex(
+            architecture,
+            r'v1\.5\.4 — Control Plane Reduction(?:（框架）| / Official Capability Boundary)',
+        )
         for relative in ('SKILL.md', 't0-executive-router/router.md'):
             self.assertNotIn('Hot Path Weight', self.read(relative), relative)
 

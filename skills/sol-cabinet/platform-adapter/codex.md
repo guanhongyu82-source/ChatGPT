@@ -134,4 +134,4 @@ Work 负责办公生产；Chat 负责正式维护决策与 GitHub 版本；Codex
 - 本机 hooks.json 只登记受任务范围约束的事件，调用正式部署版本的 `scripts/codex_delivery_hook.py`。钩子仅按上方 Hook 状态治理保存短期状态，不记录用户正文，不联网、不换型。只有经过宿主原生信任后才实际执行；未信任、宿主未加载或非本机环境，不称已自动强制。
 - 文件任务在本轮显式激活后注册 delivery-contract；无文件分析在本轮显式激活后声明 analysis-only。首次失败只允许一次定向返工，重新登记不重置预算；再次失败进入 `TERMINAL_PARTIAL` 并停止自动重试，不以循环耗额度换“通过”。该检查验证真实文件和记录一致性，不认证模型说法或替代内容审查。
 - Work读不到本机运行态时，按同一Skill主动完成收尾核验并保留脱敏待办；不得声称已经运行本机钩子。
-- 正式 GitHub 版本需要进入 Mac 运行环境时，按 [Deployment Contract](deployment-contract.md) 执行：锁定 GITHUB_STABLE commit 与源摘要 → 比 Runtime 漂移 → 备份 → 单向部署 → Agent 同步 → 写外部部署状态凭证 → `check_installation.py --expected-commit` 核验到 SYNCED → 报告。任何一步失败不得声称本机已更新。
+- 正式 GitHub 版本或用户明确授权的 LAB 候选需要进入 Mac 运行环境时，按 [Deployment Contract](deployment-contract.md) 执行：锁定 channel/source ref/commit 与源摘要 → 比 Runtime 漂移 → 备份 → 单向部署 → Agent 同步 → 写带 channel/source ref 的外部部署状态凭证 → `check_installation.py --expected-commit --expected-channel` 核验到 SYNCED → 报告。任何一步失败不得声称本机已更新；LAB 不自动晋升 Stable。

@@ -2,6 +2,10 @@
 
 本文件记录 Sol Cabinet 的正式版本变化。当前版本号的唯一权威仍为 [`VERSION`](VERSION)；本文件只记录发布事实、变更范围与验证边界，不成为 Core、Office、Review、Router 或其他规则域的第二政策来源。
 
+## v1.5.5-lab.2 — LAB — Stable／LAB 并行部署身份机制
+
+本实验后继版本继承 v1.5.5-lab.1 的 PPT 模块化数字基座，并补齐候选 Runtime 的可验证身份：部署状态 schema v2 增加 `channel` 与 `source_ref`，版本校验支持 `1.5.5-lab.N`，安装核验可同时绑定目标 commit 和通道。旧 v1.5.4 Stable 状态凭证保持兼容；LAB 不自动晋升 Stable，失败仍回滚到 `main` Stable。
+
 ## v1.5.4 — 2026-09-17 — FINAL
 
 ### 定稿结论

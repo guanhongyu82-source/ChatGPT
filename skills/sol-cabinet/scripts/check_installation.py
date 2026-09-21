@@ -71,10 +71,11 @@ def _check_agent_runtime() -> list[dict[str, object]]:
 
 
 def check(*, expected_commit: str | None = None,
+          expected_channel: str | None = None,
           state_path: Path = deployment_state.DEFAULT_STATE) -> dict[str, object]:
     issues: list[dict[str, object]] = []
     warnings: list[str] = []
-    deployment_scope = expected_commit is not None
+    deployment_scope = expected_commit is not None or expected_channel is not None
 
     if not SKILL_LINK.is_symlink() or SKILL_LINK.resolve() != ROOT.resolve():
         issues.append({"issue": "skill-link-invalid", "path": str(SKILL_LINK)})
@@ -100,7 +101,8 @@ def check(*, expected_commit: str | None = None,
         issues.append({"issue": "agent-runtime-check-failed", "detail": str(exc)})
 
     runtime = deployment_state.classify(
-        deployment_state.read_state(state_path), ROOT, expected_commit=expected_commit
+        deployment_state.read_state(state_path), ROOT,
+        expected_commit=expected_commit, expected_channel=expected_channel,
     )
     if deployment_scope and runtime["state"] != "SYNCED":
         issues.append({"issue": "runtime-deployment-state-" + runtime["state"].lower(),
@@ -131,9 +133,14 @@ def check(*, expected_commit: str | None = None,
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expected-commit")
+    parser.add_argument("--expected-channel", choices=sorted(deployment_state.CHANNELS))
     parser.add_argument("--state", type=Path, default=deployment_state.DEFAULT_STATE)
     args = parser.parse_args()
-    result = check(expected_commit=args.expected_commit, state_path=args.state)
+    result = check(
+        expected_commit=args.expected_commit,
+        expected_channel=args.expected_channel,
+        state_path=args.state,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["verdict"] == "PASS" else 1
 
