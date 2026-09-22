@@ -1,6 +1,17 @@
 {
+  "schema_version": 2,
   "task_instance_id": "task-REPLACE-WITH-32-HEX-CHARACTERS",
   "run_id": "YYYYMMDD-HHMMSS-slug",
+  "lifecycle": {
+    "task_root": "/ABSOLUTE/TASK/ROOT/YYYY-MM-DD_任务主题",
+    "last_substantive_date": "YYYY-MM-DD",
+    "state": "ACTIVE|DELIVERED|REOPENED",
+    "reopen_count": 0,
+    "material_manifest": "/ABSOLUTE/TASK/ROOT/00_原稿/原稿清单.json",
+    "material_batches": ["B01"],
+    "current_version": "v1",
+    "formal_versions": []
+  },
   "goal": "",
   "deliverables": [
     {

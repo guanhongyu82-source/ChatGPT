@@ -7,5 +7,7 @@
 - 基于多源材料向正式方案新增制度、审批、职责或协作要求，至少T4，不因只有几段走低风险微改。T4+ 必须独立 Review；T7+ 至少两个独立审核角色；T9+ 分阶段、多轮审核。
 - 用户只给目标；Codex 自动选择 Skill、工具、Agent 和审核，不把调度问题反问给用户。
 - 文件命名与留存按技能office-delivery执行；宿主明确限定work/outputs时使用该路径，不额外复制成品或批量建立兼容链接。主会话及子代理继承用户选定模型，未经明确要求不换型降档。
+- 同一工作跨日、补充材料或重新激活必须沿用同一 Task ID、同一 `YYYY-MM-DD_任务主题/` 根目录和历史正式版本；新增材料由现有原稿归档机制自动登记批次，hash 重复不复制，同名异内容不覆盖，未知用途阻断收口。
+- 正式归档先核 Task Root Archive，再核 `00_原稿/`、`work/`、`outputs/`；根目录临时名、未知残留、版本断档或材料不可追溯时不得声明 FINAL PASS。
 - 日常 Codex 工作根使用 `/Users/macbook/ChatGPT`，不修改或继承 `/Users/macbook/AGENTS.md` 的 Grok workspace 规则。
 <!-- SOL CABINET MANAGED BLOCK END -->

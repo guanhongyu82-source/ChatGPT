@@ -2,6 +2,34 @@
 
 本文件记录 Sol Cabinet 的正式版本变化。当前版本号的唯一权威仍为 [`VERSION`](VERSION)；本文件只记录发布事实、变更范围与验证边界，不成为 Core、Office、Review、Router 或其他规则域的第二政策来源。
 
+## v1.5.5 — FINAL — 持续任务身份与最终归档闭环
+
+### 定稿结论
+
+本版将真实暴露的两项收口缺陷纳入既有 Office Delivery、原稿归档、Task Card、Delivery Contract 和 Review Gate：**一项工作保持一个稳定 Task ID、一个任务根目录和一条正式版本历史；最终归档同时核任务根和任务内部目录。** 版本不新增独立 Skill、Agent、监控器、数据库或外围系统，仍保持 T1—T10、Evolution Checkpoint、Stable/LAB 权限与其他 AI 系统边界不变。
+
+### 机制修订
+
+1. `archive_originals.py` 将原稿清单升级为兼容 schema 2：自动登记 `B01`、`B02` 等材料批次，hash 完全相同的输入写入 `duplicates` 而不重复归档，同名异内容以安全的 hash 后缀保留两份；未知／待确认角色直接阻断且不删除输入。
+2. `delivery_gate.py` 增加同一任务根命名、根目录未知项、正式版本连续性、材料批次追溯、历史正式版本 hash 和 11 项 FINAL PASS 门禁；`next_formal_version()` 读取现有 `outputs/` 后返回下一正式版本，不覆盖历史版本。
+3. Office／Router／Review／托管运行提示统一规定跨日续办、补充材料、Delivered 后 Reopen 沿用原 Task ID 和根目录；根目录日期只在实质性工作发生时更新，最终契约、hash 和报告必须基于最终正式路径生成。
+
+### 两项真实问题记录
+
+- **E-01**：内部 `00_原稿/`、`work/`、`outputs/` 已整理，但任务根仍为 `new-chat`，旧归档粒度只检查内部目录，错误放行 Archive PASS。根因是 Task Root 未进入 Final PASS；修复为任务根命名、未知根项和 Task Root Archive 进入 `delivery_gate.py` 硬门槛。
+- **E-02**：同一工作跨日、多轮补充材料和多轮正式版本缺少稳定持续生命周期，存在重复任务夹、历史版本覆盖和材料关系断裂风险。修复为复用现有 Task Card／原稿清单／Delivery Contract，固化 Task ID、根目录日期、材料批次、版本历史、Reopen 和最终收口顺序。
+
+### 定向回归与边界
+
+- T1：4 份材料 → B01 → v1 → FINAL PASS。
+- T2：同日新增 1 份 → B02 → v2，原根和 v1 保留。
+- T3：跨日新增 3 份 → 同 Task ID、同根原地更新日期 → B03 → v3，历史文件名不改。
+- T4：重复 hash 只登记不复制。
+- T5：同名异内容两版均保留并进入新批次。
+- T6：未知输入不删除，Archive=FAIL，不得 FINAL PASS。
+
+既有原稿逐字节保护、目录白名单、Delivery Contract Expected↔Actual、Hook 返工边界、Evolution Checkpoint、Stable 必须用户 FINAL、LAB 不自动晋升 Stable 和 ChatGPT 自动维护边界均保留。未对速度作未经实测的承诺；新增检查只在正式归档／续办任务路径激活，普通快车道不创建额外账本或监控。
+
 ## v1.5.5-lab.2 — LAB — Stable／LAB 并行部署身份机制
 
 本实验后继版本继承 v1.5.5-lab.1 的 PPT 模块化数字基座，并补齐候选 Runtime 的可验证身份：部署状态 schema v2 增加 `channel` 与 `source_ref`，版本校验支持 `1.5.5-lab.N`，安装核验可同时绑定目标 commit 和通道。旧 v1.5.4 Stable 状态凭证保持兼容；LAB 不自动晋升 Stable，失败仍回滚到 `main` Stable。

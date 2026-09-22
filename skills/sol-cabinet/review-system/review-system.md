@@ -29,6 +29,12 @@ Review 核对用户要求与真实结果，不核对执行者是否“看起来�
 
 正式契约任务中，`source_archive_gate.required=true` 且状态不是 PASS、源或副本未核、待修项非空、问题解决但尚未复验时，均不得 PASS。原稿不得是转换稿、接受修订稿或元数据清理稿。快车道仍必须实际通过原稿归档门禁，但不为证明已通过再生成一套 Review Gate 文件。
 
+## Task Root Archive 与 FINAL PASS
+
+正式归档的审阅对象包含两层：任务根目录和任务内部目录。任务根必须是 `YYYY-MM-DD_任务主题/`，日期等于最近一次实质性工作日期；`new-chat`、`temp`、`tmp`、`untitled`、`working`、`未命名`、`临时` 及根目录未知项均使 Archive=FAIL。跨日续办和 Delivered 后 Reopen 必须沿用同一 `task_instance_id`、同一根目录和历史正式版本，只原地更新日期、材料批次及下一版本。
+
+每一正式版本都要在既有 `formal_versions` 中登记形成日期、实际文件 hash 和材料批次；`outputs/` 可以保留历史正式版本，但不得保留中间稿、测试稿、预览、临时转换或未声明附件。`delivery_gate.py` 在 `archive_status=done` 时要求 `content`、`deliverables`、`original_inputs`、`work_evidence`、`task_root_archive`、`temporary_residue`、`version_continuity`、`material_traceability`、`final_path`、`final_validation`、`delivery_contract` 十一项 `finalization_gates` 全部为 `PASS`，并重新读取最终路径上的成品、原稿清单和版本 hash。任何一项失败均只能判 Finalization=FAIL，不得用内部目录整理或预填状态替代证据。
+
 ## 返工与交付
 
 失败项与其依赖单独返工。非轻量任务一般最多三轮修复复验，仍无进展报告 PARTIAL／BLOCKED；短任务不机械进入三轮循环。T1-T2 快车道发现局部问题时只修受影响处并复验受影响分页／对象；发现系统性转换问题时切换一次合适的替代路径或报告限制，不连续叠加多套工具逐页试错。审阅授权不等于测试可修改共享目录或访问 API。

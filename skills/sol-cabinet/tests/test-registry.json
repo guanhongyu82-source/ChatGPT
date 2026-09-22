@@ -35,5 +35,9 @@
   "S12": {
     "status": "PASS",
     "evidence": "Parallel ephemeral T1 smoke verified source files require Archive Gate before content read and no-source tasks do not create empty original directories"
+  },
+  "A02": {
+    "status": "PASS",
+    "evidence": "TaskLifecycleRules verified one Task Root across same-day and cross-day reopen, B01-B03 material batches, v1-v3 continuity, duplicate hash recording, same-name different-content retention, unknown-input fail-closed behavior, and final root/archive gates"
   }
 }

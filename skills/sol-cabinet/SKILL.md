@@ -36,12 +36,12 @@ Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、�
 - 不编造未来耗时承诺。若当前宿主能取得可靠任务起点，可记录实际计时口径；无法取得可靠起止时间时，结尾明确“无法精确核实总耗时”，不得伪造精确秒数。
 - 用户纠偏、补救与继续同一任务沿用原任务，不把每条消息当新任务；范围实质变化时更新交付契约和必要说明，不偷偷扩展。
 
-1. **T0**：内部锁定物件、动作、约束、依据、交付位置、当前阶段和停止条件。有源文件先归档。
+1. **T0**：内部锁定物件、动作、约束、依据、交付位置、当前阶段和停止条件。有源文件先归档；文件任务同时识别既有 Task Identity，沿用同一 Task Root，跨日或 Reopen 不另建任务夹。
 2. **快车道直接完成**：一句、一段、已知字段的局部修改，或“单输入→单输出、目标格式明确、无新增事实／正文改写／复杂模板迁移／批量耦合／高风险”的确定性文件转换与局部排版，通常 T1-T2；快速识别后直接执行，不因文件后缀、交付格式或展示规划而升级流程。
 3. **非轻量任务**：读 [Core](core/core.md)、[Router](t0-executive-router/router.md)、[分类](task-classification/t1-t10.md)，只加载命中的[领域规则](domain-skills/routing-map.md)。
 4. **材料与执行**：按 [中文写作](domain-skills/formal-writing.md) 复用材料角色、定位和画像；依赖已满足才起草。文件读写、转换、渲染、格式处理与技术校验按 [Domain Router](domain-skills/routing-map.md) 调用平台原生原子能力，一项操作只保留一个主执行器。多 Agent 按 [编排](agent-orchestrator/orchestration.md) 执行，主代理唯一总控，角色不另组办公团队。
 5. **验收一次化**：快车道由主代理做一轮联合自检／抽检，将内容忠实、版式、可打开性、目标位置和目录状态合并核验；平台已完成且可复用的技术校验不重复跑。只有发现系统性问题、高风险或用户明确要求时才扩大范围。非轻量任务按 [Review](review-system/review-system.md) 执行必要独立审核。
-6. **进化检查、交付并停止**：确认预期成品与实际成品对应、应进入目标文件夹的文件已进入、过程文件和无关产物未混入后，在发完工小结前执行一次 **Evolution Checkpoint**。Checkpoint 只使用本任务已经发生且主 Agent 已知的事实，不重新读文件、不重跑校验、不扫描维护账本。检查本次是否出现用户纠正、漏文件／对象／步骤、假完成、质量失败、误路由、Agent 未履职、不必要串行、重复读取／检查、规则未生效、运行时兼容或质量退化等真实信号。无信号记 `CLEAN`，零记录、零回归、零 EVO；有信号才按 [Evolution](memory-evolution/evolution-policy.md) 记录或明确标记未完成记录。完工小结最后必须给出一行可见进化状态，格式见 [Delivery Summary](templates/delivery-summary.md)。然后只报告真实完成内容、成品路径、关键核验和未完成／限制；有实质失误时说明处置，无实质失误不制造额外反思。未经新授权不进入下一阶段、不创建后台续作。
+6. **进化检查、最终归档、交付并停止**：确认预期成品与实际成品对应、应进入目标文件夹的文件已进入、过程文件和无关产物未混入后，按 [Office Delivery](domain-skills/office-delivery.md) 完成同一 Task Root、材料批次、正式版本和最终路径核验；`storage.archive_status=done` 时 `delivery_gate.py` 的 11 项 `finalization_gates` 必须全部为 PASS，根目录临时名或未知项直接 FAIL。随后在发完工小结前执行一次 **Evolution Checkpoint**。Checkpoint 只使用本任务已经发生且主 Agent 已知的事实，不重新读文件、不重跑校验、不扫描维护账本。检查本次是否出现用户纠正、漏文件／对象／步骤、假完成、质量失败、误路由、Agent 未履职、不必要串行、重复读取／检查、规则未生效、运行时兼容或质量退化等真实信号。无信号记 `CLEAN`，零记录、零回归、零 EVO；有信号才按 [Evolution](memory-evolution/evolution-policy.md) 记录或明确标记未完成记录。完工小结最后必须给出一行可见进化状态，格式见 [Delivery Summary](templates/delivery-summary.md)。然后只报告真实完成内容、成品路径、关键核验和未完成／限制；有实质失误时说明处置，无实质失误不制造额外反思。未经新授权不进入下一阶段、不创建后台续作。
 
 ### 三项硬完成条件
 
@@ -50,6 +50,8 @@ Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、�
 1. **有成品**：用户要求的实体交付物真实存在并可定位；没有成品时只能 `PARTIAL/BLOCKED`。
 2. **目录干净**：该进目标目录的成品全部在位；原稿、过程件、测试件、证据、缓存和临时产物按约定分区，不能把无关文件塞进最终交付目录。
 3. **有完工小结**：必须给用户明确的结果、路径、核验和未完成项说明；没有完工小结不得结束为成功。
+
+正式归档任务还必须满足：Task Root Archive、Version Continuity、Material Traceability、Final Path 和 Final Validation 均有真实证据；任一失败只能报告 `PARTIAL`／`BLOCKED`，不得输出“未完成项：无”“正式归档完成”或 `FINAL PASS`。
 
 主 Agent 是 Final Lead：比较证据与子结果，裁决冲突，只返工受影响项，再验最终候选。不能把 Agent 的 PASS 或摘要拼接当作验收。
 

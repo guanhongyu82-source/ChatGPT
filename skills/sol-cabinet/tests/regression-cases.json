@@ -58,5 +58,17 @@
     "no_regression": "不新增正常任务的账本读取、回归、incident 或后台任务；原有权限、保密、Stable 晋升授权和质量门禁不变。",
     "pass_condition": "规则与模板共同强制 checkpoint、CLEAN 零维护、事故不可静默、RECORDED/PENDING 不冒充 EVO，且状态行不泄露业务细节。",
     "test": "test_evolution_checkpoint.py:test_checkpoint_is_mandatory_and_visible"
+  },
+  {
+    "case_id": "RC-TASK-LIFECYCLE-001",
+    "incident_id": "INC-55555555555555555555555555555555",
+    "failure_type": "file_delivery_uncontrolled",
+    "cause": "rule_gap",
+    "impact": "high",
+    "trigger": "内部目录已整理但任务根仍为临时目录；跨日补充材料与多轮正式版本没有稳定的任务身份、批次和最终归档门禁。",
+    "correct_behavior": "一项工作沿用同一 Task ID 与 Task Root；新增材料按 hash 和批次归档，正式版本连续保留，根目录和内部目录共同通过 FINAL PASS。",
+    "no_regression": "原稿逐字节保护、未知输入不删除、历史正式版本不覆盖、outputs 白名单、Delivery Contract 与必要质量门禁继续有效。",
+    "pass_condition": "T1 首次 B01→v1、T2 同日 B02→v2、T3 跨日同 Task ID B03→v3、T4 重复 hash、T5 同名异内容、T6 未知文件阻断均通过。",
+    "test": "test_delivery_rules.py:TaskLifecycleRules six targeted tests"
   }
 ]

@@ -13,6 +13,7 @@ import secrets
 import stat
 import sys
 import time
+from datetime import date
 from pathlib import Path
 from typing import Iterable
 from maintenance_boundary import guarded
@@ -23,7 +24,10 @@ ARCHIVE_DIR_NAME = "00_原稿"
 MANIFEST_NAME = "原稿清单.json"
 ROLE_RE = re.compile(r"^[^/\\\x00-\x1f]{1,40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-RECORD_KEYS = {
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+BATCH_ID_RE = re.compile(r"^B\d{2,}$")
+UNKNOWN_ROLES = frozenset({'unknown', 'unclassified', '未分类', '待确认', '未知'})
+BASE_RECORD_KEYS = {
     "source_role",
     "source_name",
     "archived_relative_path",
@@ -34,8 +38,22 @@ RECORD_KEYS = {
     "source_unmodified",
     "status",
 }
+OPTIONAL_RECORD_KEYS = {"material_batch_id", "supersedes"}
+BATCH_KEYS = {"batch_id", "batch_date", "kind", "record_paths"}
+DUPLICATE_KEYS = {
+    "source_role", "source_name", "source_sha256",
+    "existing_archived_relative_path", "status",
+}
 NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+
+
+def _valid_date(value: str) -> bool:
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
 
 
 def _write_all(fd: int, data: bytes) -> None:
@@ -149,7 +167,9 @@ def _read_name(archive_fd: int, name: str) -> bytes:
 
 
 def _validate_record(record: object, archive_fd: int) -> dict[str, object]:
-    if not isinstance(record, dict) or set(record) != RECORD_KEYS:
+    if (not isinstance(record, dict)
+            or not BASE_RECORD_KEYS.issubset(record)
+            or set(record) - (BASE_RECORD_KEYS | OPTIONAL_RECORD_KEYS)):
         raise ValueError("original manifest record schema is invalid")
     role = record["source_role"]
     source_name = record["source_name"]
@@ -179,6 +199,14 @@ def _validate_record(record: object, archive_fd: int) -> dict[str, object]:
         raise ValueError("original manifest preservation flags are invalid")
     if record["status"] != "UNMODIFIED_BYTE_COPY":
         raise ValueError("original manifest status is invalid")
+    if "material_batch_id" in record:
+        batch_id = record["material_batch_id"]
+        if not isinstance(batch_id, str) or not BATCH_ID_RE.fullmatch(batch_id):
+            raise ValueError("original manifest material batch is invalid")
+    if "supersedes" in record:
+        supersedes = record["supersedes"]
+        if not isinstance(supersedes, str) or not supersedes:
+            raise ValueError("original manifest supersedes relation is invalid")
     member_name = parts[1]
     _validate_basename(member_name)
     fd = os.open(member_name, os.O_RDONLY | NOFOLLOW, dir_fd=archive_fd)
@@ -197,27 +225,90 @@ def _parse_manifest(archive_fd: int) -> dict[str, object]:
     try:
         data = _read_name(archive_fd, MANIFEST_NAME)
     except FileNotFoundError:
-        return {"schema_version": 1, "archive_state": "PASS", "files": []}
+        return {"schema_version": 2, "archive_state": "PASS", "files": [], "batches": [], "duplicates": []}
     payload = json.loads(data.decode("utf-8"))
-    if not isinstance(payload, dict) or set(payload) != {"schema_version", "archive_state", "files"}:
+    if not isinstance(payload, dict):
         raise ValueError("original manifest schema is invalid")
-    if payload["schema_version"] != 1 or payload["archive_state"] != "PASS":
+    schema_version = payload.get("schema_version")
+    if schema_version not in {1, 2} or payload.get("archive_state") != "PASS":
         raise ValueError("original manifest state is invalid")
+    if schema_version == 1 and set(payload) != {"schema_version", "archive_state", "files"}:
+        raise ValueError("original manifest schema is invalid")
+    if schema_version == 2 and set(payload) != {"schema_version", "archive_state", "files", "batches", "duplicates"}:
+        raise ValueError("original manifest schema is invalid")
     if not isinstance(payload["files"], list):
         raise ValueError("original manifest files must be a list")
     identities: set[tuple[object, object, object]] = set()
     paths: set[object] = set()
+    hashes: set[str] = set()
     records = []
     for raw_record in payload["files"]:
         record = _validate_record(raw_record, archive_fd)
         identity = (record["source_role"], record["source_name"], record["source_sha256"])
         relative = record["archived_relative_path"]
-        if identity in identities or relative in paths:
+        if (identity in identities or relative in paths
+                or (schema_version == 2 and record["source_sha256"] in hashes)):
             raise ValueError("original manifest contains duplicate records")
         identities.add(identity)
         paths.add(relative)
+        hashes.add(record["source_sha256"])
         records.append(record)
-    return {"schema_version": 1, "archive_state": "PASS", "files": records}
+
+    if schema_version == 1:
+        batches = []
+        if records:
+            batches.append({
+                "batch_id": "B00",
+                "batch_date": "unknown",
+                "kind": "legacy-existing",
+                "record_paths": [record["archived_relative_path"] for record in records],
+            })
+        return {"schema_version": 2, "archive_state": "PASS", "files": records,
+                "batches": batches, "duplicates": []}
+
+    batches = payload["batches"]
+    duplicates = payload["duplicates"]
+    if not isinstance(batches, list) or not isinstance(duplicates, list):
+        raise ValueError("original manifest batches and duplicates must be lists")
+    batch_ids: set[str] = set()
+    mapped: set[str] = set()
+    for batch in batches:
+        if not isinstance(batch, dict) or set(batch) != BATCH_KEYS:
+            raise ValueError("original manifest batch schema is invalid")
+        batch_id = batch["batch_id"]
+        batch_date = batch["batch_date"]
+        record_paths = batch["record_paths"]
+        if (not isinstance(batch_id, str) or not BATCH_ID_RE.fullmatch(batch_id)
+                or batch_id in batch_ids):
+            raise ValueError("original manifest batch id is invalid")
+        if (not isinstance(batch_date, str)
+                or (batch_date != "unknown" and (not DATE_RE.fullmatch(batch_date)
+                                                  or _valid_date(batch_date) is False))):
+            raise ValueError("original manifest batch date is invalid")
+        if not isinstance(batch["kind"], str) or not batch["kind"]:
+            raise ValueError("original manifest batch kind is invalid")
+        if not isinstance(record_paths, list) or not record_paths:
+            raise ValueError("original manifest batch records are invalid")
+        for relative in record_paths:
+            if relative not in paths or relative in mapped:
+                raise ValueError("original manifest batch record mapping is invalid")
+            mapped.add(relative)
+        batch_ids.add(batch_id)
+    if mapped != paths:
+        raise ValueError("original manifest contains unmapped records")
+    for duplicate in duplicates:
+        if not isinstance(duplicate, dict) or set(duplicate) != DUPLICATE_KEYS:
+            raise ValueError("original manifest duplicate schema is invalid")
+        if (not isinstance(duplicate["source_role"], str)
+                or not ROLE_RE.fullmatch(duplicate["source_role"])
+                or not isinstance(duplicate["source_name"], str)
+                or not isinstance(duplicate["source_sha256"], str)
+                or not SHA256_RE.fullmatch(duplicate["source_sha256"])
+                or duplicate["existing_archived_relative_path"] not in paths
+                or duplicate["status"] != "DUPLICATE_HASH"):
+            raise ValueError("original manifest duplicate record is invalid")
+    return {"schema_version": 2, "archive_state": "PASS", "files": records,
+            "batches": batches, "duplicates": duplicates}
 
 
 def _open_source(source: Path) -> tuple[int, os.stat_result, str]:
@@ -296,16 +387,77 @@ def _validate_basename(name: str) -> None:
         raise ValueError("source filename is too long for a safe archive name")
 
 
+def _next_batch_id(batches: list[dict[str, object]]) -> str:
+    numbers = []
+    for batch in batches:
+        value = batch.get("batch_id") if isinstance(batch, dict) else None
+        if isinstance(value, str) and BATCH_ID_RE.fullmatch(value):
+            numbers.append(int(value[1:]))
+    return f"B{max(numbers, default=0) + 1:02d}"
+
+
+def _unique_archive_name(role: str, source_name: str, source_sha256: str,
+                         occupied: set[str], archive_fd: int) -> str:
+    base = f"原稿_{role}_{source_name}"
+    candidates = [base]
+    if base in occupied:
+        source_path = Path(source_name)
+        candidates.append(
+            f"原稿_{role}_{source_path.stem}__{source_sha256[:12]}{source_path.suffix}"
+        )
+    index = 2
+    while candidates:
+        candidate = candidates.pop(0)
+        try:
+            _validate_basename(candidate)
+        except ValueError:
+            continue
+        if candidate in occupied:
+            if candidate == base:
+                candidates.append(
+                    f"原稿_{role}_{Path(source_name).stem}__{source_sha256[:12]}{Path(source_name).suffix}"
+                )
+            continue
+        try:
+            os.stat(candidate, dir_fd=archive_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            return candidate
+        if candidate == base:
+            candidates.append(f"{Path(candidate).stem}__{source_sha256[:12]}{Path(candidate).suffix}")
+        else:
+            candidates.append(
+                f"{Path(candidate).stem}-{index}{Path(candidate).suffix}"
+            )
+            index += 1
+    raise FileExistsError("unable to allocate a unique original archive destination")
+
+
 @guarded
 def archive_originals(
     task_dir: Path,
     sources: Iterable[tuple[str, Path]],
     *,
     allow_test_output: bool = False,
+    batch_id: str | None = None,
+    batch_date: str | None = None,
+    batch_kind: str | None = None,
 ) -> dict[str, object]:
     items = [(role, Path(path)) for role, path in sources]
     if not items:
         return {"state": "NOT_APPLICABLE", "archived_count": 0}
+    for role, _source in items:
+        if (not isinstance(role, str) or not ROLE_RE.fullmatch(role)
+                or role in {".", ".."} or role.strip().casefold() in UNKNOWN_ROLES):
+            raise ValueError("source role is unknown or invalid; archive is blocked")
+    if batch_id is not None and (not isinstance(batch_id, str) or not BATCH_ID_RE.fullmatch(batch_id)):
+        raise ValueError("batch_id must use B## format")
+    if batch_date is not None and (batch_date != "unknown"
+                                   and (not isinstance(batch_date, str)
+                                        or not DATE_RE.fullmatch(batch_date)
+                                        or not _valid_date(batch_date))):
+        raise ValueError("batch_date must be an ISO date")
+    if batch_kind is not None and (not isinstance(batch_kind, str) or not batch_kind.strip()):
+        raise ValueError("batch_kind must be a non-empty string")
     task_fd, task_dir = _open_task_directory(
         Path(task_dir), allow_test_output=allow_test_output
     )
@@ -334,32 +486,43 @@ def archive_originals(
 
         manifest = _parse_manifest(archive_fd)
         records = list(manifest["files"])
-        existing = {
-            (record["source_role"], record["source_name"], record["source_sha256"])
-            for record in records
+        batches = [dict(batch) for batch in manifest["batches"]]
+        duplicates = list(manifest["duplicates"])
+        existing_hashes = {record["source_sha256"] for record in records}
+        archive_by_hash = {
+            record["source_sha256"]: record["archived_relative_path"] for record in records
         }
         occupied = {record["archived_relative_path"] for record in records}
+        new_record_paths: list[str] = []
+        duplicate_count = 0
+        active_batch_id = batch_id
+        active_batch_date = batch_date
+        active_batch_kind = batch_kind
 
         for role, source in items:
-            if not isinstance(role, str) or not ROLE_RE.fullmatch(role) or role in {".", ".."}:
-                raise ValueError("source role is invalid")
             _validate_basename(source.name)
             source_fd, source_info, source_sha256 = _open_source(source)
             try:
-                identity = (role, source.name, source_sha256)
-                if identity in existing:
+                if source_sha256 in existing_hashes:
+                    duplicates.append({
+                        "source_role": role,
+                        "source_name": source.name,
+                        "source_sha256": source_sha256,
+                        "existing_archived_relative_path": archive_by_hash[source_sha256],
+                        "status": "DUPLICATE_HASH",
+                    })
+                    duplicate_count += 1
                     continue
-                archived_name = f"原稿_{role}_{source.name}"
-                _validate_basename(archived_name)
+                if active_batch_id is None:
+                    active_batch_id = _next_batch_id(batches)
+                if active_batch_date is None:
+                    active_batch_date = date.today().isoformat()
+                if active_batch_kind is None:
+                    active_batch_kind = "initial" if not records else "supplement"
+                archived_name = _unique_archive_name(
+                    role, source.name, source_sha256, occupied, archive_fd
+                )
                 relative = f"{ARCHIVE_DIR_NAME}/{archived_name}"
-                if relative in occupied:
-                    raise FileExistsError("an original archive destination already exists")
-                try:
-                    os.stat(archived_name, dir_fd=archive_fd, follow_symlinks=False)
-                except FileNotFoundError:
-                    pass
-                else:
-                    raise FileExistsError("an original archive destination already exists")
                 size_bytes, copied_sha256 = _copy_source_fd(
                     source_fd,
                     source_info,
@@ -379,15 +542,31 @@ def archive_originals(
                         "byte_identical": True,
                         "source_unmodified": True,
                         "status": "UNMODIFIED_BYTE_COPY",
+                        "material_batch_id": active_batch_id,
                     }
                 )
-                existing.add(identity)
+                existing_hashes.add(copied_sha256)
+                archive_by_hash[copied_sha256] = relative
                 occupied.add(relative)
+                new_record_paths.append(relative)
             finally:
                 os.close(source_fd)
 
+        if new_record_paths:
+            existing_batch = next((batch for batch in batches if batch["batch_id"] == active_batch_id), None)
+            if existing_batch is None:
+                batches.append({
+                    "batch_id": active_batch_id,
+                    "batch_date": active_batch_date,
+                    "kind": active_batch_kind,
+                    "record_paths": list(new_record_paths),
+                })
+            else:
+                existing_batch["record_paths"] = list(existing_batch["record_paths"]) + new_record_paths
+
         payload = json.dumps(
-            {"schema_version": 1, "archive_state": "PASS", "files": records},
+            {"schema_version": 2, "archive_state": "PASS", "files": records,
+             "batches": batches, "duplicates": duplicates},
             ensure_ascii=False,
             indent=2,
         ).encode("utf-8") + b"\n"
@@ -418,6 +597,9 @@ def archive_originals(
         return {
             "state": "PASS",
             "archived_count": len(records),
+            "new_count": len(new_record_paths),
+            "duplicate_count": duplicate_count,
+            "batch_id": active_batch_id,
             "manifest": str(archive_dir / MANIFEST_NAME),
         }
     except BaseException:
@@ -452,9 +634,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("task_dir", type=Path)
     parser.add_argument("--source", action="append", default=[], type=_source_arg)
+    parser.add_argument("--batch-id")
+    parser.add_argument("--batch-date")
+    parser.add_argument("--batch-kind")
     args = parser.parse_args()
     try:
-        result = archive_originals(args.task_dir, args.source)
+        result = archive_originals(
+            args.task_dir,
+            args.source,
+            batch_id=args.batch_id,
+            batch_date=args.batch_date,
+            batch_kind=args.batch_kind,
+        )
     except (OSError, RuntimeError, TypeError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"state": "BLOCKED", "error_type": type(exc).__name__}), file=sys.stderr)
         return 2

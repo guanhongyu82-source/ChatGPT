@@ -24,6 +24,13 @@
 4. `00_原稿/`、`work/`、`outputs/` 或用户指定目录各自内容符合职责；
 5. 如果宿主限制导致无法实际整理目录，必须明确说明未完成，不能虚称归档完成。
 
+## 持续任务与正式归档附加对账
+
+- 同一工作必须报告稳定 Task ID、当前正式任务根和最近一次实质性工作日期；跨日或 Reopen 不得出现第二任务根。
+- 新增材料应报告自动登记的材料批次；相同 hash 只报告重复输入，同名异内容报告两份均保留；未知文件不得删除或强制归类。
+- `outputs/` 可以包含本任务历史正式版本和当前版本；逐版报告实际形成日期、版本号、hash 与材料批次，不能覆盖历史正式版。
+- 正式归档必须逐项给出 `Content`、`Deliverables`、`Original Inputs`、`Work Evidence`、`Task Root Archive`、`Temporary Residue`、`Version Continuity`、`Material Traceability`、`Final Path`、`Final Validation`、`Delivery Contract` 的实际状态。任一 `FAIL` 时只能报告 `PARTIAL`／`BLOCKED`，不得写“归档 PASS”或“未完成项：无”。
+
 ## 兼容字段
 
 需要更详细交接时可按下列字段展开，但不为形式机械堆字：

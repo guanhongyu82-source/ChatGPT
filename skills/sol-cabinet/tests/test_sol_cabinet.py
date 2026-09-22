@@ -300,7 +300,7 @@ class SourceArchiveTests(unittest.TestCase):
             manifest = json.loads((task_dir / "00_原稿" / "原稿清单.json").read_text(encoding="utf-8"))
             self.assertEqual(len(manifest["files"]), 2)
 
-    def test_symlink_source_and_collision_are_rejected(self):
+    def test_symlink_source_is_rejected_and_same_name_different_content_is_retained(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             base = Path(temp_dir).resolve()
             real = base / "real.txt"
@@ -324,12 +324,20 @@ class SourceArchiveTests(unittest.TestCase):
             original_archiver.archive_originals(
                 task_dir, [("附件", left / "same.txt")], allow_test_output=True
             )
-            with self.assertRaises(FileExistsError):
-                original_archiver.archive_originals(
-                    task_dir, [("附件", right / "same.txt")], allow_test_output=True
-                )
+            result = original_archiver.archive_originals(
+                task_dir, [("附件", right / "same.txt")], allow_test_output=True
+            )
+            self.assertEqual(result["new_count"], 1)
             archived = task_dir / "00_原稿" / "原稿_附件_same.txt"
             self.assertEqual(archived.read_text(encoding="utf-8"), "left")
+            manifest = json.loads((task_dir / "00_原稿" / "原稿清单.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(manifest["files"]), 2)
+            self.assertEqual(len({item["archived_relative_path"] for item in manifest["files"]}), 2)
+            self.assertEqual(
+                sorted(item["source_sha256"] for item in manifest["files"]),
+                sorted(hashlib.sha256((left / "same.txt").read_bytes()).hexdigest()
+                       for left in (left, right)),
+            )
 
     def test_existing_archive_is_reverified_after_tamper_or_delete(self):
         with tempfile.TemporaryDirectory() as temp_dir:
