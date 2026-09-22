@@ -149,7 +149,15 @@ def handle(event,state_root=STATE,allowed_root=BASE):
         if not p.resolve().is_relative_to(allowed_root.resolve()) or not p.is_file():issues.append('交付契约不存在或越界')
         elif hashlib.sha256(p.read_bytes()).hexdigest()!=state.get('contract_sha256'):issues.append('交付契约变更后未重新登记')
         else:
-            try:issues+=check(json.loads(p.read_text(encoding='utf-8')),contract_path=p)['issues']
+            try:
+                checked=json.loads(p.read_text(encoding='utf-8'))
+                issues+=check(checked,contract_path=p)['issues']
+                actual=[a.get('path') for a in checked.get('artifacts',[]) if isinstance(a,dict)]
+                if not actual or any(not isinstance(name,str) or name not in last for name in actual):
+                    issues.append('完工小结必须列出当前契约的实际最终路径')
+                linked=ARTIFACT.findall(last)
+                if any(name not in actual for name in linked):
+                    issues.append('完工小结包含不属于当前交付契约的成品链接')
             except (OSError,ValueError,TypeError):issues.append('交付契约无法核验')
     elif state['mode']=='analysis':
         if DELIVERY_CLAIM.search(last) or '/outputs/' in last:issues.append('声明无文件分析但回复包含成品交付，须登记契约')

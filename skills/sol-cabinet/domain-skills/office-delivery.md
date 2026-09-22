@@ -12,12 +12,13 @@
 - 没有用户指定扁平目录时，文件型任务默认采用最小三分区：`00_原稿/`（仅真实输入原稿）、`work/`（必要过程、审核和机械证据）、`outputs/`（仅正式交付版本及已声明正式附件）。无对应内容的分区不为形式空建。
 - 用户已明确指定最终输出目录时，以该目录为准；过程文件、审核证据、临时解析和测试件仍放受控 `work/` 或 scratch，不得为方便混入最终输出目录。
 - **一项工作一身份一根目录**：首次建立任务时沿用 Task Card 的稳定 `task_instance_id` 作为 Task ID；任务根目录使用 `YYYY-MM-DD_任务主题/`。日期只表示最近一次实质性工作，新增有效材料、收到修改意见并启动修改、形成正式新版本才更新日期；打开、查看、重新渲染和技术检查不更新日期。跨日续办、Delivered 后 Reopen、标题轻微调整和新增附件均原地更新同一根目录，不创建 `new-chat-2`、`final2` 或第二任务夹。
-- Task Card 的 `lifecycle` 锁定 `task_root`、`last_substantive_date`、`state`、`material_manifest`、`material_batches`、`current_version` 与 `formal_versions`；续办只更新这些既有字段并重新锁契约，不另建状态机或数据库。`state=REOPENED` 仍保留原 Task ID，完成新版本后回到 `DELIVERED`。
+- Task Card 的 `lifecycle` 保存任务根及其目录身份、实质日期、材料批次、未解决输入和正式版本历史；由 `delivery_gate.prepare_task()` 首次生成稳定 Task ID 或重开原任务。`state=REOPENED` 保持原 ID；旧版本以相对路径和保留的 Finalization Report 核对，禁止从已改写文件重新计算历史基准。
 - 每次续办把用户新拖入的文件交给现有 `scripts/archive_originals.py` 归档：脚本按 hash 去重并把本轮新文件自动登记为下一材料批次 `B01`、`B02`……；同 hash 输入只进 `duplicates` 记录，不重复复制；同名异内容以 hash 后缀生成不冲突的归档副本，旧版不覆盖；明确标为未知／待确认或无法可靠归属的输入阻断归档，保留现场等待裁决。
+- 已形成批次不可追加或改写；schema 1 的历史副本迁移为 `B00/legacy-existing`，不删原件。明确修订版通过 `supersedes` 指向旧归档相对路径，优先参考该新版；仅同名不能推断替代。主代理依据用户消息和材料用途给角色，无法确认则 `unknown`；即使附件仍在任务根外，`prepare_task` 也将其记入 Task Card 的 `unresolved_inputs`，解决前禁止发布。
 - 正式版本由 `scripts/delivery_gate.py` 的 `next_formal_version(outputs/)` 从现有正式文件读取最高版本后递增。正式版本只能新增 `v1`、`v2`、`v3`……，不得覆盖已形成交付事实的历史版；每个 `formal_versions` 条目记录形成日期、文件哈希和所用材料批次。内部试改、渲染、测试和临时转换不占正式版本号。
 - `outputs/` 不再使用“只能有一个文件”的规则；允许本任务历史正式版本、当前正式版本及 Delivery Contract 明确声明的正式附件。历史版本文件名中的日期是该版本实际形成日期，后续任务根日期变化不得回改历史文件名；所有过程文件仍归入 `work/`。
 - 正式收口顺序固定为：内容／版式完成 → 识别同一 Task Identity → 原地确定正式任务根目录 → 归类新增材料 → 整理 `00_原稿/`、`work/`、`outputs/` → 核对版本与材料批次 → 检查未知文件和临时残留 → 生成 Delivery Contract → 在最终路径重新验收 → 生成最终 hash 和 Finalization Report → 独立收口检查 → FINAL PASS。契约、报告和 hash 不得在根目录改名或移动前生成。
-- `storage.archive_status=done` 的正式契约必须同时声明并机械通过 `delivery_gate.py` 的任务根、材料清单、版本连续性、材料追溯、最终路径、最终验收和 11 项 `finalization_gates`；任务根仍是 `new-chat`、`temp`、`tmp`、`untitled`、`working`、`未命名`、`临时`，或存在无法可靠判断用途的未知根目录项时，Archive=FAIL，禁止 FINAL PASS 和“归档完成”。`deferred` 只能如实报告未归档，不能报告 PASS。
+- 正式 `check()`、CLI 和 Hook 必须经过最终归档门；`deferred/not_applicable` 不能获得 FINAL PASS。`check_components()` 仅供内部组件测试，不能作为交付凭证。十一项 `finalization_gates` 为 Content、Deliverables、Original Inputs、Work Evidence、Task Root Archive、Temporary Residue、Version Continuity、Material Traceability、Final Path、Final Validation、Delivery Contract；目录、文件、版本和材料关系读取实体检查，内容与技术验收读取绑定当前文件 hash 的真实执行证据。任何一项失败不得以自填 PASS 覆盖。根目录临时名或未知项阻断，保留现场。
 - **T1-T2 快车道文件任务**：满足“单输入→单输出、目标格式和位置明确、无新增事实、无正文改写、无复杂模板迁移、无批量耦合、无高风险或独立审核要求”时，预期成品直接以用户当前要求为唯一 Expected，在会话内锁定源文件、目标格式／文件、目标位置和必要抽检；宿主未强制 Hook／契约时，不为形式另建 Task Card、Delivery Contract、Review Gate 或审核 JSON。
 - **非轻量文件任务或宿主强制门禁**：在 Task Card 的 `deliverables` 锁定预期成品，不另建第二份 Expected 清单。每个预期成品至少包含 `artifact_id`、`required`、`format`、`target_role`、`target_directory`；用户明确指定文件名时写入 `filename_override`，否则为 null。Delivery Contract 只保存 Task Card 的绝对路径和 SHA-256 锁，不复制 `deliverables`；`artifacts` 只记录 Actual。
 - 正式契约路径下，交付前逐项做 Expected ↔ Actual 机械对账：必交项缺失 FAIL；出现未授权 `artifact_id` FAIL；格式、角色或目标目录不符 FAIL；Expected 为 `final` 而 Actual 仍是 `candidate` FAIL；用户指定文件名与实际不符 FAIL。快车道则直接核“用户要求的一个成品是否真实存在、格式／位置／名称是否正确”，不为了得到同一结论再落盘一次机械契约。
@@ -26,6 +27,16 @@
 - 平台允许且任务已办时整夹归档，再报告真实最终路径；指定输出目录不允许搬迁时记录“延后归档”及原因，不声称已归档。不创建无必要兼容副本或软链。
 
 ## 最终目录白名单
+
+### 既有脚本执行接口
+
+持续／正式契约任务按以下接口执行，T1-T2 非契约快车道继续一次联合自检，不为此增加全套报告：
+
+1. `delivery_gate.prepare_task(root, subject, work_date, inputs, revision=False)`：inputs 每项提供 `path/role`，明确新版另给 `supersedes`。自动识别 hash 新增与重复；收到修改意见启动修改时给 `revision=True`。返回最终 `task_root/task_card/next_version` 后始终使用该路径；纯查看和重复输入不更新日期。
+2. `delivery_gate.publish_version(task_card, candidates, validator, formed_date=..., t_level=..., reviews=...)`：candidates 每项为 work 中候选的 `path/artifact_id/filename`。下一版本号取 prepare 返回值；正式文件以排他创建写入。validator 是接收实际最终文件清单的回调，在文件已落最终路径后调用本任务原生内容／格式校验，返回 `content/final_validation` 两项证据引用，各含绝对 `path/sha256`。证据 JSON 含 `verdict/must_fix/candidate_sha256/source_ref/checks`。checks 必须是实际执行内容，结构检查不冒充视觉或业务审阅；T4+ reviews 仍按 Review 独立证据要求。
+3. 发布器复用既有 Task Card、Delivery Contract、Finalization Report；成功返回契约与报告路径。报告绑定契约 hash、最终根、版本和材料批次；失败只回退本次未交付尝试的已登记输出，保留原稿和历史正式版。最后运行 `delivery_gate.py --contract <返回路径>`，再按当前实际成品路径给用户小结。
+
+宿主固定输出路径或已有旧任务缺少可验证版本历史时，保留现状并准确报告未完成的归档条件；不搬离上级指定位置、不伪造历史、不删除未知资料。目录约束不降低验收事实门槛。
 
 最终交付目录执行“成品白名单”原则：
 

@@ -4,6 +4,14 @@
 
 ## v1.5.5 — FINAL — 持续任务身份与最终归档闭环
 
+### 2026-09-22 封板终审修订
+
+对已发布的 0ccbc897a1ebdc216bcd1c91e2b5e6df9379fee4 进行真实终审发现：deferred/not_applicable 可跳过最终门；跨日夹具替脚本完成了目录改名和版本拼装；历史 hash 缺少保留基准；未知外部附件不形成持续阻断；内容/最终技术验收及报告仅凭声明。原稿批次还允许追溯性追加，schema 1 同 hash 历史副本迁移后会阻断后续读取。
+
+本轮在既有 delivery_gate / archive_originals / Hook 中修复，正式入口使用 prepare_task → publish_version → check；历史 Finalization Report 保存相对版本记录与材料批次，当前报告绑定最终根和契约；保留完整原件、批次冻结和显式 supersedes。失败发布只回退本次未交付尝试，旧版保持。T1–T7 改为调用实际执行入口，并增加可复现负向回归；原有 Expected/Actual 测试保留为组件测试，不再冒充 FINAL PASS。
+
+未新增独立 Skill、Agent、监控、数据库；Office 是生命周期政策唯一 owner。正式封板以通过候选独立审核、完整回归、Git main/tag 与 Runtime deployment-scope 验收的提交为准，原 0ccbc89 历史保留，不移动已有正式 tag。
+
 ### 定稿结论
 
 本版将真实暴露的两项收口缺陷纳入既有 Office Delivery、原稿归档、Task Card、Delivery Contract 和 Review Gate：**一项工作保持一个稳定 Task ID、一个任务根目录和一条正式版本历史；最终归档同时核任务根和任务内部目录。** 版本不新增独立 Skill、Agent、监控器、数据库或外围系统，仍保持 T1—T10、Evolution Checkpoint、Stable/LAB 权限与其他 AI 系统边界不变。

@@ -247,9 +247,11 @@ class QualityValidationTests(unittest.TestCase):
                 },
             }
 
-            self.assertEqual(delivery_gate.check(contract)["state"], "PASS")
-            contract["artifacts"] = [contract["artifacts"][0]]
+            # Legacy fixture checks Expected/Actual only; deferred archive is never FINAL PASS.
+            self.assertEqual(delivery_gate.check_components(contract)["state"], "PASS")
             self.assertEqual(delivery_gate.check(contract)["state"], "FAIL")
+            contract["artifacts"] = [contract["artifacts"][0]]
+            self.assertEqual(delivery_gate.check_components(contract)["state"], "FAIL")
 
     def test_qv_07_analysis_only_does_not_enter_file_delivery(self):
         case = next(item for item in CASES if item["id"] == "QV-07")

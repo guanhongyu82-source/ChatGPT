@@ -69,6 +69,18 @@
     "correct_behavior": "一项工作沿用同一 Task ID 与 Task Root；新增材料按 hash 和批次归档，正式版本连续保留，根目录和内部目录共同通过 FINAL PASS。",
     "no_regression": "原稿逐字节保护、未知输入不删除、历史正式版本不覆盖、outputs 白名单、Delivery Contract 与必要质量门禁继续有效。",
     "pass_condition": "T1 首次 B01→v1、T2 同日 B02→v2、T3 跨日同 Task ID B03→v3、T4 重复 hash、T5 同名异内容、T6 未知文件阻断均通过。",
-    "test": "test_delivery_rules.py:TaskLifecycleRules six targeted tests"
+    "test": "test_delivery_rules.py:test_t3_cross_day_reopen_keeps_task_id_and_history_and_creates_v3"
+  },
+  {
+    "case_id": "RC-FINAL-ARCHIVE-001",
+    "incident_id": "INC-55555555555555555555555555555556",
+    "failure_type": "false-completion",
+    "cause": "rule_gap",
+    "impact": "high",
+    "trigger": "归档声明可绕过任务根检查；旧测试人工拼装版本和路径，不能证明真实最终化执行链。",
+    "correct_behavior": "正式check与Hook强制已归档任务根、当前版本、最终证据和报告一致；未知输入持续阻断。",
+    "no_regression": "原稿保护、快车道和既有独立审核门槛保持，组件测试不冒充FINAL PASS。",
+    "pass_condition": "真实prepare/publish/check通过T1-T7，临时根、延后归档、未知输入和陈旧报告反例均拒绝。",
+    "test": "test_delivery_rules.py:test_t7_temporary_roots_cannot_finalize"
   }
 ]

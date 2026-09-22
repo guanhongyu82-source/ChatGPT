@@ -101,14 +101,25 @@ class HookTests(unittest.TestCase):
    r=Path(d);state_root=r/'state';state_root.mkdir();p=hook.state_file('test-session-123',state_root);p.write_text('{"mode":"file"}')
    with self.assertRaises(ValueError):hook.handle(self.stop(r),state_root,r)
  def test_registered_real_contract_runs_gate(self):
-  from test_delivery_rules import DeliveryRules
-  case=DeliveryRules('test_host_output_and_honest_deferred_archive_pass');case.setUp()
+  from test_delivery_rules import TaskLifecycleRules
+  case=TaskLifecycleRules('test_t1_initial_task_creates_b01_v1_and_final_pass');case.setUp()
   try:
-   r=case.root;state_root=r/'state';p=r/'contract.json';self.activate(r,state_root)
-   case.c['retention'].setdefault('retained_reason',{}).update({str(p):'gate contract',str(case.evidence):'independent review',str(state_root):'hook test runtime'})
-   p.write_text(json.dumps(case.c));hook.register('test-session-123',p,state_root,r)
-   summary=f'核验完成，交付文件 {case.artifact}，目录状态已核对，耗时1秒'
+   case.prepare(4);case.publish()
+   r=case.base;state_root=r/'state';p=Path(case.result['contract']);self.activate(r,state_root)
+   hook.register('test-session-123',p,state_root,r)
+   summary=f"核验完成，交付文件 {case.result['artifacts'][0]['path']}，目录状态已核对，耗时1秒"
    self.assertEqual(hook.handle(self.stop(r,last_assistant_message=summary),state_root,r),{})
+  finally:case.doCleanups()
+
+ def test_stale_or_wrong_summary_path_is_blocked(self):
+  from test_delivery_rules import TaskLifecycleRules
+  case=TaskLifecycleRules('test_t1_initial_task_creates_b01_v1_and_final_pass');case.setUp()
+  try:
+   case.prepare(1);case.publish()
+   r=case.base;state_root=r/'state';self.activate(r,state_root)
+   hook.register('test-session-123',Path(case.result['contract']),state_root,r)
+   result=hook.handle(self.stop(r,last_assistant_message='FINAL PASS 未完成项：无 核验完成，交付文件 /wrong/nonexistent.pdf，归档完成，耗时1秒'),state_root,r)
+   self.assertEqual(result['decision'],'block')
   finally:case.doCleanups()
  def test_registered_file_summary_requires_artifact_and_folder_status(self):
   from test_delivery_rules import DeliveryRules

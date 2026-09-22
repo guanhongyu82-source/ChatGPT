@@ -33,7 +33,7 @@ Review 核对用户要求与真实结果，不核对执行者是否“看起来�
 
 正式归档的审阅对象包含两层：任务根目录和任务内部目录。任务根必须是 `YYYY-MM-DD_任务主题/`，日期等于最近一次实质性工作日期；`new-chat`、`temp`、`tmp`、`untitled`、`working`、`未命名`、`临时` 及根目录未知项均使 Archive=FAIL。跨日续办和 Delivered 后 Reopen 必须沿用同一 `task_instance_id`、同一根目录和历史正式版本，只原地更新日期、材料批次及下一版本。
 
-每一正式版本都要在既有 `formal_versions` 中登记形成日期、实际文件 hash 和材料批次；`outputs/` 可以保留历史正式版本，但不得保留中间稿、测试稿、预览、临时转换或未声明附件。`delivery_gate.py` 在 `archive_status=done` 时要求 `content`、`deliverables`、`original_inputs`、`work_evidence`、`task_root_archive`、`temporary_residue`、`version_continuity`、`material_traceability`、`final_path`、`final_validation`、`delivery_contract` 十一项 `finalization_gates` 全部为 `PASS`，并重新读取最终路径上的成品、原稿清单和版本 hash。任何一项失败均只能判 Finalization=FAIL，不得用内部目录整理或预填状态替代证据。
+审核按 [Office Delivery](../domain-skills/office-delivery.md) 的十一项最终化条件和脚本接口逐项取证：确认当前 Actual、历史保留报告、材料批次和最终路径一致，内容／技术验收证据真实可读，未知输入已解决。正式 `check()` 或 Hook 失败即 Finalization=FAIL；`check_components()` 只证明局部组件，不证明最终归档。独立审核不得仅抄写执行者的 PASS。
 
 ## 返工与交付
 

@@ -246,8 +246,7 @@ def _parse_manifest(archive_fd: int) -> dict[str, object]:
         record = _validate_record(raw_record, archive_fd)
         identity = (record["source_role"], record["source_name"], record["source_sha256"])
         relative = record["archived_relative_path"]
-        if (identity in identities or relative in paths
-                or (schema_version == 2 and record["source_sha256"] in hashes)):
+        if identity in identities or relative in paths:
             raise ValueError("original manifest contains duplicate records")
         identities.add(identity)
         paths.add(relative)
@@ -255,6 +254,7 @@ def _parse_manifest(archive_fd: int) -> dict[str, object]:
         records.append(record)
 
     if schema_version == 1:
+        records = [dict(record, material_batch_id="B00") for record in records]
         batches = []
         if records:
             batches.append({
@@ -272,6 +272,8 @@ def _parse_manifest(archive_fd: int) -> dict[str, object]:
         raise ValueError("original manifest batches and duplicates must be lists")
     batch_ids: set[str] = set()
     mapped: set[str] = set()
+    batch_for_path = {}
+    legacy_paths = set()
     for batch in batches:
         if not isinstance(batch, dict) or set(batch) != BATCH_KEYS:
             raise ValueError("original manifest batch schema is invalid")
@@ -290,12 +292,33 @@ def _parse_manifest(archive_fd: int) -> dict[str, object]:
         if not isinstance(record_paths, list) or not record_paths:
             raise ValueError("original manifest batch records are invalid")
         for relative in record_paths:
-            if relative not in paths or relative in mapped:
+            if not isinstance(relative, str) or relative not in paths or relative in mapped:
                 raise ValueError("original manifest batch record mapping is invalid")
             mapped.add(relative)
+            batch_for_path[relative] = batch_id
+            if batch_id == "B00" and batch["kind"] == "legacy-existing":
+                legacy_paths.add(relative)
         batch_ids.add(batch_id)
     if mapped != paths:
         raise ValueError("original manifest contains unmapped records")
+    records_by_path = {r["archived_relative_path"]: r for r in records}
+    paths_by_hash = {}
+    earlier_paths = set()
+    for record in records:
+        relative = record["archived_relative_path"]
+        if "material_batch_id" in record and record["material_batch_id"] != batch_for_path[relative]:
+            raise ValueError("original manifest material batch mapping disagrees")
+        paths_by_hash.setdefault(record["source_sha256"], []).append(relative)
+        supersedes = record.get("supersedes")
+        if supersedes is not None:
+            if supersedes not in earlier_paths:
+                raise ValueError("supersedes target must precede revision")
+            if records_by_path[supersedes]["source_sha256"] == record["source_sha256"]:
+                raise ValueError("revision must have different content")
+        earlier_paths.add(relative)
+    for same_hash_paths in paths_by_hash.values():
+        if len(same_hash_paths) > 1 and not set(same_hash_paths).issubset(legacy_paths):
+            raise ValueError("duplicate hashes outside legacy batch")
     for duplicate in duplicates:
         if not isinstance(duplicate, dict) or set(duplicate) != DUPLICATE_KEYS:
             raise ValueError("original manifest duplicate schema is invalid")
@@ -304,9 +327,12 @@ def _parse_manifest(archive_fd: int) -> dict[str, object]:
                 or not isinstance(duplicate["source_name"], str)
                 or not isinstance(duplicate["source_sha256"], str)
                 or not SHA256_RE.fullmatch(duplicate["source_sha256"])
+                or not isinstance(duplicate["existing_archived_relative_path"], str)
                 or duplicate["existing_archived_relative_path"] not in paths
                 or duplicate["status"] != "DUPLICATE_HASH"):
             raise ValueError("original manifest duplicate record is invalid")
+        if duplicate["source_sha256"] != records_by_path[duplicate["existing_archived_relative_path"]]["source_sha256"]:
+            raise ValueError("duplicate hash disagrees with target")
     return {"schema_version": 2, "archive_state": "PASS", "files": records,
             "batches": batches, "duplicates": duplicates}
 
@@ -441,13 +467,19 @@ def archive_originals(
     batch_id: str | None = None,
     batch_date: str | None = None,
     batch_kind: str | None = None,
+    supersedes: dict[str, str] | None = None,
 ) -> dict[str, object]:
     items = [(role, Path(path)) for role, path in sources]
+    supersedes = {} if supersedes is None else supersedes
+    if not isinstance(supersedes, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and v
+            and k in {str(p) for _, p in items} for k, v in supersedes.items()):
+        raise ValueError("supersedes must map supplied source paths to prior archive paths")
     if not items:
         return {"state": "NOT_APPLICABLE", "archived_count": 0}
     for role, _source in items:
         if (not isinstance(role, str) or not ROLE_RE.fullmatch(role)
-                or role in {".", ".."} or role.strip().casefold() in UNKNOWN_ROLES):
+                or not role.strip() or role in {".", ".."} or role.strip().casefold() in UNKNOWN_ROLES):
             raise ValueError("source role is unknown or invalid; archive is blocked")
     if batch_id is not None and (not isinstance(batch_id, str) or not BATCH_ID_RE.fullmatch(batch_id)):
         raise ValueError("batch_id must use B## format")
@@ -493,6 +525,9 @@ def archive_originals(
             record["source_sha256"]: record["archived_relative_path"] for record in records
         }
         occupied = {record["archived_relative_path"] for record in records}
+        frozen_batch_ids = {batch["batch_id"] for batch in batches}
+        if any(value not in occupied for value in supersedes.values()):
+            raise ValueError("supersedes must reference existing archived originals")
         new_record_paths: list[str] = []
         duplicate_count = 0
         active_batch_id = batch_id
@@ -504,6 +539,8 @@ def archive_originals(
             source_fd, source_info, source_sha256 = _open_source(source)
             try:
                 if source_sha256 in existing_hashes:
+                    if str(source) in supersedes:
+                        raise ValueError("explicit revision content is already archived")
                     duplicates.append({
                         "source_role": role,
                         "source_name": source.name,
@@ -515,6 +552,8 @@ def archive_originals(
                     continue
                 if active_batch_id is None:
                     active_batch_id = _next_batch_id(batches)
+                if active_batch_id in frozen_batch_ids or active_batch_id == "B00":
+                    raise ValueError("existing material batches are immutable")
                 if active_batch_date is None:
                     active_batch_date = date.today().isoformat()
                 if active_batch_kind is None:
@@ -545,6 +584,8 @@ def archive_originals(
                         "material_batch_id": active_batch_id,
                     }
                 )
+                if str(source) in supersedes:
+                    records[-1]["supersedes"] = supersedes[str(source)]
                 existing_hashes.add(copied_sha256)
                 archive_by_hash[copied_sha256] = relative
                 occupied.add(relative)
@@ -553,16 +594,10 @@ def archive_originals(
                 os.close(source_fd)
 
         if new_record_paths:
-            existing_batch = next((batch for batch in batches if batch["batch_id"] == active_batch_id), None)
-            if existing_batch is None:
-                batches.append({
-                    "batch_id": active_batch_id,
-                    "batch_date": active_batch_date,
-                    "kind": active_batch_kind,
-                    "record_paths": list(new_record_paths),
-                })
-            else:
-                existing_batch["record_paths"] = list(existing_batch["record_paths"]) + new_record_paths
+            batches.append({
+                "batch_id": active_batch_id, "batch_date": active_batch_date,
+                "kind": active_batch_kind, "record_paths": list(new_record_paths),
+            })
 
         payload = json.dumps(
             {"schema_version": 2, "archive_state": "PASS", "files": records,
@@ -637,7 +672,10 @@ def main() -> int:
     parser.add_argument("--batch-id")
     parser.add_argument("--batch-date")
     parser.add_argument("--batch-kind")
+    parser.add_argument("--supersedes", help="existing archive path for a single explicit revision")
     args = parser.parse_args()
+    if args.supersedes and len(args.source) != 1:
+        parser.error("--supersedes requires exactly one --source")
     try:
         result = archive_originals(
             args.task_dir,
@@ -645,6 +683,7 @@ def main() -> int:
             batch_id=args.batch_id,
             batch_date=args.batch_date,
             batch_kind=args.batch_kind,
+            supersedes={str(args.source[0][1]): args.supersedes} if args.supersedes else None,
         )
     except (OSError, RuntimeError, TypeError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"state": "BLOCKED", "error_type": type(exc).__name__}), file=sys.stderr)
