@@ -41,7 +41,7 @@ skills/sol-cabinet/platform-adapter/codex-agents/sol-*.toml
 ## Chat / Work / Codex 分工
 
 - **Chat**：讨论、审阅、方案、定稿、GitHub 正式维护和版本决策；不因看见本机历史路径就把它当比 GitHub 更新的权威源。
-- **Work**：中文办公生产、文件处理、多文件综合和实际成品交付；必须遵守原稿、目录、Review 与完工小结规则。
+- **Work**：中文办公生产、文件处理、多文件综合和实际成品交付；必须遵守原稿、目录、Review 与完工小结规则。正式任务先走四档启动卡并等用户确认；若 Work 宿主不提供可验证的预算拦截，只按指令停止，不声称自动强制。
 - **Codex**：本机部署、运行核验、受管 Agent 同步、确需本机文件权限的机械维护；不得重新设计已经在 Chat 定稿的内容。
 
 宿主能力变化时按实际可用工具降级或转交，不伪称调用了不存在的 Work、Agent、Hook、连接器或本机权限。
@@ -69,18 +69,22 @@ T0 命中真实人名加具体案件或 `secret-bearing` 时，除禁止联网�
 
 Hook 的唯一适配规则由本文件定义，`scripts/codex_delivery_hook.py` 只机械实现。Hook 只有在宿主实际加载并信任时才有阻断效力；脚本状态和合成测试不能证明宿主已经启用 Hook。
 
-短期状态只保存在 `/Users/macbook/ChatGPT/system/codex-home/sol-cabinet-runtime/`，使用 schema v2；只记录不透明 session/turn ID、开工模型、生命周期、交付模式、契约路径与哈希、失败次数和时间戳，不记录用户 prompt、附件正文或业务内容。状态不是长期记忆、GitHub 状态、发布证据或 Runtime 部署凭证。
+短期状态只保存在 /Users/macbook/ChatGPT/system/codex-home/sol-cabinet-runtime/，使用 schema v3；只记录不透明 session/turn ID、开工模型、Intake 档级与预算、计时状态、交付模式、契约路径与哈希、失败次数和时间戳，不记录用户 prompt、附件正文或业务内容。状态不是长期记忆、GitHub 状态、发布证据或 Runtime 部署凭证。
 
-生命周期只有四个 phase：
+交付门禁 phase 只有四个：
 
-1. `AWAITING_DECLARATION`：显式 Sol Cabinet 触发后建立；尚未声明 file 或 analysis。
+1. AWAITING_DECLARATION：显式 Sol 调用或识别出的办公任务触发后建立；等待 Intake 卡片显示和用户确认。
 2. `READY`：本轮已通过 `--register` 锁定文件契约，或通过 `--analysis-only` 声明无文件分析。
 3. `RETRY_REQUIRED`：首次 Stop 检查失败；只允许一次定向返工，失败次数保持为 1。重新登记契约只能更新本轮契约锁，**不得重置返工预算**。
 4. `TERMINAL_PARTIAL`：第二次失败或宿主已处于 stop-hook 重入时进入；停止自动重试，不得靠再次 Stop、重新登记或普通后续消息复活。
 
+Intake 生命周期与交付生命周期分离：AWAITING_CARD／AWAITING_CONFIRMATION 阶段拒绝受支持的本地工具；明确确认后进入 EXECUTING 并开始墙钟预算；预算到期转为 BUDGET_EXHAUSTED，拒绝后续本地工具；T4 阶段交付后转为 AWAITING_NEXT_STAGE，新阶段须重出卡并确认。取消或正常完成后删除状态；预算熔断报告保留状态，直到用户取消、重新授权或开始无关新任务。
+
+PreToolUse Hook 只有经过宿主审查并信任后才会阻断；它能拒绝下一次受支持的本地工具调用，但不能中断已运行工具、覆盖托管网页工具或代替 Work 宿主能力。未受信任、未加载、受支持覆盖之外或运行中工具耗时超过预算时，不得声称具备机械硬中断。
+
 `mode=undecided|file|analysis` 与 phase 正交：`AWAITING_DECLARATION` 必须是 undecided，`READY` 必须已经声明 file/analysis。`--register` 和 `--analysis-only` 都必须绑定当前已经存在的显式激活，不能凭 session_id 独立创建任务状态。**同一 activation 内 mode 一经从 undecided 声明为 file 或 analysis 即锁定，禁止 file↔analysis 互换；需要改变交付模式必须再次显式触发 Sol Cabinet，建立新 activation。** 文件契约内容变化后旧 `contract_sha256` 失效，必须重新登记；analysis 模式若回复声称交付文件则 FAIL。
 
-通过 Stop 检查后立即删除本任务短期状态。`TERMINAL_PARTIAL` 后出现普通、未触发 Sol Cabinet 的下一条用户消息时，只清除旧终态并保持 Hook 未激活，避免上一任务污染下一任务；如用户确需重新进入 Hook 治理，必须再次显式触发 Sol Cabinet，建立全新的 `AWAITING_DECLARATION` 和返工预算。无状态 Stop 永远不猜测任务归属、不补造状态。
+T1-T3 通过 Stop 后删除本任务短期状态；T4 阶段完成转为 AWAITING_NEXT_STAGE，预算熔断转为 BUDGET_EXHAUSTED 并保留，直到用户取消、重新授权或开始无关新任务。新阶段必须重出卡、重新确认；普通无关提示清除旧终态，不把旧预算带入新任务。
 
 ## 历史能力与安装记录
 
@@ -128,11 +132,11 @@ Work 负责办公生产；Chat 负责正式维护决策与 GitHub 版本；Codex
 ## v1.5.x 执行约定
 
 - 主体继承用户当前模型，子代理也继承；不因速度/额度自行覆写 model 或 effort。模型切换须从当前宿主真实设置核实；没有操作者证据时保持来源待核实。
-- 非瞬时任务开工先给简短小结：T级、目标、预期交付物、目标文件夹／位置、关键约束和停止条件。**不要求也不编造未来耗时承诺。**
+- Sol Cabinet 的任何正式任务都先给 T1-T4 启动卡；用户未选 A 不开工。预计耗时与硬预算来自 task-intake 四档表。
 - 文件任务优先遵守用户指定工作目录；未指定时使用最小分区：`00_原稿/`、`work/`、`outputs/`。`outputs/` 或用户指定最终目录只放正式成品和明确附件；审核证据、日志、缓存、测试件、候选和临时转换件留在 `work/` 或受控过程目录。
 - 文件任务跨日、补充材料或 Delivered 后继续办理时沿用 Task Card 的稳定 `task_instance_id` 和同一 Task Root；原稿清单登记材料批次，正式版本只递增不覆盖，最终归档先核任务根再核内部目录。具体门禁由 Office Delivery 与 `scripts/delivery_gate.py` 执行。
 - 文件任务在收尾前必须核预期成品清单与实际文件、枚举最终目录、确认原稿未覆盖并给完工小结。没有真实成品、目录不干净或缺完工小结时不得 PASS。
-- 本机 hooks.json 只登记受任务范围约束的事件，调用正式部署版本的 `scripts/codex_delivery_hook.py`。钩子仅按上方 Hook 状态治理保存短期状态，不记录用户正文，不联网、不换型。只有经过宿主原生信任后才实际执行；未信任、宿主未加载或非本机环境，不称已自动强制。
-- 文件任务在本轮显式激活后注册 delivery-contract；无文件分析在本轮显式激活后声明 analysis-only。首次失败只允许一次定向返工，重新登记不重置预算；再次失败进入 `TERMINAL_PARTIAL` 并停止自动重试，不以循环耗额度换“通过”。该检查验证真实文件和记录一致性，不认证模型说法或替代内容审查。
+- 本机 hooks.json 对 Sol 显式调用和识别出的办公任务加载 UserPromptSubmit，并配置 Stop 收口与同步 PreToolUse 预算拦截；均调用正式部署版本的 scripts/codex_delivery_hook.py。Hook 只保存短期状态，不记录用户正文，不联网、不换型。PreToolUse 新定义须在宿主原生审查并信任；未信任、宿主未加载、单次工具仍在运行或工具路径不受覆盖时，不称已自动强制。
+- 文件任务在用户确认启动卡后注册 delivery-contract；无文件分析在确认后声明 analysis-only。首次失败只允许一次定向返工，重新登记不重置预算；再次失败进入 TERMINAL_PARTIAL 并停止自动重试，不以循环耗额度换“通过”。预算 Hook 到期后先拒绝下一次受支持的本地工具调用；该检查验证真实文件和记录一致性，不认证模型说法或替代内容审查。
 - Work读不到本机运行态时，按同一Skill主动完成收尾核验并保留脱敏待办；不得声称已经运行本机钩子。
 - 正式 GitHub 版本或用户明确授权的 LAB 候选需要进入 Mac 运行环境时，按 [Deployment Contract](deployment-contract.md) 执行：锁定 channel/source ref/commit 与源摘要 → 比 Runtime 漂移 → 备份 → 单向部署 → Agent 同步 → 写带 channel/source ref 的外部部署状态凭证 → `check_installation.py --expected-commit --expected-channel` 核验到 SYNCED → 报告。任何一步失败不得声称本机已更新；LAB 不自动晋升 Stable。

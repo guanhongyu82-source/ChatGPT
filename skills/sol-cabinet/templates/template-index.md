@@ -2,9 +2,9 @@
 
 | 模板 | 用途 | 何时使用 |
 |---|---|---|
-| [TASK_CARD](task-card.json) | T0 目标、授权、风险、路由 | 每个任务内部；T1-T2 可不落盘 |
+| [TASK_CARD](task-card.json) | 确认后的目标、授权、风险与交付路由 | 仅在需要结构化交接或持久化门禁时落盘；启动卡不落文件 |
 | [Task Profile](task-profile.json) | 确定性 T 级脚本的匿名输入 | 临界或 T4+ 复核 |
-| [Opening Summary](opening-summary.md) | T级、目标、预期交付、目标位置、约束和停止条件的简短开工提示 | 非瞬时任务；只在对话中简洁呈现 |
+| [Opening Summary](opening-summary.md) | 确认后的目标、预期交付、位置、约束和停止条件 | 非轻量任务；启动卡优先，确认后按需呈现 |
 | [Agent Result](agent-result.json) | 子 Agent 统一返回 | 启用多 Agent 时 |
 | [Review Gate](review-gate.json) | 独立验收和返工 | T4+ |
 | [Evolution Entry](evolution-entry.json) | **LEGACY / READ ONLY**：早期短期 intake schema | 仅解释或核查历史记录；新事故不得使用 |

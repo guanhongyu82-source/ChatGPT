@@ -1,0 +1,96 @@
+[
+  {
+    "id": "case1_scanned_pdf_to_editable_and_tracked",
+    "description": "单份扫描 PDF 转 Word、审稿并交付原版和修订版",
+    "profile": {
+      "file_count": 1,
+      "input_size_kb": 80,
+      "deliverable_count": 3,
+      "steps": 6,
+      "complexity": 2,
+      "office_artifact": true,
+      "multiple_deliverables": true
+    },
+    "expected": {
+      "tier": 1,
+      "estimate_minutes": [
+        5,
+        10
+      ],
+      "budget_minutes": 12,
+      "budget_scope": "whole-task",
+      "route": "lead-only-no-research-no-agents"
+    }
+  },
+  {
+    "id": "case2_1500_word_notice",
+    "description": "修改 1500 字通知，使表达更正式",
+    "profile": {
+      "file_count": 1,
+      "input_size_kb": 20,
+      "deliverable_count": 1,
+      "steps": 4,
+      "complexity": 1,
+      "office_artifact": true
+    },
+    "expected": {
+      "tier": 1,
+      "estimate_minutes": [
+        5,
+        10
+      ],
+      "budget_minutes": 12,
+      "budget_scope": "whole-task",
+      "route": "lead-only-no-research-no-agents"
+    }
+  },
+  {
+    "id": "case3_eight_source_report",
+    "description": "根据 8 份材料形成 5000 字报告并核对主要数据",
+    "profile": {
+      "file_count": 8,
+      "input_size_kb": 240,
+      "deliverable_count": 1,
+      "steps": 10,
+      "complexity": 3,
+      "multi_source": true,
+      "fact_risk": true,
+      "office_artifact": true,
+      "formal_publish": true
+    },
+    "expected": {
+      "tier": 3,
+      "estimate_minutes": [
+        25,
+        60
+      ],
+      "budget_minutes": 75,
+      "budget_scope": "whole-task",
+      "route": "phased-cross-check"
+    }
+  },
+  {
+    "id": "case4_eighty_file_batch",
+    "description": "统一整理修改 80 份文件并生成目录、问题清单和最终版",
+    "profile": {
+      "file_count": 80,
+      "input_size_kb": 1800,
+      "deliverable_count": 3,
+      "steps": 18,
+      "complexity": 3,
+      "multiple_deliverables": true,
+      "office_artifact": true,
+      "multi_stage": true
+    },
+    "expected": {
+      "tier": 4,
+      "estimate_minutes": [
+        61,
+        null
+      ],
+      "budget_minutes": 60,
+      "budget_scope": "per-stage",
+      "route": "staged-milestones-stop-between-stages"
+    }
+  }
+]

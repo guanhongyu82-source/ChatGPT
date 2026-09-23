@@ -51,6 +51,21 @@ def make_evidence(directory, proposal):
 
 
 class RouterTests(unittest.TestCase):
+    def test_four_tier_task_intake_cases(self):
+        cases = json.loads((ROOT / "tests/task-intake-cases.json").read_text(encoding="utf-8"))
+        for case in cases:
+            with self.subTest(case=case["id"]):
+                result = classifier.classify_intake(case["profile"])
+                for key, expected in case["expected"].items():
+                    self.assertEqual(result[key], expected)
+                self.assertTrue(result["requires_explicit_start_confirmation"])
+                if case["id"] == "case1_scanned_pdf_to_editable_and_tracked":
+                    integrated = classifier.classify(case["profile"])
+                    self.assertEqual(integrated["task_intake"]["tier"], 1)
+                    self.assertFalse(integrated["review"]["required"])
+                    self.assertEqual(integrated["agents"]["additional_execution_agents"], 0)
+                    self.assertEqual(integrated["agents"]["planned"], 1)
+
     def test_all_router_cases(self):
         cases = json.loads((ROOT / "tests/router-cases.json").read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(cases), 20)

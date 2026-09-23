@@ -39,5 +39,9 @@
   "A02": {
     "status": "PASS",
     "evidence": "TaskLifecycleRules verified one Task Root across same-day and cross-day reopen, B01-B03 material batches, v1-v3 continuity, duplicate hash recording, same-name different-content retention, unknown-input fail-closed behavior, and final root/archive gates"
+  },
+  "T01": {
+    "status": "PASS",
+    "evidence": "Four-tier intake cases verify T1 scanned-PDF and wording work, T3 eight-source synthesis, T4 batch work, explicit confirmation, lead-only T1 routing, time-budget denial, fuse reporting, and per-stage T4 reauthorization."
   }
 }

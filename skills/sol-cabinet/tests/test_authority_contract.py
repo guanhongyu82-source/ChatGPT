@@ -21,11 +21,12 @@ class AuthorityContract(unittest.TestCase):
                 relative,
             )
 
-    def test_router_does_not_own_future_timing_policy(self):
+    def test_router_owns_task_intake_and_budget_policy(self):
         router = self.read('t0-executive-router/router.md')
-        self.assertNotIn('预计耗时', router)
-        self.assertIn('不另定义开工字段或耗时规则', router)
-        self.assertIn('../SKILL.md', router)
+        self.assertIn('## 任务启动门', router)
+        self.assertIn('预计耗时', router)
+        self.assertIn('执行预算上限', router)
+        self.assertIn('用户重新授权', router)
 
     def test_architecture_declares_required_canonical_owners(self):
         architecture = self.read('core/system-architecture.md')
@@ -36,7 +37,7 @@ class AuthorityContract(unittest.TestCase):
             'VERSION': '当前版本身份',
             'core/core.md': '长期不变量',
             't0-executive-router/router.md': 'T0',
-            'task-classification/t1-t10.md': 'T1-T10',
+            'task-classification/t1-t10.md': '旧 T1-T10',
             'domain-skills/office-delivery.md': '文件',
             'review-system/review-system.md': '独立审核',
             'agent-orchestrator/orchestration.md': 'Agent',

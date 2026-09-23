@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic helper for Sol Cabinet T1-T10 classification.
+"""Deterministic helper for four-tier task intake and legacy T1-T10 review gates.
 
 The model still owns semantic judgment. This script makes borderline and
 T4+ routing decisions reproducible from an anonymized task profile.
@@ -189,6 +189,61 @@ def _resource_plan(profile: dict[str, Any], reviewers: int) -> dict[str, Any]:
     }
 
 
+
+
+def classify_intake(profile: dict[str, Any]) -> dict[str, Any]:
+    """Assign one user-facing T1-T4 start tier and its wall-clock budget."""
+    files = _as_int(profile, "file_count")
+    outputs = _as_int(profile, "deliverable_count", 1)
+    steps = _as_int(profile, "steps", 1)
+    complexity = _as_int(profile, "complexity")
+    if complexity > 3:
+        raise ValueError("complexity must be in 0..3")
+
+    high_scope = (
+        files >= 20 or outputs >= 8 or steps >= 15
+        or _flag(profile, "system_build") or _flag(profile, "long_running")
+    )
+    research_or_crosscheck = (
+        _flag(profile, "multi_source")
+        or (_flag(profile, "needs_research") and (_flag(profile, "current_fact") or _flag(profile, "fact_risk")))
+        or (files >= 5 and _flag(profile, "fact_risk"))
+    )
+    elevated_risk = any(_flag(profile, key) for key in (
+        "sensitive", "secret_bearing", "high_risk", "regulated", "external_action", "destructive_action"
+    ))
+    quick_single_input = (
+        files <= 1 and outputs <= 3 and steps <= 6
+        and complexity <= 2 and not research_or_crosscheck and not elevated_risk
+        and not any(_flag(profile, key) for key in (
+            "needs_research", "current_fact", "fact_risk", "needs_review", "formal_publish",
+            "formal_normative_additions", "multi_stage", "long_running", "system_build",
+            "security_task", "repository_task"
+        ))
+    )
+    if high_scope:
+        tier = 4
+    elif quick_single_input:
+        tier = 1
+    elif files >= 5 or research_or_crosscheck or elevated_risk or steps >= 8 or complexity >= 3 or _flag(profile, "multi_stage"):
+        tier = 3
+    else:
+        tier = 2
+
+    estimate = {1: (5, 10), 2: (10, 25), 3: (25, 60), 4: (61, None)}[tier]
+    budget = {1: 12, 2: 30, 3: 75, 4: 60}[tier]
+    return {
+        "tier": tier,
+        "estimate_minutes": list(estimate),
+        "budget_minutes": budget,
+        "budget_scope": "per-stage" if tier == 4 else "whole-task",
+        "requires_explicit_start_confirmation": True,
+        "route": "lead-only-no-research-no-agents" if tier == 1 else
+                 "lead-led-limited-checks" if tier == 2 else
+                 "phased-cross-check" if tier == 3 else "staged-milestones-stop-between-stages",
+    }
+
+
 def classify(profile: dict[str, Any]) -> dict[str, Any]:
     unknown = set(profile) - PROFILE_FIELDS
     if unknown:
@@ -300,7 +355,13 @@ def classify(profile: dict[str, Any]) -> dict[str, Any]:
         if _flag(profile, key)
     ]
 
-    if level <= 3 and not _flag(profile, "needs_review"):
+    task_intake = classify_intake(profile)
+    if task_intake["tier"] == 1:
+        # T1 uses one lead-only pass; explicit independent review and safety signals
+        # already prevent T1 classification above.
+        reviewers = 0
+        rounds = 0
+    elif level <= 3 and not _flag(profile, "needs_review"):
         reviewers = 0
         rounds = 0
     elif level <= 6:
@@ -313,6 +374,12 @@ def classify(profile: dict[str, Any]) -> dict[str, Any]:
         reviewers = 2
         rounds = 2
     agents = _resource_plan(profile, reviewers)
+    if task_intake["tier"] == 1:
+        agents["additional_execution_agents"] = 0
+        agents["planned"] = 1
+        agents["minimum"] = 1
+        agents["parallel_benefit"] = "nonpositive"
+        agents["planning_basis"] = "intake-t1-lead-only"
     role_tasks = ["final_lead"]
     if reviewers:
         role_tasks.append("final_verifier")
@@ -362,6 +429,7 @@ def classify(profile: dict[str, Any]) -> dict[str, Any]:
         }
 
     return {
+        "task_intake": task_intake,
         "t_level": level,
         "score": score,
         "score_axes": axes,
@@ -385,7 +453,7 @@ def classify(profile: dict[str, Any]) -> dict[str, Any]:
             "classifier_does_not_verify_completion": True,
         },
         "review": {
-            "required": level >= 4 or _flag(profile, "needs_review"),
+            "required": reviewers > 0 or _flag(profile, "needs_review"),
             "minimum_independent_reviewers": reviewers,
             "minimum_rounds": rounds,
         },

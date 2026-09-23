@@ -25,8 +25,8 @@ sol-cabinet/
 | 用户架构名称 | 实际目录 | 唯一职责 |
 |---|---|---|
 | Core | `core/` | 长期不变量、权限、保密、资产保护 |
-| T0 Executive Router | `t0-executive-router/` | 目标、风险、路径、等级和路由 |
-| Task Classification | `task-classification/` | T1-T10 与核验需求；资源按独立工作和收益决策 |
+| T0 Executive Router | t0-executive-router/ | 目标、风险、路径、T1-T4 启动预算、用户确认与路由 |
+| Task Classification | task-classification/ | 旧 T1-T10 审核／安全门；不定义用户启动等级、预算或固定 Agent 套餐 |
 | Domain Skills | `domain-skills/` | Office、写作、研究、数据、仓库与安全增量规则 |
 | Agent Orchestrator | `agent-orchestrator/` | 角色、依赖图、并发、冲突裁决和持久运行 |
 | Review System | `review-system/` | 独立取证、门禁、返工和 verdict |
@@ -45,8 +45,8 @@ sol-cabinet/
 | 当前版本身份 | `VERSION` | 唯一当前版本号；README、SKILL、架构正文不得复制“当前版本=x.y.z” |
 | 长期不变量、阶段授权、保密、资产保护 | `core/core.md` | 其他模块只能增加本域具体规则，不得弱化 Core |
 | 上层任务编排与平台原子能力边界 | `core/core.md` | Cabinet 是唯一上层编排者；平台官方文件能力只作底层原子执行，不成为第二规划／审核 owner |
-| T0 目标理解与路由 | `t0-executive-router/router.md` | 负责路由，不定义 T 等级表、Office 交付细则或 Review verdict |
-| T1-T10 分级与核验强度 | `task-classification/t1-t10.md` | 不定义固定 Agent 套餐或具体文件交付政策 |
+| T0 任务理解、Intake 与路由 | t0-executive-router/router.md | 唯一负责 T1-T4 启动分级、预估、预算和确认门；不定义 Office 细则或 Review verdict |
+| 旧 T1-T10 审核与核验强度 | task-classification/t1-t10.md | 仅作内部审核／安全门；不定义用户启动等级或预算 |
 | 文件、原稿、目录、预期成品与 Actual 对账政策 | `domain-skills/office-delivery.md` | `templates/task-card.json` 承载 Expected 数据；`scripts/delivery_gate.py` 只机械执行其可判定子集 |
 | 独立审核、证据、返工与 PASS/FAIL/BLOCKED verdict | `review-system/review-system.md` | 可审 Office 规则是否满足，但不另写第二套 Office 政策 |
 | Agent 编排、依赖与并发 | `agent-orchestrator/orchestration.md` | 不改变 T 分级、质量 Gate 或用户授权边界 |

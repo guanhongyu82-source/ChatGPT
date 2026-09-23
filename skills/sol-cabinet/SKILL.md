@@ -1,13 +1,13 @@
 ---
 name: sol-cabinet
-description: "Route Chinese office work through one lightweight coordinator: understand the task, protect sources, prepare evidence, use bounded agents when beneficial, and verify the real deliverable. Use when the user says Sol Cabinet, 使用 Sol Cabinet, 交给 Sol Cabinet, SC处理, or for formal, multi-file, fact-sensitive, high-risk or staged office work. Keep T1-T2 edits direct; use for repository work only when explicitly requested or for system-level work."
+description: "Route Chinese office work through one lightweight coordinator: understand the task, protect sources, prepare evidence, use bounded agents when beneficial, and verify the real deliverable. Use when the user says Sol Cabinet, 使用 Sol Cabinet, 交给 Sol Cabinet, SC处理, or for formal, multi-file, fact-sensitive, high-risk or staged office work. Keep T1 work direct after explicit start confirmation; use for repository work only when explicitly requested or for system-level work."
 metadata:
   short-description: 中文办公唯一中枢，范围收敛、证据复用、动态协作与真实验收
 ---
 
 # Sol Cabinet
 
-Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、调度、裁决并交付。当前版本只读取 [`VERSION`](VERSION)，架构与规则唯一职责见 [System Architecture](core/system-architecture.md)；本入口提供执行摘要，不另立同类规则的第二权威。1.5.x 维护线保持主结构与 T1-T10 不变。
+Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、调度、裁决并交付。当前版本只读取 [`VERSION`](VERSION)，架构与规则唯一职责见 [System Architecture](core/system-architecture.md)；本入口提供执行摘要，不另立同类规则的第二权威。启动与预算只使用 T1-T4 四档；现有 T1-T10 分类只用于独立审核、安全和质量门槛，不向用户展示，也不能扩大已确认预算。
 
 ## 第一原则
 
@@ -28,16 +28,20 @@ Sol Cabinet 是唯一中文办公中枢。用户给目标；主 Agent 理解、�
 
 ## 最短有效路径
 
+### 任务启动门
+
+T0 Router 是唯一启动分级与预算规则源。Sol Cabinet 每项正式任务先按 [T0 任务启动门](t0-executive-router/router.md#任务启动门) 快速分级、展示启动卡并等待用户明确确认；未确认不读材料正文或开始执行。本节只作入口提示，不重复启动字段、分档表或熔断规则。
+
 ### 开工与交付提示
 
-先锁定有限交付契约：本次目标、预期成品、目标位置、关键约束和停止条件。**满足 T1-T2 快车道的确定性单文件任务只在会话内锁定这些信息，直接执行；不为形式落 Task Card、Delivery Contract、Review Gate 或单独规划消息。** 非轻量文件任务，或宿主已启用并强制要求持久化契约／Hook 时，再在受控过程目录保存 `delivery-contract.json`，按 `scripts/delivery_gate.py --contract 路径` 核验；脚本只检查声明与实际文件，只有已被宿主信任并执行的钩子才能要求返工。已启用 Codex 钩子时按其真实要求登记；未启用时不为模拟 Hook 增加落盘步骤。
+先锁定有限交付契约：本次目标、预期成品、目标位置、关键约束和停止条件。**满足 T1 快车道时只在会话内锁定交付信息，不落 Task Card、Delivery Contract 或 Review Gate。** 非轻量文件任务，或宿主已启用并强制要求持久化契约／Hook 时，再在受控过程目录保存 `delivery-contract.json`，按 `scripts/delivery_gate.py --contract 路径` 核验；脚本只检查声明与实际文件，只有已被宿主信任并执行的钩子才能要求返工。已启用 Codex 钩子时按其真实要求登记；未启用时不为模拟 Hook 增加落盘步骤。
 
-- **非轻量任务**开工给一段简短小结，至少包含初判 T 级、当前目标、预期交付物、目标位置、关键约束和停止条件。**快车道任务内部定级后直接进入原稿保护和执行，不单独发送“计划阶段”消息；必要信息可并入首个执行更新。**
-- 不编造未来耗时承诺。若当前宿主能取得可靠任务起点，可记录实际计时口径；无法取得可靠起止时间时，结尾明确“无法精确核实总耗时”，不得伪造精确秒数。
-- 用户纠偏、补救与继续同一任务沿用原任务，不把每条消息当新任务；范围实质变化时更新交付契约和必要说明，不偷偷扩展。
+- **非轻量任务**开工给一段简短小结，至少包含启动级别 T1-T4、当前目标、预期交付物、目标位置、关键约束和停止条件。**用户确认前只返回启动卡；确认后的快任务不再多加一轮规划消息。**
+- 启动卡按范围给预计耗时与预算上限；预计时间不是完成保证。只报告可核实的实际耗时，无法取得可靠起止时间时明确“无法精确核实总耗时”。
+- 在任务仍执行时，用户纠偏沿用原任务根和原预算；范围或质量要求实质变化，先停下更新启动卡并等待新确认。交付后 Reopen 作为新阶段重新出卡；预算到期不得由重登记契约或 Hook 重入重置。
 
-1. **T0**：内部锁定物件、动作、约束、依据、交付位置、当前阶段和停止条件。有源文件先归档；文件任务同时识别既有 Task Identity，沿用同一 Task Root，跨日或 Reopen 不另建任务夹。
-2. **快车道直接完成**：一句、一段、已知字段的局部修改，或“单输入→单输出、目标格式明确、无新增事实／正文改写／复杂模板迁移／批量耦合／高风险”的确定性文件转换与局部排版，通常 T1-T2；快速识别后直接执行，不因文件后缀、交付格式或展示规划而升级流程。
+1. **T0**：内部锁定物件、动作、约束、依据、交付位置、当前阶段和停止条件。用户确认后，有源文件先归档；文件任务同时识别既有 Task Identity，沿用同一 Task Root，跨日或 Reopen 不另建任务夹。
+2. **确认后快车道执行**：一句、一段、已知字段的局部修改，或单一输入、目标明确、无外部研究和多源事实核验的确定性文件任务通常为 T1；用户确认后直接执行，不因文件后缀或交付格式抬级。
 3. **非轻量任务**：读 [Core](core/core.md)、[Router](t0-executive-router/router.md)、[分类](task-classification/t1-t10.md)，只加载命中的[领域规则](domain-skills/routing-map.md)。
 4. **材料与执行**：按 [中文写作](domain-skills/formal-writing.md) 复用材料角色、定位和画像；依赖已满足才起草。文件读写、转换、渲染、格式处理与技术校验按 [Domain Router](domain-skills/routing-map.md) 调用平台原生原子能力，一项操作只保留一个主执行器。多 Agent 按 [编排](agent-orchestrator/orchestration.md) 执行，主代理唯一总控，角色不另组办公团队。
 5. **验收一次化**：快车道由主代理做一轮联合自检／抽检，将内容忠实、版式、可打开性、目标位置和目录状态合并核验；平台已完成且可复用的技术校验不重复跑。只有发现系统性问题、高风险或用户明确要求时才扩大范围。非轻量任务按 [Review](review-system/review-system.md) 执行必要独立审核。
