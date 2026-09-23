@@ -1,0 +1,34 @@
+{
+  "schema_version": 2,
+  "archive_state": "PASS",
+  "files": [
+    {
+      "source_role": "primary|template|reference|attachment",
+      "source_name": "",
+      "archived_relative_path": "00_原稿/原稿_角色_原文件名.ext",
+      "size_bytes": 0,
+      "source_sha256": "64-hex",
+      "archived_sha256": "64-hex",
+      "byte_identical": true,
+      "source_unmodified": true,
+      "status": "UNMODIFIED_BYTE_COPY"
+    }
+  ],
+  "batches": [
+    {
+      "batch_id": "B01",
+      "batch_date": "YYYY-MM-DD",
+      "kind": "initial|supplement|legacy-existing",
+      "record_paths": ["00_原稿/原稿_角色_原文件名.ext"]
+    }
+  ],
+  "duplicates": [
+    {
+      "source_role": "reference",
+      "source_name": "原文件名.ext",
+      "source_sha256": "64-hex",
+      "existing_archived_relative_path": "00_原稿/原稿_角色_原文件名.ext",
+      "status": "DUPLICATE_HASH"
+    }
+  ]
+}

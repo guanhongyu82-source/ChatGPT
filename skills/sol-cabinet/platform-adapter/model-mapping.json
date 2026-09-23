@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-13",
+  "strategy": "inherit-current-session",
+  "roles": {
+    "orchestrator": {
+      "surface": "Work",
+      "model": "inherit",
+      "effort": "inherit"
+    },
+    "primary-executor": {
+      "surface": "Work",
+      "model": "inherit",
+      "effort": "inherit"
+    },
+    "quality-reviewer": {
+      "surface": "available-independent-agent",
+      "model": "inherit",
+      "effort": "inherit"
+    },
+    "parallel-worker": {
+      "surface": "available-bounded-agent",
+      "model": "inherit",
+      "effort": "inherit"
+    },
+    "mechanical-worker": {
+      "surface": "local-script",
+      "model": null,
+      "effort": null
+    },
+    "maintenance-engineer": {
+      "surface": "Codex",
+      "model": "inherit",
+      "effort": "inherit"
+    }
+  },
+  "fallback": "无法独立调用时明确限制；不可用能力不得假装运行，必要审核缺失则不晋升。",
+  "core_strategy_changes": "approve",
+  "historical_snapshot": "runtime-snapshot.json 是历史记录，不是当前映射。",
+  "model_change_policy": "inherit-user-selection; no autonomous model/effort override; report observed host changes without attributing cause"
+}

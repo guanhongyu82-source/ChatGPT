@@ -1,0 +1,8 @@
+{
+  "evidence_id": "EV-f8f0d36d72b940b29e1cd7117d4feb8f",
+  "task_instance_id": "task-01a09650e47675c3a37ab7f77dbe34ec",
+  "failure_type": "task_underclassification",
+  "artifact_sha256": "da332038147f8b5d9f5c493dcf01a869aa10a9c06057c855064244f422b527ea",
+  "source": "executor-capture",
+  "sanitized": true
+}

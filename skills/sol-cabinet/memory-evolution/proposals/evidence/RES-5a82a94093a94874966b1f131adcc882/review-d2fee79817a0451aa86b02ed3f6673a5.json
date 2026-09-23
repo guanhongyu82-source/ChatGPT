@@ -1,0 +1,19 @@
+{
+  "record_id": "review-d2fee79817a0451aa86b02ed3f6673a5",
+  "kind": "review",
+  "candidate_sha256": "f28a75409a340d89c58930280fc95a52e91d9a1f03e4c8306843ebf2312e2472",
+  "verdict": "PASS",
+  "error_type": null,
+  "source": "executor-capture",
+  "artifact_path": "review-d2fee79817a0451aa86b02ed3f6673a5.log",
+  "artifact_sha256": "8132ba41d83c6e0e7ceedd2c9f9415e5ff4dc170e3dc00a6e1c74f0c528e8979",
+  "reviewer_id": "/root/verify_candidate",
+  "author_id": "/root",
+  "independent": true,
+  "must_fix": [],
+  "source_ref": {
+    "session_id": "01a0963d-491e-76a2-9d6d-db387a2da5c7",
+    "line": 977,
+    "message_id": "amsg_01a09840-d283-7550-81c2-13966156e9b4"
+  }
+}

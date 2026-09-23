@@ -1,0 +1,913 @@
+{
+  "schema_version": "1.0",
+  "cabinet_version": "1.5.5-lab.4",
+  "layer": "RUNTIME_LIGHT",
+  "source_fingerprint": {
+    "pages": 373,
+    "page_size_pt": [
+      960,
+      540
+    ],
+    "sha256": "8b591dc7e00ba9da61eeb0f6191f6f1a29b44ecb97f801d5975b526b1f808bcd"
+  },
+  "default_profile": "executive_dense",
+  "profile": {
+    "name": "正式领导汇报-中高密度",
+    "preferences": [
+      "结论优先",
+      "版面丰满",
+      "避免大面积装饰性留白",
+      "2-4个主要信息区",
+      "信息分层而非缩字塞满",
+      "数据和事实优先于装饰",
+      "蓝金灰有限色阶"
+    ],
+    "soft_split_triggers": [
+      "一页同时承担两个以上不同认知任务",
+      "多个长段落导致层级消失",
+      "两张以上复杂图表又叠加大量文字",
+      "只有降低到新一档不可读字号才能容纳",
+      "来源/限制说明被挤压到不可读"
+    ]
+  },
+  "decision_fields": [
+    "page_intent",
+    "information_relation",
+    "content_units",
+    "data_ratio",
+    "image_ratio",
+    "density_target",
+    "executive_takeaway",
+    "evidence_strength"
+  ],
+  "intent_map": {
+    "orient": [
+      "L01",
+      "L02",
+      "L03"
+    ],
+    "summarize": [
+      "L04",
+      "L17",
+      "L24",
+      "L28"
+    ],
+    "explain": [
+      "L05",
+      "L06",
+      "L07",
+      "L10",
+      "L15",
+      "L16",
+      "L23",
+      "L26"
+    ],
+    "sequence": [
+      "L08",
+      "L09",
+      "L10",
+      "L11"
+    ],
+    "diagnose": [
+      "L12",
+      "L13",
+      "L14",
+      "L26"
+    ],
+    "compare": [
+      "L12",
+      "L16",
+      "L21"
+    ],
+    "measure": [
+      "L17",
+      "L18",
+      "L19",
+      "L20",
+      "L21"
+    ],
+    "evidence": [
+      "L22",
+      "L23",
+      "L27"
+    ],
+    "plan": [
+      "L09",
+      "L10",
+      "L25"
+    ],
+    "close": [
+      "L28"
+    ]
+  },
+  "relation_map": {
+    "parallel": [
+      "L05",
+      "L24",
+      "L25"
+    ],
+    "hub_spoke": [
+      "L06"
+    ],
+    "hierarchy": [
+      "L07",
+      "L15"
+    ],
+    "temporal": [
+      "L08",
+      "L09",
+      "L21"
+    ],
+    "process": [
+      "L10"
+    ],
+    "cycle": [
+      "L11"
+    ],
+    "comparison": [
+      "L12",
+      "L16",
+      "L21"
+    ],
+    "problem_solution": [
+      "L13"
+    ],
+    "risk": [
+      "L14"
+    ],
+    "stage": [
+      "L15"
+    ],
+    "matrix": [
+      "L16"
+    ],
+    "quantitative": [
+      "L17",
+      "L18",
+      "L19",
+      "L20",
+      "L21"
+    ],
+    "image_parallel": [
+      "L22"
+    ],
+    "image_text": [
+      "L23",
+      "L27"
+    ],
+    "framework": [
+      "L26"
+    ]
+  },
+  "scoring": {
+    "intent_match": 0.3,
+    "relation_match": 0.3,
+    "density_fit": 0.15,
+    "evidence_fit": 0.1,
+    "brand_fit": 0.1,
+    "variety_bonus": 0.05,
+    "penalties": [
+      "无真实时间关系却选时间轴",
+      "无阶段递进却选成熟度",
+      "无数据却选图表",
+      "无统摄中心却选辐射",
+      "口径不一致却做直接对比",
+      "图片无证据价值却占主视觉"
+    ]
+  },
+  "candidate_policy": "每页默认返回3-5个候选一级版式族；主模型根据认知任务和证据关系选择1个主族，必要时组合1个辅助结构。",
+  "brand_policy": {
+    "with_user_template": "优先提取本次模板的品牌层（Logo、配色、标题体系、页眉页脚、字体气质）覆盖默认样片视觉token；不继承原模板页数和逐页结构。",
+    "without_user_template": "使用样片观测到的蓝金视觉骨架作为默认候选，但正式品牌色值/字体仍需人工确认。"
+  },
+  "observed_visual_tokens": {
+    "note": "以下为样片PDF高频观测色，不等同招商港口正式品牌标准。",
+    "palette": {
+      "primary_deep_blue": "#004695",
+      "primary_navy_alt": "#004888",
+      "secondary_blue": "#3077BC",
+      "accent_gold": "#F4BB31",
+      "muted_gold": "#C6A24D",
+      "light_blue": "#BBCEE5",
+      "light_gray": "#EFEFEF",
+      "mid_gray": "#808080",
+      "paper_white": "#FEFFFF"
+    },
+    "brand_anchors": [
+      "右上招商港口标识锚点",
+      "左上蓝金识别条/标题标记",
+      "白底为主",
+      "底部蓝色波浪带",
+      "右下/背景浅金水印",
+      "蓝-金-灰有限图表色阶"
+    ],
+    "font_note": "字体仅记录样片观察结果，不作为正式字体规范。"
+  },
+  "families": [
+    {
+      "id": "L01",
+      "name": "品牌封面",
+      "intents": [
+        "orient"
+      ],
+      "relations": [
+        "identity"
+      ],
+      "density": [
+        "low",
+        "medium"
+      ],
+      "variants": [
+        "蓝金标准封面",
+        "大图弧切封面"
+      ],
+      "evidence_ref": "evidence-map.json#L01"
+    },
+    {
+      "id": "L02",
+      "name": "目录导航",
+      "intents": [
+        "orient"
+      ],
+      "relations": [
+        "navigation"
+      ],
+      "density": [
+        "medium"
+      ],
+      "variants": [
+        "六项编号目录",
+        "四条横条目录",
+        "双列目录"
+      ],
+      "evidence_ref": "evidence-map.json#L02"
+    },
+    {
+      "id": "L03",
+      "name": "章节过渡",
+      "intents": [
+        "orient"
+      ],
+      "relations": [
+        "section_shift"
+      ],
+      "density": [
+        "low",
+        "medium"
+      ],
+      "variants": [
+        "巨型序号章节页",
+        "全景图章节页"
+      ],
+      "evidence_ref": "evidence-map.json#L03"
+    },
+    {
+      "id": "L04",
+      "name": "核心结论总览",
+      "intents": [
+        "summarize",
+        "decide"
+      ],
+      "relations": [
+        "summary",
+        "parallel"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "顶部结论+下部卡片",
+        "关键数字+要点",
+        "一句话总览+多区"
+      ],
+      "evidence_ref": "evidence-map.json#L04"
+    },
+    {
+      "id": "L05",
+      "name": "并列卡片",
+      "intents": [
+        "explain",
+        "summarize"
+      ],
+      "relations": [
+        "parallel"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "三栏并列",
+        "四栏并列",
+        "2×3六卡"
+      ],
+      "evidence_ref": "evidence-map.json#L05"
+    },
+    {
+      "id": "L06",
+      "name": "中心辐射",
+      "intents": [
+        "explain",
+        "summarize"
+      ],
+      "relations": [
+        "hub_spoke"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "中心+四周",
+        "中心+六项",
+        "双层环"
+      ],
+      "evidence_ref": "evidence-map.json#L06"
+    },
+    {
+      "id": "L07",
+      "name": "组织层级",
+      "intents": [
+        "explain"
+      ],
+      "relations": [
+        "hierarchy"
+      ],
+      "density": [
+        "medium"
+      ],
+      "variants": [
+        "树状层级",
+        "分组层级矩阵"
+      ],
+      "evidence_ref": "evidence-map.json#L07"
+    },
+    {
+      "id": "L08",
+      "name": "时间轴",
+      "intents": [
+        "sequence",
+        "evidence"
+      ],
+      "relations": [
+        "temporal"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "年度节点",
+        "月份节点",
+        "上下双轨",
+        "事件+里程碑"
+      ],
+      "evidence_ref": "evidence-map.json#L08"
+    },
+    {
+      "id": "L09",
+      "name": "路线图/甘特",
+      "intents": [
+        "plan",
+        "sequence"
+      ],
+      "relations": [
+        "temporal",
+        "schedule"
+      ],
+      "density": [
+        "high"
+      ],
+      "variants": [
+        "横向甘特",
+        "多工作流甘特",
+        "里程碑路线"
+      ],
+      "evidence_ref": "evidence-map.json#L09"
+    },
+    {
+      "id": "L10",
+      "name": "线性流程",
+      "intents": [
+        "sequence",
+        "explain"
+      ],
+      "relations": [
+        "process"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "箭头五步",
+        "阶段卡链",
+        "上下分层流程",
+        "泳道流程"
+      ],
+      "evidence_ref": "evidence-map.json#L10"
+    },
+    {
+      "id": "L11",
+      "name": "闭环循环",
+      "intents": [
+        "sequence",
+        "improve"
+      ],
+      "relations": [
+        "cycle"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "四步闭环",
+        "PDCA环",
+        "双循环"
+      ],
+      "evidence_ref": "evidence-map.json#L11"
+    },
+    {
+      "id": "L12",
+      "name": "对比/差异",
+      "intents": [
+        "compare",
+        "decide"
+      ],
+      "relations": [
+        "comparison"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "VS双栏",
+        "前后对比",
+        "方案并列"
+      ],
+      "evidence_ref": "evidence-map.json#L12"
+    },
+    {
+      "id": "L13",
+      "name": "问题-措施",
+      "intents": [
+        "diagnose",
+        "improve"
+      ],
+      "relations": [
+        "problem_solution",
+        "causal"
+      ],
+      "density": [
+        "high"
+      ],
+      "variants": [
+        "问题-原因-措施",
+        "不足-改进",
+        "挑战-方案"
+      ],
+      "evidence_ref": "evidence-map.json#L13"
+    },
+    {
+      "id": "L14",
+      "name": "风险/挑战",
+      "intents": [
+        "diagnose",
+        "control"
+      ],
+      "relations": [
+        "risk",
+        "matrix",
+        "parallel"
+      ],
+      "density": [
+        "high"
+      ],
+      "variants": [
+        "风险清单",
+        "风险环",
+        "风险矩阵"
+      ],
+      "evidence_ref": "evidence-map.json#L14"
+    },
+    {
+      "id": "L15",
+      "name": "阶段/成熟度",
+      "intents": [
+        "explain",
+        "assess"
+      ],
+      "relations": [
+        "hierarchy",
+        "stage"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "阶梯成熟度",
+        "漏斗阶段",
+        "金字塔层级",
+        "阶段箭头"
+      ],
+      "evidence_ref": "evidence-map.json#L15"
+    },
+    {
+      "id": "L16",
+      "name": "矩阵/表格",
+      "intents": [
+        "compare",
+        "assess",
+        "organize"
+      ],
+      "relations": [
+        "matrix",
+        "table"
+      ],
+      "density": [
+        "high"
+      ],
+      "variants": [
+        "横纵矩阵",
+        "对照表",
+        "分层表",
+        "卡片矩阵"
+      ],
+      "evidence_ref": "evidence-map.json#L16"
+    },
+    {
+      "id": "L17",
+      "name": "KPI/数字看板",
+      "intents": [
+        "measure",
+        "summarize"
+      ],
+      "relations": [
+        "quantitative"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "大数字条",
+        "KPI卡片",
+        "指标+文字"
+      ],
+      "evidence_ref": "evidence-map.json#L17"
+    },
+    {
+      "id": "L18",
+      "name": "进度/状态",
+      "intents": [
+        "measure",
+        "track"
+      ],
+      "relations": [
+        "quantitative",
+        "status"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "环形进度",
+        "百分比柱",
+        "状态灯"
+      ],
+      "evidence_ref": "evidence-map.json#L18"
+    },
+    {
+      "id": "L19",
+      "name": "单图表分析",
+      "intents": [
+        "measure",
+        "explain"
+      ],
+      "relations": [
+        "quantitative",
+        "chart"
+      ],
+      "density": [
+        "medium"
+      ],
+      "variants": [
+        "柱图",
+        "横条图",
+        "折线图",
+        "饼/环图"
+      ],
+      "evidence_ref": "evidence-map.json#L19"
+    },
+    {
+      "id": "L20",
+      "name": "多图表驾驶舱",
+      "intents": [
+        "measure",
+        "summarize"
+      ],
+      "relations": [
+        "quantitative",
+        "dashboard"
+      ],
+      "density": [
+        "high"
+      ],
+      "variants": [
+        "四象限仪表盘",
+        "KPI+多图",
+        "财务/运营驾驶舱"
+      ],
+      "evidence_ref": "evidence-map.json#L20"
+    },
+    {
+      "id": "L21",
+      "name": "趋势/同比对比",
+      "intents": [
+        "measure",
+        "compare"
+      ],
+      "relations": [
+        "temporal",
+        "quantitative"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "年度同比",
+        "月度趋势",
+        "多系列对比"
+      ],
+      "evidence_ref": "evidence-map.json#L21"
+    },
+    {
+      "id": "L22",
+      "name": "图集/照片墙",
+      "intents": [
+        "evidence",
+        "showcase"
+      ],
+      "relations": [
+        "image_parallel"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "三图成果",
+        "五图序列",
+        "拼贴图集"
+      ],
+      "evidence_ref": "evidence-map.json#L22"
+    },
+    {
+      "id": "L23",
+      "name": "图文分栏",
+      "intents": [
+        "evidence",
+        "explain"
+      ],
+      "relations": [
+        "image_text"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "左图右文",
+        "上图下文",
+        "背景图+文字"
+      ],
+      "evidence_ref": "evidence-map.json#L23"
+    },
+    {
+      "id": "L24",
+      "name": "成果/亮点展示",
+      "intents": [
+        "summarize",
+        "showcase"
+      ],
+      "relations": [
+        "parallel",
+        "quantitative",
+        "image_text"
+      ],
+      "density": [
+        "high"
+      ],
+      "variants": [
+        "成果三卡",
+        "亮点四卡",
+        "成果+数字",
+        "成果时间序"
+      ],
+      "evidence_ref": "evidence-map.json#L24"
+    },
+    {
+      "id": "L25",
+      "name": "计划/行动部署",
+      "intents": [
+        "plan",
+        "decide"
+      ],
+      "relations": [
+        "schedule",
+        "parallel",
+        "process"
+      ],
+      "density": [
+        "high"
+      ],
+      "variants": [
+        "季度计划",
+        "年度计划",
+        "行动清单",
+        "任务责任"
+      ],
+      "evidence_ref": "evidence-map.json#L25"
+    },
+    {
+      "id": "L26",
+      "name": "框架/方法模型",
+      "intents": [
+        "explain",
+        "diagnose",
+        "decide"
+      ],
+      "relations": [
+        "framework",
+        "causal",
+        "matrix"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "SWOT",
+        "5W1H/3R/KISS",
+        "AIDMA/SMART",
+        "鱼骨/逻辑模型"
+      ],
+      "evidence_ref": "evidence-map.json#L26"
+    },
+    {
+      "id": "L27",
+      "name": "案例/证据说明",
+      "intents": [
+        "evidence",
+        "explain"
+      ],
+      "relations": [
+        "case",
+        "documentary"
+      ],
+      "density": [
+        "medium",
+        "high"
+      ],
+      "variants": [
+        "项目简介",
+        "公司介绍",
+        "证书/凭证"
+      ],
+      "evidence_ref": "evidence-map.json#L27"
+    },
+    {
+      "id": "L28",
+      "name": "总结/展望收束",
+      "intents": [
+        "close",
+        "summarize"
+      ],
+      "relations": [
+        "closing",
+        "future"
+      ],
+      "density": [
+        "medium"
+      ],
+      "variants": [
+        "年度总结",
+        "下一步展望"
+      ],
+      "evidence_ref": "evidence-map.json#L28"
+    }
+  ],
+  "composition_components": [
+    {
+      "component_id": "C01",
+      "name": "顶部标题带",
+      "purpose": "页面标题与层级锚点"
+    },
+    {
+      "component_id": "C02",
+      "name": "结论句",
+      "purpose": "1句可独立成立的主结论"
+    },
+    {
+      "component_id": "C03",
+      "name": "KPI数字卡",
+      "purpose": "数字+单位+解释"
+    },
+    {
+      "component_id": "C04",
+      "name": "编号节点",
+      "purpose": "序号/步骤/章节"
+    },
+    {
+      "component_id": "C05",
+      "name": "状态标签",
+      "purpose": "完成/进行/待核/风险等"
+    },
+    {
+      "component_id": "C06",
+      "name": "图标标题",
+      "purpose": "图标+短标题"
+    },
+    {
+      "component_id": "C07",
+      "name": "文本卡片",
+      "purpose": "标题+2-5条短句"
+    },
+    {
+      "component_id": "C08",
+      "name": "图片卡片",
+      "purpose": "图片+短说明/证据"
+    },
+    {
+      "component_id": "C09",
+      "name": "证据注释",
+      "purpose": "来源、时间、口径、待核"
+    },
+    {
+      "component_id": "C10",
+      "name": "风险标签",
+      "purpose": "风险级别/关注点"
+    },
+    {
+      "component_id": "C11",
+      "name": "时间节点",
+      "purpose": "日期/季度/月+事项"
+    },
+    {
+      "component_id": "C12",
+      "name": "方向连接",
+      "purpose": "箭头/连线/递进关系"
+    },
+    {
+      "component_id": "C13",
+      "name": "循环节点",
+      "purpose": "闭环环节"
+    },
+    {
+      "component_id": "C14",
+      "name": "迷你图表",
+      "purpose": "小型趋势/占比/进度"
+    },
+    {
+      "component_id": "C15",
+      "name": "矩阵单元",
+      "purpose": "行列维度交叉内容"
+    },
+    {
+      "component_id": "C16",
+      "name": "图例与口径",
+      "purpose": "图表颜色和统计口径"
+    },
+    {
+      "component_id": "C17",
+      "name": "强调框",
+      "purpose": "重点结论/例外事项"
+    },
+    {
+      "component_id": "C18",
+      "name": "品牌页脚",
+      "purpose": "蓝色波浪/底部识别"
+    },
+    {
+      "component_id": "C19",
+      "name": "浅金水印",
+      "purpose": "低对比品牌秩序元素"
+    },
+    {
+      "component_id": "C20",
+      "name": "页下注释",
+      "purpose": "来源/限制/材料边界"
+    }
+  ],
+  "load_policy": {
+    "default": "只加载本文件。",
+    "evidence": "仅版式冲突、深度设计或来源追溯时读取 evidence-map.json。",
+    "full_page_index": "不进入Runtime；完整373页页级分析仅保留在维护证据包。"
+  }
+}

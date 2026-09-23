@@ -1,0 +1,86 @@
+[
+  {
+    "case_id": "RC-INSTALL-001",
+    "incident_id": "INC-11111111111111111111111111111111",
+    "failure_type": "runtime-compatibility",
+    "cause": "runtime_issue",
+    "impact": "high",
+    "trigger": "用户规则替代旧托管块后，安装器仍强制旧标记，产生真实基线失败。",
+    "correct_behavior": "历史 installation-manifest/runtime-snapshot 不再作为当前安装权威；当前 checker 直接核验真实 Skill 入口、受管块、Agent Runtime 与 deployment-state，并保留用户 Work/Codex 分工。",
+    "no_regression": "真实 managed block、Agent Runtime 与 deployment-state 漂移仍拒绝；历史 manifest/snapshot 不得重新取得当前权威。",
+    "pass_condition": "当前回归证明历史 manifest/snapshot 不参与 live checker 判定，deployment_state 为当前 Runtime 身份输入；实际安装检查仍可机械失败关闭。",
+    "test": "test_runtime_state.py:test_historical_snapshot_and_manifest_are_not_live_checker_inputs"
+  },
+  {
+    "case_id": "RC-CLASSIFICATION-001",
+    "incident_id": "INC-9c7918f806614c37b7115b4419a26a27",
+    "failure_type": "task_underclassification",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "正式材料新增义务被按低级局部改写处理。",
+    "correct_behavior": "识别正式材料新增内容并拒绝低级流程捷径。",
+    "no_regression": "原有权限、保密和必要质量门禁保留；合成回归不冒充生产事故。",
+    "pass_condition": "登记方法实际唯一发现并执行成功，相关负向输入受到拒绝或待办正确可见。",
+    "test": "test_delivery_rules.py:test_t3_formal_additions_fail"
+  },
+  {
+    "case_id": "RC-DELIVERY-001",
+    "incident_id": "INC-6864502ef4754fcc88d26c6036f0355a",
+    "failure_type": "file_delivery_uncontrolled",
+    "cause": "rule_conflict",
+    "impact": "high",
+    "trigger": "成品临时目录或命名未受交付规则约束。",
+    "correct_behavior": "未说明的临时路径和不合规成品名必须阻断交付。",
+    "no_regression": "原有权限、保密和必要质量门禁保留；合成回归不冒充生产事故。",
+    "pass_condition": "登记方法实际唯一发现并执行成功，相关负向输入受到拒绝或待办正确可见。",
+    "test": "test_delivery_rules.py:test_unjustified_temp_and_bad_name_fail"
+  },
+  {
+    "case_id": "RC-INTAKE-001",
+    "incident_id": "INC-aef9ccc1d6d34f278bc1e568dae2e786",
+    "failure_type": "incident_not_recorded",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "真实失败未记录，且没有候选时从维护提示消失。",
+    "correct_behavior": "普通事故一旦记录立即作为待办可见，无须先形成候选。",
+    "no_regression": "原有权限、保密和必要质量门禁保留；合成回归不冒充生产事故。",
+    "pass_condition": "登记方法实际唯一发现并执行成功，相关负向输入受到拒绝或待办正确可见。",
+    "test": "test_evolution_intake.py:test_ordinary_incident_visible_before_candidate"
+  },
+  {
+    "case_id": "RC-EVOLUTION-TRIGGER-001",
+    "incident_id": "INC-44444444444444444444444444444444",
+    "failure_type": "incident_not_recorded",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "生产任务已出现真实执行失败，但收尾依赖模型自行想起 Evolution，导致未进入进化入口或用户无法确认是否执行。",
+    "correct_behavior": "每次完成前固定执行一次轻量 Evolution Checkpoint；CLEAN 零维护开销，命中真实问题必须 RECORDED 或 PENDING，并在完工小结显示一行状态。",
+    "no_regression": "不新增正常任务的账本读取、回归、incident 或后台任务；原有权限、保密、Stable 晋升授权和质量门禁不变。",
+    "pass_condition": "规则与模板共同强制 checkpoint、CLEAN 零维护、事故不可静默、RECORDED/PENDING 不冒充 EVO，且状态行不泄露业务细节。",
+    "test": "test_evolution_checkpoint.py:test_checkpoint_is_mandatory_and_visible"
+  },
+  {
+    "case_id": "RC-TASK-LIFECYCLE-001",
+    "incident_id": "INC-55555555555555555555555555555555",
+    "failure_type": "file_delivery_uncontrolled",
+    "cause": "rule_gap",
+    "impact": "high",
+    "trigger": "内部目录已整理但任务根仍为临时目录；跨日补充材料与多轮正式版本没有稳定的任务身份、批次和最终归档门禁。",
+    "correct_behavior": "一项工作沿用同一 Task ID 与 Task Root；新增材料按 hash 和批次归档，正式版本连续保留，根目录和内部目录共同通过 FINAL PASS。",
+    "no_regression": "原稿逐字节保护、未知输入不删除、历史正式版本不覆盖、outputs 白名单、Delivery Contract 与必要质量门禁继续有效。",
+    "pass_condition": "T1 首次 B01→v1、T2 同日 B02→v2、T3 跨日同 Task ID B03→v3、T4 重复 hash、T5 同名异内容、T6 未知文件阻断均通过。",
+    "test": "test_delivery_rules.py:test_t3_cross_day_reopen_keeps_task_id_and_history_and_creates_v3"
+  },
+  {
+    "case_id": "RC-FINAL-ARCHIVE-001",
+    "incident_id": "INC-55555555555555555555555555555556",
+    "failure_type": "false-completion",
+    "cause": "rule_gap",
+    "impact": "high",
+    "trigger": "归档声明可绕过任务根检查；旧测试人工拼装版本和路径，不能证明真实最终化执行链。",
+    "correct_behavior": "正式check与Hook强制已归档任务根、当前版本、最终证据和报告一致；未知输入持续阻断。",
+    "no_regression": "原稿保护、快车道和既有独立审核门槛保持，组件测试不冒充FINAL PASS。",
+    "pass_condition": "真实prepare/publish/check通过T1-T7，临时根、延后归档、未知输入和陈旧报告反例均拒绝。",
+    "test": "test_delivery_rules.py:test_t7_temporary_roots_cannot_finalize"
+  }
+]

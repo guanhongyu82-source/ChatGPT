@@ -1,0 +1,16 @@
+{
+  "incident_id": "INC-6864502ef4754fcc88d26c6036f0355a",
+  "time": "2026-09-13T00:45:25.943057+00:00",
+  "failure_type": "file_delivery_uncontrolled",
+  "cause": "rule_conflict",
+  "impact": "high",
+  "evidence": [
+    "EV-1f383c6873b74c4387c014eb4c33a920"
+  ],
+  "capabilities": [
+    "delivery"
+  ],
+  "repeated": false,
+  "hits": 1,
+  "permission": "record"
+}

@@ -1,0 +1,6 @@
+{
+  "incident_id": "INC-aef9ccc1d6d34f278bc1e568dae2e786",
+  "status": "pending-activation",
+  "reason_code": "native-hook-trust-unverified",
+  "candidate_sha256": "f28a75409a340d89c58930280fc95a52e91d9a1f03e4c8306843ebf2312e2472"
+}

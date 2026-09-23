@@ -1,0 +1,18 @@
+{
+  "resolution_id": "RES-5a82a94093a94874966b1f131adcc882",
+  "incident_id": "INC-9c7918f806614c37b7115b4419a26a27",
+  "evidence": [
+    "EV-f8f0d36d72b940b29e1cd7117d4feb8f"
+  ],
+  "time": "2026-09-13T00:57:35.503705+00:00",
+  "kind": "direct-maintenance",
+  "candidate_sha256": "f28a75409a340d89c58930280fc95a52e91d9a1f03e4c8306843ebf2312e2472",
+  "test_run_id": "testrun-d6a67bb1aa5843eb9299f4b48c91a6d8",
+  "review_ids": [
+    "review-d2fee79817a0451aa86b02ed3f6673a5",
+    "review-76d9944b2b37478ba5662bd8e96136ba"
+  ],
+  "required_test_ids": [
+    "RC-CLASSIFICATION-001"
+  ]
+}

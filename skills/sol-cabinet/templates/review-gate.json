@@ -1,0 +1,33 @@
+{
+  "run_id": "",
+  "t_level": 4,
+  "verdict": "FAIL",
+  "requirements": [],
+  "reviewers": [],
+  "issues": [],
+  "must_fix": [
+    "not-reviewed"
+  ],
+  "source_archive_gate": {
+    "required": false,
+    "state": "NOT_APPLICABLE",
+    "manifest_verified": false,
+    "source_unmodified": false,
+    "hash_match_count": 0,
+    "unverified_count": 0
+  },
+  "blocker_closure": {
+    "open_must_fix": 1,
+    "resolved_unverified": 0,
+    "accepted_risks": []
+  },
+  "artifact_manifest": [],
+  "unverified": [],
+  "candidate_manifest": [],
+  "review_evidence": [],
+  "scope_check": {
+    "missing_requirements": [],
+    "out_of_scope_actions": []
+  },
+  "current_candidate_verified": false
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sol Cabinet"
+  short_description: "个人办公任务自动分级、技能路由、有界协作、独立审核与受控进化"
+  default_prompt: "Use $sol-cabinet to classify, execute, review, and deliver this task. Observe real failures for evolution only under the current permission cage."

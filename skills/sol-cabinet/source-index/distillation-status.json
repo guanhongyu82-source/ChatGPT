@@ -1,0 +1,131 @@
+{
+  "version": "1.4",
+  "as_of": "2026-09-08",
+  "release_kind": "distillation-complete-testing-deferred",
+  "distillation_status": "COMPLETE_WITHIN_AGREED_SCOPE",
+  "scope": "已审计的可复用中文办公能力及其研究、代理、公共组件、配置与维护处置",
+  "skill_disposition_index": "source-index/migration-v1.3.json",
+  "skill_entries": 74,
+  "skill_index_note": "复用1.3已完成处置；原表属于历史记录，其中留1.4测试的表述由本状态的延期决定取代。",
+  "non_skill_dispositions": [
+    {
+      "kind": "Rules／任务提示与边界",
+      "decision": "已融合并去重",
+      "targets": [
+        "core/core.md",
+        "t0-executive-router/router.md",
+        "review-system/review-system.md"
+      ],
+      "detail": "任务不扩界、材料三态、当前授权、阶段停止、少做与多做检查；Grok专用规则与自动同步不迁。"
+    },
+    {
+      "kind": "Agent岗卡与分工",
+      "decision": "方法已融合，目标角色复用",
+      "targets": [
+        "agent-orchestrator/orchestration.md",
+        "platform-adapter/codex-agents/roster.md"
+      ],
+      "detail": "窄职责、最小读集、单写者、独立判断；不用Grok角色配置、固定档位或固定人数替代目标原生角色。"
+    },
+    {
+      "kind": "Workflow／hooks／后台循环",
+      "decision": "能力原则复用，源执行器不迁",
+      "targets": [
+        "agent-orchestrator/orchestration.md",
+        "agent-orchestrator/durable-operations.md",
+        "review-system/review-system.md"
+      ],
+      "detail": "依赖、恢复、有界等待和阶段停止已承接；Rhai、180秒门槛、启发式写拦截与源后台任务不启用。"
+    },
+    {
+      "kind": "知识框架／模板／中文写作提示",
+      "decision": "已提炼适用机制，不迁业务正文",
+      "targets": [
+        "domain-skills/formal-writing.md",
+        "domain-skills/ledger-data.md",
+        "domain-skills/office-delivery.md"
+      ],
+      "detail": "材料角色、画像、源定位、样本映射、中性引文、保真修改、语义责任单元与权重守恒；不声称历史全部框架逐篇实现。"
+    },
+    {
+      "kind": "Tools／文件生成与公共脚本",
+      "decision": "原生复用与必要重写完成",
+      "targets": [
+        "domain-skills/common-components.md",
+        "scripts/inspect_office.py",
+        "scripts/verify_evidence.py"
+      ],
+      "detail": "目标原生Office/PDF/浏览/图像工具复用；新增只读定位和证据一致性；旧渲染、状态误判、二进制猜读与跨工具接力不迁。"
+    },
+    {
+      "kind": "研究／引用／舆情方法",
+      "decision": "独立研究与交接完成",
+      "targets": [
+        "domain-skills/research-facts.md",
+        "domain-skills/routing-map.md"
+      ],
+      "detail": "Sol Research为复杂研究，research-agent为轻量兼容入口；来源日期、阅读状态、冲突与样本边界统一，外部工具只在实际可用且获授权时使用。"
+    },
+    {
+      "kind": "Config／模型档位／路径索引",
+      "decision": "策略已收口，用户运行选择明确保留",
+      "targets": [
+        "platform-adapter/codex.md",
+        "core/system-architecture.md"
+      ],
+      "detail": "迁移相关旧索引已转为真源导航；业务规则不绑定产品档位，用户确认保留全局模型、effort、权限、插件及现有加载入口。"
+    },
+    {
+      "kind": "维护／经验／错误与关闭流程",
+      "decision": "授权与证据机制已融合",
+      "targets": [
+        "memory-evolution/evolution-policy.md",
+        "scripts/record_evolution.py",
+        "scripts/manage_improvements.py",
+        "scripts/validate_evolution_proposal.py"
+      ],
+      "detail": "显式持久化授权、真实候选与记录、pending不直接关闭；不伪造身份认证，不自动产生观察或发布。"
+    },
+    {
+      "kind": "Command／平台专用入口与非办公能力",
+      "decision": "复用目标入口或不迁移",
+      "targets": [
+        "SKILL.md",
+        "source-index/migration-v1.3.json"
+      ],
+      "detail": "技能命令通过现有入口承接；不建立旧宿主接力、游戏素材或大型编码流水线，Grok源保留原位只读。"
+    }
+  ],
+  "remaining_distillation_items": [],
+  "exclusions": [
+    "业务样片与案件正文",
+    "凭据与认证数据",
+    "未纳入审计的历史备份/缓存/第三方实现细节",
+    "Grok专用实现及无中文办公复用价值的能力"
+  ],
+  "testing": {
+    "current_release": "MINIMAL_CLOSURE_ONLY",
+    "historical_baseline": "1.3已有75项测试与当时独立验收；不是1.4测试结果",
+    "pending": [
+      "实际工作中逐步验证",
+      "对真实问题进行必要修复与受影响范围核对"
+    ],
+    "requires_new_user_authorization": true,
+    "scheduled": false,
+    "ordinary_task_quality_rules": "unchanged"
+  },
+  "global_runtime_choices": "用户已明确保留，未修改；不列为未完成迁移",
+  "runtime_scope": "本机Codex现有入口；不声称已把本机Skill自动部署到网页或所有其他宿主",
+  "concurrent_source_update": {
+    "files": 5,
+    "observed_after_baseline": true,
+    "change_kind": "Grok平台版本标记与维护历史调整；包括旧日志条目收敛",
+    "distillation_impact": "未发现新增中文办公机制，按已有平台专属不迁移决策处置",
+    "source_written_by_this_task": false,
+    "attribution": "未核定具体写入者"
+  },
+  "maintenance_scope": "ChatGPT skills only",
+  "external_source_monitoring": "DISABLED",
+  "historical_sources": "static provenance only; do not follow paths",
+  "closure_policy_date": "2026-09-08"
+}

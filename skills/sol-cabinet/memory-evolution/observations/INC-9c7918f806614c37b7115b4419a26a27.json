@@ -1,0 +1,17 @@
+{
+  "incident_id": "INC-9c7918f806614c37b7115b4419a26a27",
+  "time": "2026-09-13T00:45:25.940359+00:00",
+  "failure_type": "task_underclassification",
+  "cause": "execution_failure",
+  "impact": "high",
+  "evidence": [
+    "EV-f8f0d36d72b940b29e1cd7117d4feb8f"
+  ],
+  "capabilities": [
+    "routing",
+    "inspection"
+  ],
+  "repeated": false,
+  "hits": 1,
+  "permission": "record"
+}

@@ -1,0 +1,8 @@
+{
+  "evidence_id": "EV-11111111111111111111111111111111",
+  "task_instance_id": "task-01a0930663147e319e3c514b5077319f",
+  "failure_type": "runtime-compatibility",
+  "artifact_sha256": "9008336a7d3c03d73d65ed51103f03de2395e1944f51ae3dffd2d5bc08108c1e",
+  "source": "executor-capture",
+  "sanitized": true
+}

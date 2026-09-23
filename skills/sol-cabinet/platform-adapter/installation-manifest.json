@@ -1,0 +1,51 @@
+{
+  "system": "Sol Cabinet",
+  "version": "1.5",
+  "installed_at": "2026-08-24T21:07:44+08:00",
+  "source_of_truth": "/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet",
+  "skill_entry": {
+    "path": "/Users/macbook/.codex/skills/sol-cabinet",
+    "mode": "symlink",
+    "resolved_path": "/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet",
+    "skill_md_sha256": "db1470c4ff2ebfc9305841f4b5ca1f21bd7ec00f00bbc63c7a4df4f45e77533a"
+  },
+  "agent_runtime": {
+    "path": "/Users/macbook/.codex/agents",
+    "mode": "managed-regular-copies",
+    "sync_script": "scripts/sync_agent_runtime.py",
+    "sync_script_sha256": "d31e20db207dbb4087df67342736efa0f8dbac6e69b5f4dc768aa63dad3c64c7",
+    "files": {
+      "sol-researcher.toml": "bb14ad9085e41579618eae6622be9690d1195aff2ae78594ee1fb837444998b8",
+      "sol-fact-checker.toml": "8757bd3a801c8a3e8a8335c886c461da3b361e712cd1269efc0cf68e1a38bd00",
+      "sol-structure-architect.toml": "9fa00e357e2f9a1aa48038963efadf618dff864fd7ade8ac417bd242e2b17e6c",
+      "sol-drafter.toml": "b5e7350f4b45973d9a5d15c4b906d05f4745f9ef08ba796017ec377934637801",
+      "sol-critic.toml": "e64909016a4a678dec66789674472f89c52a7c6549d559a719c8bbe70969e5ec",
+      "sol-compliance-reviewer.toml": "3c5489a725977bd2ba8df34e013d2c1e6b6cf0be2b02034f3e3d9d0fdbec46d3",
+      "sol-language-editor.toml": "d0b9dabdad88792f3e9095c12eb204bb26f4aacead0f052bd9ba76364eff127d",
+      "sol-final-verifier.toml": "acd7af191e1b2b3519f18d7b142fb9fe21e0d62abf9ded9a0f44e97ea738f56f"
+    }
+  },
+  "managed_rules": {
+    "source": "platform-adapter/AGENTS.managed-block.md",
+    "source_sha256": "1c06c6532e2e3332721be433c8188dc6d5214cca1caa12d7f5e85721e8a1c1d3",
+    "installed_in": [
+      "/Users/macbook/ChatGPT/AGENTS.md",
+      "/Users/macbook/ChatGPT/lineage/codex-root/AGENTS.md"
+    ],
+    "user_owned": {
+      "/Users/macbook/.codex/AGENTS.md": "7614dabb37b5ca9904e6409b6904378f2c6907d20b800ee25ca77947321b5e3a"
+    }
+  },
+  "required_cwd": "/Users/macbook/ChatGPT",
+  "smoke_tests": {
+    "skill_discovery": "PASS",
+    "custom_agent_discovery": "PASS",
+    "custom_agent_name": "sol_final_verifier",
+    "custom_agent_sandbox_mode": "read-only"
+  },
+  "verification": {
+    "check_script": "scripts/check_installation.py",
+    "check_script_sha256": "415497c2c9e51fb3552d6b203197dd8f1cb28aba73c7af18c00fb821763c4d06"
+  },
+  "known_preexisting_warning": "installed_at and smoke_tests retain historical installation provenance; v1.5 uses targeted checks recorded in maintenance release evidence."
+}

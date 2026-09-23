@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-08-23T21:28:47+08:00",
+  "codex_cli": "0.149.0",
+  "current_model": "gpt-5.6-sol",
+  "current_reasoning_effort": "high",
+  "multi_agent_feature": "stable:true",
+  "session_total_concurrency_slots": 4,
+  "personal_skill_path": "/Users/macbook/.agents/skills",
+  "personal_agent_path": "/Users/macbook/.codex/agents",
+  "custom_agent_symlink_test": "FAIL: agent type is currently not available",
+  "custom_agent_runtime_mode": "managed regular-file copies verified against single source",
+  "source_of_truth": "/Users/macbook/ChatGPT/lineage/codex-root/配置库/04_skill索引/sol-cabinet",
+  "notes": [
+    "Snapshot only; re-check current documentation and local config when drift matters.",
+    "No model, permission, or concurrency config changes are required for initial installation.",
+    "Pre-existing Otty hooks are registered but their referenced app and scripts are currently missing; Sol Cabinet did not modify them.",
+    "Host memories.generate_memories and use_memories are enabled; secret-bearing chats require per-chat memory contribution to be disabled or persistence to stop."
+  ]
+}
