@@ -51,6 +51,11 @@ class IntakeTests(unittest.TestCase):
             # Isolate status coverage semantics; authentication/evidence validation stays in the existing verifier.
             with patch.object(evolve,'verify_evidence',return_value={'verdict':'PASS'}):
                 self.assertEqual(evolve.status(root)['pending_count'],0)
+                catalog=root/'tests/regression-cases.json'
+                cases=json.loads(catalog.read_text())
+                cases.append({'case_id':'RC-NEW-CURRENT','failure_type':'incident_not_recorded','cause':'execution_failure'})
+                catalog.write_text(json.dumps(cases))
+                self.assertEqual(evolve.status(root)['pending_count'],0)
                 second=self.record(root,2,2)
                 incident['evidence']+=second['evidence'];incident['hits']=2;incident['repeated']=True
                 evolve.record(incident,root,evidence=root/'capture')

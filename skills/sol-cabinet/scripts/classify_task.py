@@ -230,6 +230,31 @@ def _resource_plan(profile: dict[str, Any], reviewers: int) -> dict[str, Any]:
     }
 
 
+def _workflow_route(level: int, reviewers: int, rounds: int) -> dict[str, Any]:
+    if level <= 2:
+        lane, depth, checks = "t1_t2_fast", "minimal", ["one_joint_check"]
+    elif level == 3:
+        lane, depth, checks = "t3_focused", "focused", ["structured_check"]
+    elif level <= 6:
+        lane, depth, checks = "t4_t6_structured", "structured", ["structured_check", "independent_review"]
+    elif level <= 8:
+        lane, depth, checks = "t7_t8_high_control", "high_control", ["two_independent_review_paths"]
+    else:
+        lane, depth, checks = "t9_t10_stage_gated", "stage_gated", ["stage_acceptance", "independent_final_review"]
+    return {
+        "lane": lane,
+        "depth": depth,
+        "required_checks": checks,
+        "minimum_independent_reviewers": reviewers,
+        "minimum_review_rounds": rounds,
+        "start_card_required": True,
+        "confirmation_before_work": True,
+        "direct_user_preauthorization_skips_wait_only": True,
+        "delivery_gate_required": True,
+        "evolution_checkpoint_required": True,
+    }
+
+
 def classify(profile: dict[str, Any]) -> dict[str, Any]:
     unknown = set(profile) - PROFILE_FIELDS
     if unknown:
@@ -353,6 +378,7 @@ def classify(profile: dict[str, Any]) -> dict[str, Any]:
     else:
         reviewers = 2
         rounds = 2
+    workflow = _workflow_route(level, reviewers, rounds)
     agents = _resource_plan(profile, reviewers)
     role_tasks = ["final_lead"]
     if reviewers:
@@ -418,6 +444,7 @@ def classify(profile: dict[str, Any]) -> dict[str, Any]:
         "materials_state": materials_state,
         "bounded_edit_short_path": bounded_edit,
         "agents": agents,
+        "workflow": workflow,
         "execution": {
             "current_stage_may_proceed": materials_state != "BLOCKED" and not stage_complete,
             "stage_complete": stage_complete,

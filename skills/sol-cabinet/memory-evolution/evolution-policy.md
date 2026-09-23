@@ -43,7 +43,10 @@ Work 无法写本机时，只在当前任务保留脱敏待处理项，下一次
 
 ## 归因、案例与候选
 
-根因只有 `execution_failure | rule_gap | rule_conflict | runtime_issue | noise`。已有规则未执行就修执行链，不堆规则；noise 只记录不改。先查现有机制，再复用 ＞ 修执行链 ＞ 调整表达 ＞ 小补缺 ＞ 最后增结构。
+根因只有 `execution_failure | rule_gap | rule_conflict | runtime_issue | noise`。没有 Cabinet 异常、或证据表明只是外部偶发事件时直接 CLEAN，不读历史。确认属于 Cabinet 异常后，先按 failure type 与 cause 调用 `scripts/evolve.py history <failure_type> <cause>`，再决定记录和修复；不要先写一个新“规则”再回头找重复。
+
+`history` 只返回同 failure type 的脱敏 INC/EV 事实、相同 cause 标记、既有 RES/EVO 处置、修复文件和回滚状态；不读取业务正文。若命中同类旧处置，先检查修复是否在当前活动版本、Hook 是否获信任、实际路由是否调用、部署摘要是否匹配。旧修复存在但未运行，归为 `execution_failure`／`runtime_issue` 并修执行链；只有规则真正缺失才判 `rule_gap`。旧处置的原始日志缺失时，`history` 仍返回已登记的处置 ID 与修复路径，标 `evidence_verified=false`，不宣称旧修复已获本次验真；当前新事故的记录可独立验证。若旧证据缺失使当前裁决无法完成，本次状态为 PENDING。元数据损坏则标 ERROR 并停止规则修改；禁止追加相似规则代替定位旧修复失效原因。
+
 
 [Regression Cases](../tests/regression-cases.json) 保存代表性真实失败的抽象触发、正确行为、禁止退化与 PASS 条件，并关联执行测试。现有历史测试保留；新增验收合成场景明确标 test fixture，不冒充真实事故。候选在任务 work/ 中，证据在候选外，旧 observation/improvements 历史不改写。
 
@@ -82,7 +85,7 @@ LAB.4 起，每次完工小结均保留一行 Evolution Checkpoint 状态，具�
 
 本机收尾发现真实失败时，先完成当前返工，再使用上述 `record` 保存安全分类及本任务真实机械证据；成功返回 RECORDED 只表示入队，不表示已修复。随后 `scripts/evolve.py status` 只读列出全部 pending 事故及候选，不因影响普通、只有一次或尚无候选而隐藏。无真实事故不调用 record，不新建记录；不创建后台进程。Work 无本机写入工具时，只在当前任务留脱敏待办并说明未同步。
 
-下一次实际维护先读 status，再处理已知未结项。重复按相同 failure_type 的独立 task ID 去重，不能以多个事件或重复读取凑次数。`execution_failure`、`rule_conflict` 是根因；`task_underclassification`、`file_delivery_uncontrolled`、`incident_not_recorded` 是可用故障分类。分类记录不接收业务正文、姓名、单位、业务文件名或路径，也不写用户长期记忆。
+下一次实际维护按已知 failure type + cause 先读 `history`，只展开匹配的 INC/EV/RES/EVO。需要查看全部待办与发布阻断时才读 `status`。重复按相同 failure_type 的独立 task ID 去重，不能以多个事件或重复读取凑次数。`execution_failure`、`rule_conflict` 是根因；`task_underclassification`、`file_delivery_uncontrolled`、`incident_not_recorded` 是可用故障分类。分类记录不接收业务正文、姓名、单位、业务文件名或路径，也不写用户长期记忆。
 
 正式 EVO 只关闭其中实际包含的 EV；回滚后重新待处理。用户直接授权维护可在真实修改和相关测试、两条独立审核完成后调用 `scripts/evolve.py resolve <INC> <resolution.json> <evidence-dir>`。resolution 仅含 candidate_sha256、test_run_id、review_ids、required_test_ids；必须绑定当前实体摘要并通过既有 verify_evidence。必需测试由系统 regression-cases 按 failure_type 与 cause 同时匹配决定，调用者只能增加不能省略相关 Case；无匹配 Case 或只有不相关测试时拒绝关闭。局部修复只要求相关局部测试，不为记录强制全套回归。该命令保留证据并生成 RES 处置记录，不生成 EVO、不授权新的规则修改。新增 EV 未被既有 RES/EVO 覆盖时重新 pending；无证据不得关闭。原始审核与测试工具定位由维护者在当前维护任务保留，本地摘要和哈希不能代替真实来源。
 

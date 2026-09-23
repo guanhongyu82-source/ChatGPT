@@ -84,6 +84,14 @@ def resolution_tests(root, incident, supplied):
         raise ValueError('resolution missing incident-specific regression cases')
     return sorted(required|set(supplied))
 
+
+def historical_resolution_tests(record):
+    """Verify a past RES against its frozen test set; new cases apply prospectively."""
+    supplied=record.get('required_test_ids')
+    if not isinstance(supplied,list) or not supplied or any(not isinstance(v,str) or not v for v in supplied) or len(supplied)!=len(set(supplied)):
+        raise ValueError('invalid stored resolution test set')
+    return sorted(supplied)
+
 @guarded
 def resolve(incident_id, resolution, evidence, root=ROOT):
     """Close a directly maintained incident only with current, independent evidence."""
@@ -128,7 +136,7 @@ def status(root=ROOT):
                 if not re.fullmatch(r'RES-[0-9a-f]{32}',data['resolution_id']): raise ValueError('invalid resolution identity')
                 evidence_dir=proposals/'evidence'/data['resolution_id']
                 incident=validate_incident(read(_file(observations,data['incident_id']+'.json')))
-                required=resolution_tests(root,incident,data['required_test_ids'])
+                required=historical_resolution_tests(data)
                 verify_evidence(evidence_dir,data['candidate_sha256'],data['test_run_id'],data['review_ids'],required)
                 closed_evidence.setdefault(data['incident_id'],set()).update(data['evidence'])
             elif data.get('EVO') and not data.get('rollback_of'):
@@ -169,6 +177,97 @@ def status(root=ROOT):
             'background_daemon':False,'deployment_pending':(proposals/'pending.json').exists(),
             'pending_count':len(pending_groups),'pending_incident_count':sum(i['status']=='pending' for i in incidents),'incidents':incidents,
             'candidates':candidates,'errors':errors}
+
+def history(failure_type, cause, root=ROOT):
+    """Return sanitized incidents and treatments relevant to a real recurrence."""
+    if failure_type not in FAILURES or cause not in CAUSES:
+        raise ValueError('unregistered history query')
+    root=Path(root); observations=root/'memory-evolution/observations'; proposals=root/'memory-evolution/proposals'
+    incidents={}; errors=[]; evidence_warnings=[]; treatments={}; closed_evidence={}; candidates=[]; failure_task_ids=set()
+    for p in sorted(observations.glob('INC-*.json')):
+        try:
+            item=validate_incident(read(_file(observations,p.name)))
+            if item['failure_type'] != failure_type:
+                continue
+            task_ids=set()
+            for eid in item['evidence']:
+                capture=read(_file(observations,eid+'.json'))
+                if capture['evidence_id']!=eid or capture['failure_type']!=failure_type or capture.get('sanitized') is not True:
+                    raise ValueError('invalid incident capture')
+                task_ids.add(capture['task_instance_id'])
+            if len(task_ids)!=item['hits']:
+                raise ValueError('incident hits inconsistent')
+            failure_task_ids.update(task_ids)
+            incidents[item['incident_id']]={'incident_id':item['incident_id'],'failure_type':failure_type,
+                'cause':item['cause'],'same_cause':item['cause']==cause,'impact':item['impact'],
+                'hits':len(task_ids),'independent_tasks':len(task_ids),'repeated':len(task_ids)>=2,'status':'pending'}
+            treatments[item['incident_id']]=[]
+        except (OSError,ValueError,KeyError,TypeError) as exc:
+            errors.append({'record':p.name,'error':type(exc).__name__})
+    matched=set(incidents)
+    for p in sorted(proposals.glob('*.json')):
+        if p.name=='pending.json':
+            continue
+        try:
+            data=read(_file(proposals,p.name))
+            incident_id=data.get('incident_id')
+            if data.get('resolution_id'):
+                if incident_id not in matched:
+                    continue
+                if not re.fullmatch(r'RES-[0-9a-f]{32}',data['resolution_id']):
+                    raise ValueError('invalid resolution identity')
+                validate_incident(read(_file(observations,incident_id+'.json')))
+                required=historical_resolution_tests(data)
+                treatment={'kind':'RES','id':data['resolution_id'],'test_ids':required,
+                           'changed_paths':[],'rolled_back':False,'evidence_verified':False}
+                treatments[incident_id].append(treatment)
+                try:
+                    verify_evidence(proposals/'evidence'/data['resolution_id'],data['candidate_sha256'],data['test_run_id'],data['review_ids'],required)
+                except (OSError,ValueError,KeyError,TypeError) as exc:
+                    evidence_warnings.append({'record':p.name,'error':type(exc).__name__})
+                else:
+                    treatment['evidence_verified']=True
+                    closed_evidence.setdefault(incident_id,set()).update(data['evidence'])
+            elif data.get('EVO') and not data.get('rollback_of'):
+                incident=data.get('incident') or {};incident_id=incident.get('incident_id')
+                if incident_id not in matched:
+                    continue
+                if not re.fullmatch(r'EVO-\d{8}-\d{6}',data['EVO']): raise ValueError('invalid EVO identity')
+                rolled_back=any(read(q).get('rollback_of')==data['EVO'] for q in proposals.glob('*.json') if q.is_file() and not q.is_symlink())
+                paths=[]
+                for entry in data.get('changes',[]):
+                    name=entry.get('path') if isinstance(entry,dict) else entry
+                    if isinstance(name,str) and not Path(name).is_absolute() and '..' not in Path(name).parts:
+                        paths.append(name)
+                treatment={'kind':'EVO','id':data['EVO'],'summary':data.get('summary'),
+                    'changed_paths':sorted(set(paths)),'rolled_back':rolled_back,
+                    'post_apply':data.get('post_apply'),'evidence_verified':False}
+                treatments[incident_id].append(treatment)
+                if not rolled_back and data.get('post_apply')=='PASS':
+                    try:
+                        verify_evidence(Path(data['evidence_dir']),data['after'],data['regression'],data['reviews'],['REG1','REG2',*[c['case_id'] for c in data['cases']]])
+                    except (OSError,ValueError,KeyError,TypeError) as exc:
+                        evidence_warnings.append({'record':p.name,'error':type(exc).__name__})
+                    else:
+                        treatment['evidence_verified']=True
+                        closed_evidence.setdefault(incident_id,set()).update(incident.get('evidence',[]))
+            elif incident_id in matched:
+                candidates.append({'incident_id':incident_id,'record':p.name,'status':data.get('status','candidate')})
+        except (OSError,ValueError,KeyError,TypeError) as exc:
+            errors.append({'record':p.name,'error':type(exc).__name__})
+    result=[]
+    for incident_id,item in incidents.items():
+        old=validate_incident(read(_file(observations,incident_id+'.json')))
+        item['status']='closed' if set(old['evidence'])<=closed_evidence.get(incident_id,set()) else 'pending'
+        item['independent_tasks']=len(failure_task_ids)
+        item['repeated']=len(failure_task_ids)>=2
+        item['treatments']=treatments[incident_id]
+        result.append(item)
+    exact=[item for item in result if item['same_cause']]
+    return {'status':'ERROR' if errors else ('EXACT_MATCH' if exact else ('SYMPTOM_MATCH' if result else 'NO_MATCH')),
+            'failure_type':failure_type,'cause':cause,'incidents':result,'candidates':candidates,
+            'errors':errors,'evidence_warnings':evidence_warnings}
+
 
 def cases_for(root,incident,ids):
     cases=read(root/'tests/regression-cases.json')
@@ -383,7 +482,7 @@ def recover(root=ROOT):
         pending.unlink();return {'status':'RECOVERED','EVO':None}
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['record','regress','promote','rollback','recover','status','resolve']);p.add_argument('args',nargs='*');a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['record','regress','promote','rollback','recover','status','resolve','history']);p.add_argument('args',nargs='*');a=p.parse_args()
     try:
         if a.action=='record': result=record(read(Path(a.args[0])),evidence=Path(a.args[1]))
         elif a.action=='regress': result=regress(Path(a.args[0]),Path(a.args[1]))
@@ -391,6 +490,7 @@ def main():
         elif a.action=='rollback': result=rollback(a.args[0])
         elif a.action=='recover': result=recover()
         elif a.action=='resolve': result=resolve(a.args[0],read(Path(a.args[1])),Path(a.args[2]))
+        elif a.action=='history': result=history(a.args[0],a.args[1])
         else: result=status()
         print(json.dumps(result,ensure_ascii=False,indent=2));return 1 if result.get('verdict')=='FAIL' else 0
     except (OSError,ValueError,KeyError,TypeError,IndexError,subprocess.TimeoutExpired) as exc:

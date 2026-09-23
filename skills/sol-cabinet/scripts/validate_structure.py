@@ -46,6 +46,8 @@ REQUIRED = [
     "scripts/codex_delivery_hook.py",
     "tests/test_delivery_rules.py",
     "tests/test_delivery_hook.py",
+    "tests/test_last_lab_matrix.py",
+    "platform-adapter/lab-hooks.json",
     "tests/test_evolution_intake.py",
     "scripts/validate_evolution_proposal.py",
     "scripts/create_release_snapshot.py",

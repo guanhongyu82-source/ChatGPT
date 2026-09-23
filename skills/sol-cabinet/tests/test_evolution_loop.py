@@ -79,6 +79,28 @@ class EvolutionTests(unittest.TestCase):
             (c/'scripts/validate_structure.py').write_text('raise SystemExit(0)\n')
             (c/'tests/regression-cases.json').write_text(json.dumps([{'case_id':'RC-HIDDEN','test':'test_hidden.py:test_hidden'}]))
             result=evolve.regress(c,e);self.assertEqual(result['test_results']['RC-HIDDEN'],'FAIL')
+    def test_history_preserves_old_fix_metadata_without_archived_log(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);observations=root/'memory-evolution/observations';proposals=root/'memory-evolution/proposals'
+            observations.mkdir(parents=True);proposals.mkdir(parents=True)
+            incident=self.incident();eid=incident['evidence'][0]
+            (observations/(incident['incident_id']+'.json')).write_text(json.dumps(incident))
+            capture={'evidence_id':eid,'task_instance_id':'task-'+'1'*32,'failure_type':incident['failure_type'],'sanitized':True}
+            (observations/(eid+'.json')).write_text(json.dumps(capture))
+            prior={'EVO':'EVO-20260912-004420','incident':{'incident_id':incident['incident_id'],'evidence':[eid]},
+                   'post_apply':'PASS','evidence_dir':str(root/'missing-evidence'),'after':'a'*64,
+                   'regression':'testrun-'+'1'*32,'reviews':[],'cases':[],
+                   'changes':{'scripts/classify_task.py':{}},'summary':'improve-routing'}
+            (proposals/(prior['EVO']+'.json')).write_text(json.dumps(prior))
+            result=evolve.history('runtime-compatibility','runtime_issue',root)
+            self.assertEqual(result['status'],'EXACT_MATCH')
+            self.assertEqual(result['errors'],[])
+            self.assertEqual(len(result['evidence_warnings']),1)
+            self.assertEqual(result['incidents'][0]['status'],'pending')
+            treatment=result['incidents'][0]['treatments'][0]
+            self.assertFalse(treatment['evidence_verified'])
+            self.assertIn('scripts/classify_task.py',treatment['changed_paths'])
+
     def test_lifecycle_transaction_and_rollback(self):
         import subprocess
         result=subprocess.run([sys.executable,'-B',str(ROOT/'tests/lifecycle_fixture.py'),str(ROOT)],capture_output=True,text=True,timeout=60)

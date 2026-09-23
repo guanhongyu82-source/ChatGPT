@@ -82,5 +82,65 @@
     "no_regression": "原稿保护、快车道和既有独立审核门槛保持，组件测试不冒充FINAL PASS。",
     "pass_condition": "真实prepare/publish/check通过T1-T7，临时根、延后归档、未知输入和陈旧报告反例均拒绝。",
     "test": "test_delivery_rules.py:test_t7_temporary_roots_cannot_finalize"
+  },
+  {
+    "case_id": "RC-WORKFLOW-ROUTE-001",
+    "incident_id": "INC-66666666666666666666666666666666",
+    "failure_type": "task_underclassification",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "已有 T1-T10 分类只产等级标签，后续未按等级选不同执行深度。",
+    "correct_behavior": "分类器返回 workflow.lane 并驱动 T1-T10 对应的实际核验深度；硬风险门槛覆盖偏低用户显式等级。",
+    "no_regression": "保留现有分级和风险门槛，不引入第二套档位或固定 Agent 套餐。",
+    "pass_condition": "T1/T3/T4/T7/T9-T10 fixtures 分别选择快、聚焦、结构化、高控制、阶段门禁路线。",
+    "test": "test_last_lab_matrix.py:test_case_08_risk_gate_overrides_requested_low_tier"
+  },
+  {
+    "case_id": "RC-START-CONFIRM-001",
+    "incident_id": "INC-77777777777777777777777777777777",
+    "failure_type": "file_delivery_uncontrolled",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "开工卡只是提示；未确认时仍可调用写工具。",
+    "correct_behavior": "Hook 状态保持 START_CARD_READY，识别到的写入调用返回 PreToolUse deny；开始时间仅在用户确认或预授权后生成。",
+    "no_regression": "只对显式激活的 Cabinet 任务启用；普通对话不创建全局 Intake。",
+    "pass_condition": "自然确认与预授权都必须在卡片后；未确认写入被拒，确认前 started_at 为空。",
+    "test": "test_delivery_hook.py:test_pretool_denies_writes_before_confirmation"
+  },
+  {
+    "case_id": "RC-TIME-LIFECYCLE-001",
+    "incident_id": "INC-88888888888888888888888888888888",
+    "failure_type": "incident_not_recorded",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "启动时间从任务提示提交时开始且 Stop 不保存完成时间，完工耗时可凭模型自报。",
+    "correct_behavior": "确认转换记录 started_at；交付与 Evolution 均通过后 Stop 保存 finished_at；耗时取两者之差。",
+    "no_regression": "不写 prompt 或业务内容，不对未启动/未完成任务伪造耗时。",
+    "pass_condition": "合成生命周期按状态时间完成，并在状态完成前拒绝虚报完成。",
+    "test": "test_delivery_hook.py:test_stop_writes_finished_at_only_after_delivery_and_checkpoint"
+  },
+  {
+    "case_id": "RC-EVOLUTION-HISTORY-001",
+    "incident_id": "INC-99999999999999999999999999999999",
+    "failure_type": "incident_not_recorded",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "Evolution 能记录事故，但分类前未查同类处置，旧问题复发可能再加相似规则。",
+    "correct_behavior": "真实 Cabinet 异常先按 failure_type + cause 读取匹配 INC/EV/RES/EVO 与修复路径；命中后检查规则是否进入运行态及 Hook/部署是否失效。",
+    "no_regression": "CLEAN 零历史读取；只读脱敏状态与修复路径，不读业务正文。",
+    "pass_condition": "重复案例显示旧处置和修复模块；CLEAN 不触发 history；不生成重复规则。",
+    "test": "test_last_lab_matrix.py:test_case_09_recurrence_finds_prior_fix_and_changed_module"
+  },
+  {
+    "case_id": "RC-EVOLUTION-HISTORY-002",
+    "incident_id": "INC-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "failure_type": "incident_not_recorded",
+    "cause": "execution_failure",
+    "impact": "high",
+    "trigger": "旧 RES/EVO 的执行日志未随源码分支复制，完整 status 校验失败；旧处置线索可能因此在复发判断中消失。",
+    "correct_behavior": "历史 RES 使用当时冻结的测试集核验；日志缺失时 history 仍给出处置 ID、变更路径和未验真标记，不宣告旧问题已验证关闭。",
+    "no_regression": "当前新 RES 仍必须满足当前案例目录；元数据损坏仍失败关闭，不凭旧记录生成 EVO。",
+    "pass_condition": "旧日志缺失的 fixture 能读出旧修复路径、evidence_verified=false 与 evidence_warnings，当前任务仍可继续判断或如实 PENDING。",
+    "test": "test_evolution_loop.py:test_history_preserves_old_fix_metadata_without_archived_log"
   }
 ]
